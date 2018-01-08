@@ -26,21 +26,21 @@ def DefineMagicPacketTracker(DEPTH):
             m.wire(pop_cnt.RESET, io.rst)
 
             # increment enable logic
-            incr_en = m.bit((pop_cnt.O < m.uint(DEPTH, CNTWID)) &
+            incr_mask = m.bit((pop_cnt.O < m.uint(DEPTH, CNTWID)) &
                           (io.push) &
                           (~io.captured))
-            wide_incr_en = repeat(incr_en, CNTWID)
+            wide_incr_mask = repeat(incr_mask, CNTWID)
 
             # intermediate signal
-            push_cnt = m.uint(pop_cnt.O + m.uint(m.uint(1, CNTWID) & wide_incr_en))
+            push_cnt = m.uint(pop_cnt.O + m.uint(m.uint(1, CNTWID) & wide_incr_mask))
 
             # decrement enable logic
-            decr_en = m.bit((push_cnt > m.uint(0, CNTWID)) &
+            decr_mask = m.bit((push_cnt > m.uint(0, CNTWID)) &
                           (io.pop))
-            wide_decr_en = repeat(decr_en, CNTWID)
+            wide_decr_mask = repeat(decr_mask, CNTWID)
             
             # wire next state
-            cnt_update = push_cnt - m.uint(m.uint(1, CNTWID) & wide_decr_en)
+            cnt_update = push_cnt - m.uint(m.uint(1, CNTWID) & wide_decr_mask)
             m.wire(pop_cnt.I, cnt_update)
 
             # wire output
@@ -85,6 +85,13 @@ def DefineDataIntegritySB(DATAWID, DEPTH):
             m.wire(io.rst, fifo.rst)
             m.wire(io.data_in, fifo.data_in)
             m.wireclock(io, fifo)
+
+            # vld out
+            # TODO handle missing magic packet -- need to reset everything. Or keep as an assumption/restriction
+
+            # == throwing error? not using expected operator
+            # m.wire(en.O & (m.uint(mpt.next_cnt) == m.uint(0, (DEPTH - 1).bit_length())), io.data_out_vld)
+            m.wire(m.bit(en.O) & (m.uint(mpt.next_cnt) <= m.uint(0, (DEPTH - 1).bit_length())), io.data_out_vld)
 
     return DataIntegritySB
 
