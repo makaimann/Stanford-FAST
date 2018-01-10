@@ -1,3 +1,4 @@
+`include "/home/makai/repos/magma/magma/backend/coreir_prims.v"
 module Register1R (input [0:0] I, output [0:0] O, input  CLK, input  RESET);
 wire  inst0_Q;
 SB_DFFSR inst0 (.C(CLK), .R(RESET), .D(I[0]), .Q(inst0_Q));
@@ -320,19 +321,21 @@ endmodule
 module DataIntegritySB (input  push, input  pop, input  start, input  rst, input [7:0] data_in, output  data_out_vld, input  CLK);
 wire [0:0] en_O;
 wire [0:0] inst1_O;
-wire [2:0] inst2_cnt;
-wire [2:0] inst2_next_cnt;
-wire [7:0] inst3_data_out;
-wire  inst3_empty;
-wire  inst3_full;
-wire  inst4_O;
+wire [0:0] inst2_O;
+wire [2:0] inst3_cnt;
+wire [2:0] inst3_next_cnt;
+wire [7:0] inst4_data_out;
+wire  inst4_empty;
+wire  inst4_full;
 wire  inst5_O;
-Register1R en (.I(inst1_O), .O(en_O), .CLK(CLK), .RESET(rst));
+wire  inst6_O;
+Register1R en (.I(inst2_O), .O(en_O), .CLK(CLK), .RESET(rst));
 Or2x1 inst1 (.I0(en_O), .I1({start}), .O(inst1_O));
-MagicPacketTracker inst2 (.push(push), .pop(pop), .captured(en_O[0]), .cnt(inst2_cnt), .next_cnt(inst2_next_cnt), .rst(rst), .CLK(CLK));
-FIFO inst3 (.push(push), .pop(pop), .rst(rst), .data_in(data_in), .data_out(inst3_data_out), .empty(inst3_empty), .full(inst3_full), .CLK(CLK));
-ULE3 inst4 (.I0(inst2_next_cnt), .I1({1'b0,1'b0,1'b0}), .O(inst4_O));
-And2 inst5 (.I({inst4_O,en_O[0]}), .O(inst5_O));
-assign data_out_vld = inst5_O;
+Or2x1 inst2 (.I0(en_O), .I1({start}), .O(inst2_O));
+MagicPacketTracker inst3 (.push(push), .pop(pop), .captured(en_O[0]), .cnt(inst3_cnt), .next_cnt(inst3_next_cnt), .rst(rst), .CLK(CLK));
+FIFO inst4 (.push(push), .pop(pop), .rst(rst), .data_in(data_in), .data_out(inst4_data_out), .empty(inst4_empty), .full(inst4_full), .CLK(CLK));
+ULE3 inst5 (.I0(inst3_next_cnt), .I1({1'b0,1'b0,1'b0}), .O(inst5_O));
+And2 inst6 (.I({inst5_O,en_O[0]}), .O(inst6_O));
+assign data_out_vld = inst6_O;
 endmodule
 

@@ -1,6 +1,5 @@
 import magma as m
-from magma.bitutils import int2seq, int2uint
-from mantle import Mux, DefineRegister, Decoder
+from mantle import Mux, DefineRegister
 
 WIDTH = 8
 DEPTH = 8
@@ -10,13 +9,14 @@ def DefineFIFO(WIDTH, DEPTH):
 
     class FIFO(m.Circuit):
         name = "FIFO"
-        IO = ["push", m.In(m.Bit), "pop", m.In(m.Bit), "rst", m.In(m.Bit),
+        IO = ["push", m.In(m.Bit), "pop", m.In(m.Bit), "rst", m.In(m.Reset),
               "data_in", m.In(m.UInt(WIDTH)), "data_out", m.Out(m.UInt(WIDTH)),
               "empty", m.Out(m.Bit), "full", m.Out(m.Bit)] + m.ClockInterface()
 
         @classmethod
         def definition(io):
-            clkEn = io.push | io.pop | io.rst
+            # didn't work with coreir because the rst/bit conversion
+#            clkEn = io.push | io.pop | m.bit(io.rst)
 
             ########################## pointer logic ##############################
             ptrreg = DefineRegister(PTRWID, init=0, has_ce=True, has_reset=True, _type=m.UInt)
@@ -52,7 +52,7 @@ def DefineFIFO(WIDTH, DEPTH):
             entryReg = DefineRegister(WIDTH, init=0, has_ce=True, has_reset=False, _type=m.Bits)
             for i in range(DEPTH):
                 entry = entryReg(name="entry" + str(i))
-                m.wire(entry.CE, clkEn | m.bit(m.uint(wrPtr.O[:PTRWID-1]) == m.uint(i, PTRWID-1)))
+                m.wire(entry.CE, io.push & m.bit(m.uint(wrPtr.O[:PTRWID-1]) == m.uint(i, PTRWID-1)))
                 m.wire(entry.I, io.data_in)
                 entries.append(entry)
 

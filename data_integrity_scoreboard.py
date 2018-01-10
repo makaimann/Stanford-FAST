@@ -1,6 +1,6 @@
 import magma as m
-from magma.bitutils import int2seq, int2uint
-from mantle import Mux2, DefineRegister, repeat
+from mantle import DefineRegister, repeat
+from mantle.common.operator import eq
 from fifo import DefineFIFO
 
 
@@ -11,7 +11,7 @@ def DefineMagicPacketTracker(DEPTH):
         name = "MagicPacketTracker"
         IO = ["push", m.In(m.Bit), "pop", m.In(m.Bit), "captured", m.In(m.Bit),
               "cnt", m.Out(m.UInt(CNTWID)), "next_cnt", m.Out(m.UInt(CNTWID)),
-              "rst", m.In(m.Bit)] + m.ClockInterface()
+              "rst", m.In(m.Reset)] + m.ClockInterface()
 
         @classmethod
         def definition(io):
@@ -40,6 +40,7 @@ def DefineMagicPacketTracker(DEPTH):
             wide_decr_mask = repeat(decr_mask, CNTWID)
             
             # wire next state
+            # Seems to be an issue with subtraction in magma/compile.py:50
             cnt_update = push_cnt - m.uint(m.uint(1, CNTWID) & wide_decr_mask)
             m.wire(pop_cnt.I, cnt_update)
 
@@ -54,7 +55,7 @@ def DefineDataIntegritySB(DATAWID, DEPTH):
     class DataIntegritySB(m.Circuit):
         name = "DataIntegritySB"
         IO = ["push", m.In(m.Bit), "pop", m.In(m.Bit), "start", m.In(m.Bit),
-              "rst", m.In(m.Bit), "data_in", m.In(m.Bits(DATAWID)),
+              "rst", m.In(m.Reset), "data_in", m.In(m.Bits(DATAWID)),
               "data_out_vld", m.Out(m.Bit)] + m.ClockInterface()
 
         @classmethod
@@ -89,9 +90,11 @@ def DefineDataIntegritySB(DATAWID, DEPTH):
             # vld out
             # TODO handle missing magic packet -- need to reset everything. Or keep as an assumption/restriction
 
+            # quirk
             # == throwing error? not using expected operator
+            # print(type(m.bit(en.O) & (m.uint(mpt.next_cnt) == m.uint(0, (DEPTH - 1).bit_length()))))
             # m.wire(en.O & (m.uint(mpt.next_cnt) == m.uint(0, (DEPTH - 1).bit_length())), io.data_out_vld)
-            m.wire(m.bit(en.O) & (m.uint(mpt.next_cnt) <= m.uint(0, (DEPTH - 1).bit_length())), io.data_out_vld)
+            m.wire(m.bit(en.O) & eq(m.uint(mpt.next_cnt), m.uint(0, (DEPTH - 1).bit_length())), io.data_out_vld)
 
     return DataIntegritySB
 
@@ -100,8 +103,8 @@ if __name__ == "__main__":
 
     disb = DefineDataIntegritySB(DATAWID=8, DEPTH=8)
     
-    # Compile verilog
-    m.compile("build/data_integrity_scoreboard", disb, include_coreir=False)
+    # Compile coreir
+    m.compile("build/data_integrity_scoreboard", disb, output="coreir")
 
-    with open("build/data_integrity_scoreboard.v", "r") as disb_verilog:
-        print(disb_verilog.read())
+    # with open("build/data_integrity_scoreboard.v", "r") as disb_verilog:
+    #     print(disb_verilog.read())
