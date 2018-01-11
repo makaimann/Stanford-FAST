@@ -35,7 +35,7 @@ module FIFO(clk, rst, push, pop, data_in,
                                  .en(clkEn),
                         		 .D(wrPtrNxt),
                         		 .Q(wrPtr)
-  								);
+  				);
   
   //************** rdPtr logic ****************//
   
@@ -66,7 +66,7 @@ module FIFO(clk, rst, push, pop, data_in,
                                         .en(wrPtr == i),
                                         .D(data_in),
                                         .Q(entries[i])
-      									);
+      				       );
     end
   endgenerate
   
