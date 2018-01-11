@@ -14,7 +14,8 @@ a library of useful Magma circuits.
 
 Magma has backends for Lattice FPGAs and CoreIR (the Verilog backend exists but has not been maintained). For our purposes, we
 will write a generator in Magma, which produces a (concrete) circuit in CoreIR. Then using the CoreIR command line, we can 
-produce Verilog which is readable by Yosys to produce SMT-LIBv2.
+produce Verilog which is readable by Yosys to produce SMT-LIBv2. **To use with CoreIR, set the `MANTLE_TARGET` environment
+variable to `coreir`.**
 
 ### (Extra) Required Software for Magma track
 * [Magma](https://github.com/phanrahan/magma)
@@ -23,9 +24,9 @@ produce Verilog which is readable by Yosys to produce SMT-LIBv2.
 
 ## Verilog Flow
 In the Verilog directory are SystemVerilog implementations with embedded data integrity assertions and the necessary 
-assumptions. The script '''check.sh''' will use Yosys to read in these files, process the circuit and produce SMT-LIB 
+assumptions. The script `check.sh` will use Yosys to read in these files, process the circuit and produce SMT-LIB 
 (disb.smt2). Then it calls the yosys-smtbmc script with CVC4 as the underlying SMT solver for a bounded model checking run.
-Adding '''-i''' to the yosys-smtbmc invocation would start a k-induction run. If a counter example is found, it is written 
+Adding `-i` to the yosys-smtbmc invocation would start a k-induction run. If a counter example is found, it is written 
 to disb.vcd.
 
 No extra software required, except a Waveform viewer for viewing counter examples.
