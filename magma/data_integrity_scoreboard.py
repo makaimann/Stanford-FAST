@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import magma as m
 from mantle import DefineRegister, repeat
 from mantle.common.operator import eq
@@ -40,7 +42,6 @@ def DefineMagicPacketTracker(DEPTH):
             wide_decr_mask = repeat(decr_mask, CNTWID)
             
             # wire next state
-            # Seems to be an issue with subtraction in magma/compile.py:50
             cnt_update = push_cnt - m.uint(m.uint(1, CNTWID) & wide_decr_mask)
             m.wire(pop_cnt.I, cnt_update)
 
@@ -90,10 +91,6 @@ def DefineDataIntegritySB(DATAWID, DEPTH):
             # vld out
             # TODO handle missing magic packet -- need to reset everything. Or keep as an assumption/restriction
 
-            # quirk
-            # == throwing error? not using expected operator
-            # print(type(m.bit(en.O) & (m.uint(mpt.next_cnt) == m.uint(0, (DEPTH - 1).bit_length()))))
-            # m.wire(en.O & (m.uint(mpt.next_cnt) == m.uint(0, (DEPTH - 1).bit_length())), io.data_out_vld)
             m.wire(m.bit(en.O) & eq(m.uint(mpt.next_cnt), m.uint(0, (DEPTH - 1).bit_length())), io.data_out_vld)
 
     return DataIntegritySB
@@ -105,6 +102,3 @@ if __name__ == "__main__":
     
     # Compile coreir
     m.compile("build/data_integrity_scoreboard", disb, output="coreir")
-
-    # with open("build/data_integrity_scoreboard.v", "r") as disb_verilog:
-    #     print(disb_verilog.read())

@@ -72,9 +72,6 @@ module DataIntegritySB(clk, rst, push, pop, start, data_in,
   wire [CNTWID-1:0] cnt;
   wire [CNTWID-1:0] next_cnt;
 
-  // TODO Might have an off-by-one issue because captured/en -- fix this
-  // possibly fixed using next_en, needs testing or formal verification
-
   MagicPacketTracker #(.DEPTH(DEPTH)) mpt (.clk(clk),
                                            .rst(rst),
                                            .push(push),
