@@ -101,17 +101,7 @@ module DataIntegritySB(clk, rst, push, pop, start, data_in,
                                           .empty(empty),
                                           .data_out(data_out));
 
-  //************ Ensure you don't miss magic packet *****************//
-  // goes high one cycle after data_out_vld and stays high
-  wire missed_magic_packet;
-
-  FF #(.WIDTH(1)) ff_missed_magic_packet (.clk(clk),
-                                          .en(data_out_vld & ~missed_magic_packet),
-                                          .D(data_out_vld), // could be 1'b1 because enable
-                                          .Q(missed_magic_packet)
-  					 );
-
-  assign data_out_vld = en & & (cnt > 0) & (next_cnt == 0); //There was at least one packet stored, and now it's exiting
+  assign data_out_vld = en & (cnt > 0) & (next_cnt == 0); //There was at least one packet stored, and now it's exiting
 
   `ifdef FORMAL
 
@@ -125,7 +115,7 @@ module DataIntegritySB(clk, rst, push, pop, start, data_in,
               assume(!rst);
 	      assume(!empty | !pop);
 	      assume(!full | !push);
-              assert(~data_out_vld | missed_magic_packet | (magic_packet == data_out));
+              assert(~data_out_vld | (magic_packet == data_out));
         end
     end
 
