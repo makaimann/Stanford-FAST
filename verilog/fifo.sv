@@ -59,8 +59,8 @@ module FIFO(clk, rst, push, pop, data_in,
 
   wire [WIDTH-1:0] entries [DEPTH-1:0];
 
-  genvar i;
   generate
+    genvar i;
     for(i = 0; i < DEPTH; i = i + 1) begin : entry_gen
       FF #(.WIDTH(WIDTH)) ff_entry_inst(.clk(clk),
                                         .en(wrPtr == i),
