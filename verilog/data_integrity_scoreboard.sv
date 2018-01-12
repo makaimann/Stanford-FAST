@@ -6,6 +6,10 @@
  `include "fifo.sv"
 `endif
 
+`ifndef DWRR
+ `include "DWRR.sv"
+`endif
+
 module MagicPacketTracker(clk, rst, push, pop, captured,
                           cnt, next_cnt);
   parameter DEPTH = 8;
@@ -102,6 +106,19 @@ module DataIntegritySB(clk, rst, push, pop, start, data_in,
                                           .full(full),
                                           .empty(empty),
                                           .data_out(data_out));
+
+/*  `ifdef ARBITER
+    DWRR #(.NUM_REQS(NUM_REQS), .QWID(QWID), .PSIZE(WIDTH)) arb (.clk(clk),
+								 .rst(rst),
+								 .blk(1'b0), //TODO incorporate blk
+								 .reqs(),
+								 .input_quantums(quantums),
+								 .gnt(gnt));
+
+
+  `endif*/
+
+
 
   assign data_out_vld = en & (cnt > 0) & (next_cnt == 0); //There was at least one packet stored, and now it's exiting
 

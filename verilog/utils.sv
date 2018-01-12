@@ -2,11 +2,12 @@
 
 module FF(clk, en, D, Q);
   parameter WIDTH = 1;
-  
+  parameter INIT  = 0;
+ 
   input wire                clk;
   input wire                en;
   input wire   [WIDTH-1:0]  D;
-  output reg   [WIDTH-1:0]  Q = 'd0;
+  output reg   [WIDTH-1:0]  Q = INIT;
   
   always @ (posedge clk) begin
     if(en) begin
