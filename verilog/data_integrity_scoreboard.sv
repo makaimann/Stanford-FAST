@@ -44,7 +44,7 @@ endmodule
 
 
 module DataIntegritySB(clk, rst, push, pop, start, data_in,
-                       data_out_vld
+                       data_out_vld, prop_signal
                       );
   parameter DEPTH = 8;
   parameter WIDTH = 8;
@@ -58,6 +58,8 @@ module DataIntegritySB(clk, rst, push, pop, start, data_in,
   input wire [WIDTH-1:0] data_in;
 
   output wire data_out_vld;
+  output wire prop_signal;
+
 
   wire en;
   wire next_en;
@@ -103,23 +105,8 @@ module DataIntegritySB(clk, rst, push, pop, start, data_in,
 
   assign data_out_vld = en & (cnt > 0) & (next_cnt == 0); //There was at least one packet stored, and now it's exiting
 
-  `ifdef FORMAL
-
-  	initial begin
-   		assume (rst);
-        assume (!start);
-	end
-
-	always @* begin
-   	   if (!$initstate) begin
-              assume(!rst);
-	      assume(!empty | !pop);
-	      assume(!full | !push);
-              assert(~data_out_vld | (magic_packet == data_out));
-        end
-    end
-
-  `endif
-
+   // used in data_integrity.smtc
+  wire 	   prop_signal;
+  assign prop_signal = ~data_out_vld | (magic_packet == data_out);
 
 endmodule
