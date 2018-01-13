@@ -1,0 +1,8 @@
+initial
+assume [rst]
+
+always -1
+assume (not [rst])
+assume (or (not [empty]) (not [pop]))
+assume (or (not [full]) (not [push]))
+assert [prop_signal]
