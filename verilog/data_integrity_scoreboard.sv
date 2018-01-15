@@ -1,4 +1,4 @@
-//`define ARBITER
+`define ARBITER
 
 `ifndef UTILS
  `include "utils.sv"
@@ -50,7 +50,7 @@ endmodule
 
 
 `ifdef ARBITER
-module DataIntegritySB(clk, rst, pop, start, flat_data_in, input_quantums,
+module DataIntegritySB(clk, rst, push, start, flat_data_in, input_quantums,
                        data_out_vld, prop_signal
                       );
 `else
@@ -64,17 +64,17 @@ module DataIntegritySB(clk, rst, push, pop, start, flat_data_in, input_quantums,
 
   `ifdef ARBITER
    parameter NUM_REQS = 4; // Number of requestors
-   wire [NUM_REQS-1:0]   push;
+   wire [NUM_REQS-1:0]                 pop;
   `else
    parameter NUM_REQS = 1;
-   input wire push;
+   input wire                          pop;
   `endif
 
   parameter CNTWID = $clog2(DEPTH);
 
   input wire                                clk;
   input wire                                rst;
-  input wire [NUM_REQS-1:0]                 pop;
+  input wire [NUM_REQS-1:0]                 push;
   input wire                                start;
   input wire [NUM_REQS*WIDTH-1:0]           flat_data_in;
   input wire [NUM_REQS*QWID-1:0]            input_quantums;
@@ -150,7 +150,7 @@ module DataIntegritySB(clk, rst, push, pop, start, flat_data_in, input_quantums,
 						 .empty(empty[i]),
 						 .data_out(data_out[i]));
 	 assign reqs[i] = ~empty[i]; // For now assuming every non-empty fifo is requesting
-	 assign push[i] = gnt[i];
+	 assign pop[i] = gnt[i];
       end
    endgenerate
 
