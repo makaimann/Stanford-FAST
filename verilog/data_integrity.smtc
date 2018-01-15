@@ -3,6 +3,6 @@ assume [rst]
 
 always -1
 assume (not [rst])
-assume (or (not [empty]) (not [pop]))
-assume (or (not [full]) (not [push]))
+assume (or (not [prop_empty]) (not [prop_pop]))
+assume (or (not [prop_full]) (not [prop_push]))
 assert [prop_signal]
