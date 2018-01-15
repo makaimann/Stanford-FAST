@@ -1,3 +1,5 @@
+//`define ARBITER
+
 `ifndef UTILS
  `include "utils.sv"
 `endif
@@ -47,22 +49,52 @@ module MagicPacketTracker(clk, rst, push, pop, captured,
 endmodule
 
 
-module DataIntegritySB(clk, rst, push, pop, start, data_in,
+`ifdef ARBITER
+module DataIntegritySB(clk, rst, pop, start, flat_data_in, input_quantums,
                        data_out_vld, prop_signal
                       );
+`else
+module DataIntegritySB(clk, rst, push, pop, start, flat_data_in, input_quantums,
+                       data_out_vld, prop_signal
+                      );
+`endif
   parameter DEPTH = 8;
   parameter WIDTH = 8;
+  parameter QWID     = 8; // Quantum widths
+
+  `ifdef ARBITER
+   parameter NUM_REQS = 4; // Number of requestors
+   wire [NUM_REQS-1:0]   push;
+  `else
+   parameter NUM_REQS = 1;
+   input wire push;
+  `endif
+
   parameter CNTWID = $clog2(DEPTH);
 
-  input wire             clk;
-  input wire             rst;
-  input wire             push;
-  input wire             pop;
-  input wire             start;
-  input wire [WIDTH-1:0] data_in;
+  input wire                                clk;
+  input wire                                rst;
+  input wire [NUM_REQS-1:0]                 pop;
+  input wire                                start;
+  input wire [NUM_REQS*WIDTH-1:0]           flat_data_in;
+  input wire [NUM_REQS*QWID-1:0]            input_quantums;
 
-  output wire data_out_vld;
-  output wire prop_signal;
+  output wire                               data_out_vld;
+  output wire                               prop_signal;
+
+  wire [NUM_REQS-1:0]			    empty;
+  wire [NUM_REQS-1:0]			    full;
+
+
+  wire [WIDTH-1:0] 	    data_in [NUM_REQS-1:0];
+  generate
+     genvar 		    i;
+
+     for(i=0; i < NUM_REQS; i=i+1) begin : pack_data_in
+	assign data_in[i] = flat_data_in[(i+1)*WIDTH-1:i*WIDTH];
+     end
+  endgenerate
+
 
 
   wire en;
@@ -80,8 +112,8 @@ module DataIntegritySB(clk, rst, push, pop, start, data_in,
 
   MagicPacketTracker #(.DEPTH(DEPTH)) mpt (.clk(clk),
                                            .rst(rst),
-                                           .push(push),
-                                           .pop(pop),
+                                           .push(push[0]),
+                                           .pop(pop[0]),
                                            .captured(en),
                                            .cnt(cnt),
                                            .next_cnt(next_cnt)
@@ -90,40 +122,68 @@ module DataIntegritySB(clk, rst, push, pop, start, data_in,
   wire [WIDTH-1:0] magic_packet;
 
   FF #(.WIDTH(WIDTH)) ff_magic_packet (.clk(clk),
-                                       .en(start & push & ~en),
-                                       .D(data_in),
+                                       .en(start & push[0] & ~en),
+                                       .D(data_in[0]),
                                        .Q(magic_packet));
 
-  wire             full;
-  wire             empty;
-  wire [WIDTH-1:0] data_out;
+  wire [WIDTH-1:0] data_out [NUM_REQS-1:0];
+
+`ifdef ARBITER
+   wire [NUM_REQS-1:0] reqs;
+   wire [NUM_REQS-1:0] gnt;
+
+   DWRR #(.NUM_REQS(NUM_REQS), .QWID(QWID), .PSIZE(WIDTH)) arb (.clk(clk),
+								.rst(rst),
+								.blk(1'b0), //TODO incorporate blk
+								.reqs(reqs),
+								.input_quantums(input_quantums),
+								.gnt(gnt));
+   generate
+      genvar 	   i;
+      for(i=0; i < NUM_REQS; i=i+1) begin : gen_fifos
+	 FIFO #(.WIDTH(WIDTH), .DEPTH(DEPTH)) f (.clk(clk),
+						 .rst(rst),
+						 .push(push[i]),
+						 .pop(pop[i]),
+						 .data_in(data_in[i]),
+						 .full(full[i]),
+						 .empty(empty[i]),
+						 .data_out(data_out[i]));
+	 assign reqs[i] = ~empty[i]; // For now assuming every non-empty fifo is requesting
+	 assign push[i] = gnt[i];
+      end
+   endgenerate
+
+`else // !`ifdef ARBITER
 
   FIFO #(.WIDTH(WIDTH), .DEPTH(DEPTH)) f (.clk(clk),
                                           .rst(rst),
                                           .push(push),
                                           .pop(pop),
-                                          .data_in(data_in),
+                                          .data_in(data_in[0]),
                                           .full(full),
                                           .empty(empty),
-                                          .data_out(data_out));
-
-/*  `ifdef ARBITER
-    DWRR #(.NUM_REQS(NUM_REQS), .QWID(QWID), .PSIZE(WIDTH)) arb (.clk(clk),
-								 .rst(rst),
-								 .blk(1'b0), //TODO incorporate blk
-								 .reqs(),
-								 .input_quantums(quantums),
-								 .gnt(gnt));
-
-
-  `endif*/
+                                          .data_out(data_out[0]));
+`endif
 
 
 
   assign data_out_vld = en & (cnt > 0) & (next_cnt == 0); //There was at least one packet stored, and now it's exiting
 
-   // used in data_integrity.smtc
+  // used in data_integrity.smtc
+  wire 	       prop_push;
+  wire         prop_pop;
+  wire         prop_empty;
+  wire         prop_full;
+
+  assign prop_push = push[0];
+  assign prop_pop = pop[0];
+  assign prop_empty = empty[0];
+  assign prop_full = full[0];
+
+
+
   wire 	   prop_signal;
-  assign prop_signal = ~data_out_vld | (magic_packet == data_out);
+  assign prop_signal = ~data_out_vld | (magic_packet == data_out[0]);
 
 endmodule

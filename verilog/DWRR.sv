@@ -21,9 +21,12 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
 
    //******************** PACK QUANTUMS ****************//
    wire [NUM_REQS-1:0] 			 quantums [QWID-1:0];
-   for(i = 0; i < NUM_REQS; i=i+1) begin : pack_quantums
-      assign quantums[i] = input_quantums[(i+1)*QWID-1:i*QWID];
-   end
+   generate
+      genvar 				 i;
+      for(i = 0; i < NUM_REQS; i=i+1) begin : pack_quantums
+	 assign quantums[i] = input_quantums[(i+1)*QWID-1:i*QWID];
+      end
+   endgenerate
 
    //************** COMMUNICATION SIGNALS **************//
 
@@ -46,10 +49,14 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
    //**************** ROUND ROBIN SELECTOR *************//
    wire [NUM_REQS-1:0] 		       selected;
    wire [NUM_REQS-1:0] 		       next_selected;
-   for(i = 0; i < NUM_REQS; i=i+1) begin : selected_logic
-      assign selected[i] = rr_cnt == i;
-      assign next_selected[i] = next_rr_cnt == i;
-   end
+   generate
+      genvar 			       i;
+
+      for(i = 0; i < NUM_REQS; i=i+1) begin : selected_logic
+	 assign selected[i] = rr_cnt == i;
+	 assign next_selected[i] = next_rr_cnt == i;
+      end
+   endgenerate
 
    /*
    generate
@@ -70,34 +77,41 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
 
    wire [NUM_REQS-1:0] selected_and_empty;
 
-   for(i = 0; i < NUM_REQS; i=i+1) begin : when_to_pass
-      assign selected_and_empty[i] = selected[i] & ~reqs[i];
-   end
+   generate
+      genvar 	       i;
+      for(i = 0; i < NUM_REQS; i=i+1) begin : when_to_pass
+	 assign selected_and_empty[i] = selected[i] & ~reqs[i];
+      end
+   endgenerate
 
    generate
       genvar 			  i;
       for(i = 0; i < NUM_REQS; i=i+1) begin : deficit_counters
-	 FF #(.WIDTH(QWID)) ff_defcnt(.clk(clk),
-				      .en(next_selected[i] | selected[i]), //TODO Double check enable signal
-				      .D(next_def_cnt[i]),
-				      .Q(def_cnt[i]));
+   	 FF #(.WIDTH(QWID)) ff_defcnt(.clk(clk),
+   				      .en(next_selected[i] | selected[i]), //TODO Double check enable signal
+   				      .D(next_def_cnt[i]),
+   				      .Q(def_cnt[i]));
 
-	 wire [QWID-1:0] dc_plus_quant;
-	 assign dc_plus_quant = (~selected[i] & next_selected[i]) ? def_cnt[i] + quantums[i] :
-	                         		                    def_cnt[i];
+   	 wire [QWID-1:0] dc_plus_quant;
+   	 assign dc_plus_quant = (~selected[i] & next_selected[i]) ? def_cnt[i] + quantums[i] :
+   	                         		                    def_cnt[i];
+//	 assign dc_plus_quant = 10;
 
-	 assign next_def_cnt[i] = (rst | selected_and_empty[i]) ? 0 :
-				     gnt[i] ? dc_plus_quant - PSIZE :
-				        dc_plus_quant;
+   	 assign next_def_cnt[i] = (rst | selected_and_empty[i]) ? 0 :
+   				     gnt[i] ? dc_plus_quant - PSIZE :
+   				        dc_plus_quant;
 
-	 assign done_vec[i] = selected[i] & (~reqs[i] | (next_def_cnt[i] < PSIZE));
+   	 assign done_vec[i] = selected[i] & (~reqs[i] | (def_cnt[i] < PSIZE));
       end
    endgenerate
 
 
    // ****************** GRANT SELECTION *****************//
-    for (i = 0; i < NUM_REQS; i=i+1) begin : gnt_selection
-       assign gnt[i] = reqs[i] & (def_cnt[i] >= PSIZE) & selected[i];
-    end
+   generate
+      genvar i;
+      for (i = 0; i < NUM_REQS; i=i+1) begin : gnt_selection
+	 assign gnt[i] = reqs[i] & (def_cnt[i] >= PSIZE) & selected[i];
+      end
+   endgenerate
 
 endmodule // DWRR
