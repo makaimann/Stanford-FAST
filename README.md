@@ -5,6 +5,9 @@ The Magma circuit instances have not been tested or formally verified yet, but t
 has a bounded proof of data integrity for WIDTH=8 and DEPTH=8. A Deficit Weighted Round Robin Arbiter implementation is upcoming.
 Check back for updates.
 
+## Known Bugs/Features?
+* Yosys fails to fetch model when using `--unroll` and/or CVC4. Therefore, the generated .vcd file is incomplete. I (Makai) will look into this when I get a chance and submit a pull request. For now, if you're trying to look at counter examples, use yosys-smtbmc with `-s z3` and without `--unroll`.
+
 ## Required Software
 * [Yosys](https://github.com/YosysHQ/yosys)
 * [CVC4](https://github.com/CVC4/CVC4)
