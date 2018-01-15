@@ -50,6 +50,7 @@ endmodule
 
 
 `ifdef ARBITER
+// if using arbiter, pop signal is connected to arbiter gnt
 module DataIntegritySB(clk, rst, push, start, flat_data_in, input_quantums,
                        data_out_vld, prop_signal
                       );
@@ -60,7 +61,7 @@ module DataIntegritySB(clk, rst, push, pop, start, flat_data_in, input_quantums,
 `endif
   parameter DEPTH = 8;
   parameter WIDTH = 8;
-  parameter QWID     = 8; // Quantum widths
+  parameter QWID  = 8; // Quantum widths
 
   `ifdef ARBITER
    parameter NUM_REQS = 4; // Number of requestors

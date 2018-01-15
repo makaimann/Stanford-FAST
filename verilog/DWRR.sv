@@ -15,7 +15,7 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
    input wire 			         rst;
    input wire 			         blk;
    input wire [NUM_REQS-1:0]             reqs;
-   input wire [NUM_REQS*QWID-1:0]         input_quantums;
+   input wire [NUM_REQS*QWID-1:0]        input_quantums;
 
    output wire [NUM_REQS-1:0] 	         gnt;
 
@@ -58,27 +58,15 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
       end
    endgenerate
 
-   /*
-   generate
-      genvar 				i;
-      for(i = 0; i < NUM_REQS; i=i+1) begin : just_selected_logic
-	 FF #(.WIDTH(1)) ff_just_selected(.clk(clk),
-					  .en(done),
-					  .D((next_rr_cnt == i) & (rr_cnt == i - 1)),
-					  .Q(just_selected[i]));
-      end
-   endgenerate
-   */
-
 
    //***************** DEFICIT COUNTERS ****************//
    wire [QWID-1:0]       def_cnt [NUM_REQS-1:0];
    wire [QWID-1:0]       next_def_cnt [NUM_REQS-1:0];
 
+   // Useful signal for driving done_vec
    wire [NUM_REQS-1:0] selected_and_empty;
-
    generate
-      genvar 	       i;
+      genvar 	                  i;
       for(i = 0; i < NUM_REQS; i=i+1) begin : when_to_pass
 	 assign selected_and_empty[i] = selected[i] & ~reqs[i];
       end
@@ -95,7 +83,6 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
    	 wire [QWID-1:0] dc_plus_quant;
    	 assign dc_plus_quant = (~selected[i] & next_selected[i]) ? def_cnt[i] + quantums[i] :
    	                         		                    def_cnt[i];
-//	 assign dc_plus_quant = 10;
 
    	 assign next_def_cnt[i] = (rst | selected_and_empty[i]) ? 0 :
    				     gnt[i] ? dc_plus_quant - PSIZE :
