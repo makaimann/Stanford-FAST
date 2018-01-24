@@ -51,11 +51,11 @@ endmodule
 
 `ifdef ARBITER
 // if using arbiter, pop signal is connected to arbiter gnt
-module DataIntegritySB(clk, rst, push, start, flat_data_in, input_quantums,
+module Scoreboard(clk, rst, push, start, flat_data_in, input_quantums,
                        data_out_vld, prop_signal
                       );
 `else
-module DataIntegritySB(clk, rst, push, pop, start, flat_data_in, input_quantums,
+module Scoreboard(clk, rst, push, pop, start, flat_data_in, input_quantums,
                        data_out_vld, prop_signal
                       );
 `endif
