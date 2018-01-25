@@ -5,10 +5,12 @@ from mantle import DefineRegister, repeat
 from mantle.common.operator import eq
 from fifo import DefineFIFO
 
+ARBITER = True
+
 
 def DefineMagicPacketTracker(DEPTH):
     CNTWID = (DEPTH - 1).bit_length()
-    
+
     class MagicPacketTracker(m.Circuit):
         name = "MagicPacketTracker"
         IO = ["push", m.In(m.Bit), "pop", m.In(m.Bit), "captured", m.In(m.Bit),
@@ -18,7 +20,7 @@ def DefineMagicPacketTracker(DEPTH):
         @classmethod
         def definition(io):
             cntreg = DefineRegister(CNTWID, init=0, has_ce=False, has_reset=True, _type=m.UInt)
-            
+
             pop_cnt = cntreg(name="pop_cnt")
 
             # wire clock
@@ -40,7 +42,7 @@ def DefineMagicPacketTracker(DEPTH):
             decr_mask = m.bit((push_cnt > m.uint(0, CNTWID)) &
                           (io.pop))
             wide_decr_mask = repeat(decr_mask, CNTWID)
-            
+
             # wire next state
             cnt_update = push_cnt - m.uint(m.uint(1, CNTWID) & wide_decr_mask)
             m.wire(pop_cnt.I, cnt_update)
@@ -52,12 +54,25 @@ def DefineMagicPacketTracker(DEPTH):
     return MagicPacketTracker
 
 
-def DefineDataIntegritySB(DATAWID, DEPTH):
-    class DataIntegritySB(m.Circuit):
-        name = "DataIntegritySB"
-        IO = ["push", m.In(m.Bit), "pop", m.In(m.Bit), "start", m.In(m.Bit),
-              "rst", m.In(m.Reset), "data_in", m.In(m.Bits(DATAWID)),
-              "data_out_vld", m.Out(m.Bit)] + m.ClockInterface()
+def DefineScoreboard(DATAWID, DEPTH, NUM_REQS=None, QWID=None):
+    class Scoreboard(m.Circuit):
+        name = "Scoreboard"
+
+        assert not ARBITER or NUM_REQS is not None, "If using arbiter, need to supply NUM_REQS"
+        assert not ARBITER or QWID is not None, "If using arbiter, need to supply QWID"
+
+        if ARBITER:
+            IO = ["push", m.In(m.Bits(NUM_REQS)), "start", m.In(m.Bit), "rst", m.In(m.Reset),
+                  "data_in", m.In(m.Array(N=NUM_REQS, T=m.Bits(DATAWID))),
+                  "input_quantums", m.In(m.Array(N=NUM_REQS, T=m.UInt(QWID)))
+                  "data_out_vld", m.Out(m.Bit)] + m.ClockInterface()
+        else:
+            IO = ["push", m.In(m.Bit), "pop", m.In(m.Bit), "start", m.In(m.Bit),
+                  "rst", m.In(m.Reset), "data_in", m.In(m.Bits(DATAWID)),
+                  "data_out_vld", m.Out(m.Bit)] + m.ClockInterface()
+
+        if NUM_REQS is None:
+            NUM_REQS = 1
 
         @classmethod
         def definition(io):
@@ -70,35 +85,51 @@ def DefineDataIntegritySB(DATAWID, DEPTH):
 
             # enable only goes high once, then stays high
             m.wire(en.O | m.bits(io.start), en.I)
-            
+
             mpt = DefineMagicPacketTracker(DEPTH)()
-            fifo = DefineFIFO(DATAWID, DEPTH)()
 
             # wire up magic packet tracker
-            m.wire(io.push, mpt.push)
-            m.wire(io.pop, mpt.pop)
+            m.wire(io.push[0], mpt.push)
+            m.wire(io.pop[0], mpt.pop)
             m.wire(en.O, m.bits(mpt.captured))
             m.wire(io.rst, mpt.rst)
             m.wireclock(io, mpt)
 
-            # wire up fifo
-            m.wire(io.push, fifo.push)
-            m.wire(io.pop, fifo.pop)
-            m.wire(io.rst, fifo.rst)
-            m.wire(io.data_in, fifo.data_in)
-            m.wireclock(io, fifo)
+            if not ARBITER:
+                fifo = DefineFIFO(DATAWID, DEPTH)()
+                # wire up fifo
+                m.wire(io.push, fifo.push)
+                m.wire(io.pop, fifo.pop)
+                m.wire(io.rst, fifo.rst)
+                m.wire(io.data_in, fifo.data_in)
+                m.wireclock(io, fifo)
+            else:
+                fifos = list()
+                for i in range(NUM_REQS):
+                    f = DefineFIFO(DATAWID, DEPTH)(name="fifo_{}".format(i))
+                    fifos.append(f)
+                    m.wire(io.push[i], f.push)
+                    m.wire(io.rst, f.rst)
+                    m.wire(io.data_in[i], f.data_in)
+                    m.wireclock(io, f)
+
+
+            # Need to wire things up
+            if ARBITER:
+                for i in range(NUM_REQS):
+                    m.wire(gnt[i], fifos[i].pop)
 
             # vld out
             # TODO handle missing magic packet -- need to reset everything. Or keep as an assumption/restriction
 
             m.wire(m.bit(en.O) & eq(m.uint(mpt.next_cnt), m.uint(0, (DEPTH - 1).bit_length())), io.data_out_vld)
 
-    return DataIntegritySB
+    return Scoreboard
 
-    
+
 if __name__ == "__main__":
 
-    disb = DefineDataIntegritySB(DATAWID=8, DEPTH=8)
-    
+    sb = DefineScoreboard(DATAWID=8, DEPTH=8)
+
     # Compile coreir
-    m.compile("build/data_integrity_scoreboard", disb, output="coreir")
+    m.compile("build/data_integrity_scoreboard", sb, output="coreir")
