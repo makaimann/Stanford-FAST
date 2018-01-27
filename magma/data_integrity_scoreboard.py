@@ -1,11 +1,8 @@
-#!/usr/bin/env python3
-
 import magma as m
 from mantle import DefineRegister, repeat
 from mantle.common.operator import eq
 from fifo import DefineFIFO
-
-ARBITER = True
+from dwrr import DefineDWRR
 
 
 def DefineMagicPacketTracker(DEPTH):
@@ -54,17 +51,18 @@ def DefineMagicPacketTracker(DEPTH):
     return MagicPacketTracker
 
 
-def DefineScoreboard(DATAWID, DEPTH, NUM_REQS=None, QWID=None):
+def DefineScoreboard(DATAWID, DEPTH, ARBITER, NUM_REQS, QWID):
     class Scoreboard(m.Circuit):
+        NUM_REQS = 4
         name = "Scoreboard"
-
         assert not ARBITER or NUM_REQS is not None, "If using arbiter, need to supply NUM_REQS"
         assert not ARBITER or QWID is not None, "If using arbiter, need to supply QWID"
 
         if ARBITER:
-            IO = ["push", m.In(m.Bits(NUM_REQS)), "start", m.In(m.Bit), "rst", m.In(m.Reset),
+            IO = ["push", m.In(m.Bits(NUM_REQS)), "start", m.In(m.Bit),
+                  "rst", m.In(m.Reset), # include blk sometime in the future
                   "data_in", m.In(m.Array(N=NUM_REQS, T=m.Bits(DATAWID))),
-                  "input_quantums", m.In(m.Array(N=NUM_REQS, T=m.UInt(QWID)))
+                  "input_quantums", m.In(m.Array(N=NUM_REQS, T=m.UInt(QWID))),
                   "data_out_vld", m.Out(m.Bit)] + m.ClockInterface()
         else:
             IO = ["push", m.In(m.Bit), "pop", m.In(m.Bit), "start", m.In(m.Bit),
@@ -90,12 +88,13 @@ def DefineScoreboard(DATAWID, DEPTH, NUM_REQS=None, QWID=None):
 
             # wire up magic packet tracker
             m.wire(io.push[0], mpt.push)
-            m.wire(io.pop[0], mpt.pop)
             m.wire(en.O, m.bits(mpt.captured))
             m.wire(io.rst, mpt.rst)
             m.wireclock(io, mpt)
 
             if not ARBITER:
+                m.wire(io.pop[0], mpt.pop)
+
                 fifo = DefineFIFO(DATAWID, DEPTH)()
                 # wire up fifo
                 m.wire(io.push, fifo.push)
@@ -116,20 +115,26 @@ def DefineScoreboard(DATAWID, DEPTH, NUM_REQS=None, QWID=None):
 
             # Need to wire things up
             if ARBITER:
+                arb = DefineDWRR(NUM_REQS, QWID, DATAWID)(name="arb")
+                m.wire(io.rst, arb.rst)
+                m.wire(io.input_quantums, arb.quantums)
                 for i in range(NUM_REQS):
-                    m.wire(gnt[i], fifos[i].pop)
+                    m.wire(~fifos[i].empty, arb.reqs[i])
+                    m.wire(arb.gnt[i], fifos[i].pop)
+                m.wire(arb.gnt[0], mpt.pop)
 
             # vld out
             # TODO handle missing magic packet -- need to reset everything. Or keep as an assumption/restriction
 
-            m.wire(m.bit(en.O) & eq(m.uint(mpt.next_cnt), m.uint(0, (DEPTH - 1).bit_length())), io.data_out_vld)
+            m.wire(m.bit(en.O) & eq(m.uint(mpt.next_cnt), m.uint(0, (DEPTH - 1).bit_length())) &
+                   eq(m.uint(mpt.cnt), m.uint(1, (DEPTH - 1).bit_length())), io.data_out_vld)
 
     return Scoreboard
 
 
 if __name__ == "__main__":
 
-    sb = DefineScoreboard(DATAWID=8, DEPTH=8)
+    sb = DefineScoreboard(DATAWID=8, DEPTH=8, ARBITER=True, NUM_REQS=4, QWID=8)
 
     # Compile coreir
     m.compile("build/data_integrity_scoreboard", sb, output="coreir")
