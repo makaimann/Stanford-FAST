@@ -1,9 +1,11 @@
 import magma as m
+from magma import cache_definition
 from mantle import Mux, DefineRegister
 
 WIDTH = 8
 DEPTH = 8
 
+@cache_definition
 def DefineFIFO(WIDTH, DEPTH):
     PTRWID = DEPTH.bit_length()
 
