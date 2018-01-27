@@ -1,3 +1,5 @@
+//`define SB_SANITY
+
 `define ARBITER
 
 `ifndef UTILS
@@ -15,7 +17,7 @@
 module MagicPacketTracker(clk, rst, push, pop, captured,
                           cnt, next_cnt);
   parameter DEPTH = 8;
-  parameter CNTWID = $clog2(DEPTH);
+  parameter CNTWID = $clog2(DEPTH) + 1;
 
   input wire clk;
   input wire rst;
@@ -71,7 +73,7 @@ module Scoreboard(clk, rst, push, pop, start, flat_data_in, input_quantums,
    input wire                          pop;
   `endif
 
-  parameter CNTWID = $clog2(DEPTH);
+  parameter CNTWID = $clog2(DEPTH) + 1;
 
   input wire                                clk;
   input wire                                rst;
@@ -156,7 +158,6 @@ module Scoreboard(clk, rst, push, pop, start, flat_data_in, input_quantums,
    endgenerate
 
 `else // !`ifdef ARBITER
-
   FIFO #(.WIDTH(WIDTH), .DEPTH(DEPTH)) f (.clk(clk),
                                           .rst(rst),
                                           .push(push),
@@ -186,5 +187,13 @@ module Scoreboard(clk, rst, push, pop, start, flat_data_in, input_quantums,
 
   wire 	   prop_signal;
   assign prop_signal = ~data_out_vld | (magic_packet == data_out[0]);
+
+`ifdef FORMAL
+ `ifdef SB_SANITY
+   assert property ((cnt != 'd6) | (data_out[0] != 'd11) );
+ `endif
+`endif
+
+
 
 endmodule

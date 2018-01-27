@@ -1,3 +1,5 @@
+//`define SANITY
+
 `define FIFO
 `ifndef UTILS
  `include "utils.sv"
@@ -7,7 +9,7 @@ module FIFO(clk, rst, push, pop, data_in,
             full, empty, data_out);
   parameter WIDTH = 8;
   parameter DEPTH = 8;
-  parameter PTRWID = $clog2(DEPTH);
+  parameter PTRWID = $clog2(DEPTH) + 1;
 
   input wire clk;
   input wire rst;
@@ -63,7 +65,7 @@ module FIFO(clk, rst, push, pop, data_in,
     genvar i;
     for(i = 0; i < DEPTH; i = i + 1) begin : entry_gen
       FF #(.WIDTH(WIDTH)) ff_entry_inst(.clk(clk),
-                                        .en(wrPtr == i),
+                                        .en(push & (wrPtr[PTRWID-2:0] == i)),
                                         .D(data_in),
                                         .Q(entries[i])
       				       );
@@ -71,6 +73,13 @@ module FIFO(clk, rst, push, pop, data_in,
   endgenerate
 
   //******************** output *******************//
-  assign data_out = entries[rdPtr];
+  assign data_out = entries[rdPtr[PTRWID-2:0]];
+
+`ifdef FORMAL
+ `ifdef SANITY
+   assert property ((rdPtr[2:0] != 'd6) | (data_out != 'd5));
+ `endif
+`endif
+
 
 endmodule
