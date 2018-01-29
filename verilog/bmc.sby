@@ -1,0 +1,16 @@
+[options]
+mode bmc
+depth 30
+
+[engines]
+abc bmc3
+
+[script]
+read_verilog -sv -formal data_integrity_scoreboard.sv
+prep -top Scoreboard
+
+[files]
+data_integrity_scoreboard.sv
+fifo.sv
+utils.sv
+DWRR.sv
