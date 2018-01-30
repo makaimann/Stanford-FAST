@@ -1,4 +1,5 @@
 //`define SANITY
+`define ARRAY
 
 `define FIFO
 `ifndef UTILS
@@ -59,8 +60,16 @@ module FIFO(clk, rst, push, pop, data_in,
 
   //************** latch entries ***************//
 
-  wire [WIDTH-1:0] entries [DEPTH-1:0];
+`ifdef ARRAY
+   reg [WIDTH-1:0]   entries [DEPTH-1:0];
 
+   always @(posedge clk) begin
+      if (push) begin
+	 entries[wrPtr[PTRWID-2:0]] <= data_in;
+      end
+   end
+`else
+  wire [WIDTH-1:0] entries [DEPTH-1:0];
   generate
     genvar i;
     for(i = 0; i < DEPTH; i = i + 1) begin : entry_gen
@@ -71,6 +80,9 @@ module FIFO(clk, rst, push, pop, data_in,
       				       );
     end
   endgenerate
+`endif
+
+
 
   //******************** output *******************//
   assign data_out = entries[rdPtr[PTRWID-2:0]];
