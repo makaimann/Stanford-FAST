@@ -1,6 +1,3 @@
-;; This version of the unrolled formulas was simplified using Emacs macros
-;; The only simplification done was to propagate all the "true"s and remove them when appropriate
-
 ;; Current questions: What is going on with the quantum signals? They seem to be dropping the top 4 bits...
 
 ;; Yosys translation legend

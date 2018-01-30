@@ -22,7 +22,7 @@
 ;; Top Module: Scoreboard
 
 (set-option :produce-models true)
-(set-logic QF_ABV)
+(set-logic QF_BV)
 
 ;; MC: These are assumptions, many of them have no assumptions so they're trivially true
 (define-fun |$paramod/FF/WIDTH=8_u#2| () Bool true)
