@@ -5,8 +5,10 @@ The Magma circuit instances have not been tested or formally verified yet, but t
 has a bounded proof of data integrity for WIDTH=8 and DEPTH=8. A Deficit Weighted Round Robin Arbiter implementation is upcoming.
 Check back for updates.
 
-## Known Bugs/Features?
+## Known Bugs
 * Yosys fails to fetch model when using `--unroll` and/or CVC4. Therefore, the generated .vcd file is incomplete. I (Makai) will look into this when I get a chance and submit a pull request. For now, if you're trying to look at counter examples, use yosys-smtbmc with `-s z3` and without `--unroll`.
+* As of now, Z3 will return incorrect counter examples in incremental mode with -nomem set in the yosys translation. There is a corresponding GitHub [issue](https://github.com/Z3Prover/z3/issues/1458).
+* For some reason, setting the width to 128 or larger overconstrains the verification query. In other words, setting the width to 128 makes the solvers return UNSAT even without the necessary environmental assumptions. I have no idea why...
 
 ## Required Software
 * [Yosys](https://github.com/YosysHQ/yosys)
