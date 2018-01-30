@@ -1,0 +1,18 @@
+;; Yosys translation legend
+;; Adapted from the "help write_smt2" printout from Yosys
+
+;; LEGEND
+;; Syntax                     : type                                  || "purpose"
+;; =============================================================================
+;; |<mod>_s|                  : sort                                  || for state of <mod>
+;; |<mod>_h|                  : func |<mod>_s| --> Bool               || asserted to establish design hierarchy
+;; |<mod>_h <instancename>|   : UF   |<mod>_s| --> |<submod>_s|       || returns sort of submodule
+;; |<mod>_n <wirename>|       : func |<mod>_s| --> (BV | Bool)        || access a signal by name
+;; |<mod>_is|                 : UF   |<mod>_s| --> Bool               || asserted 'true' in initial state and 'false' otherwise
+;; |<mod>_i|                  : func |<mod>_s| --> Bool               || asserted 'true' for initial state and unconstrained otherwise
+;; |<mod>_t|                  : func |<mod>_s| x |<mod>_s| --> Bool   || evaluates to true for valid state transition
+;; |<mod>_a|                  : func |<mod>_s| --> Bool               || evaluates to true if all assertions hold in the state
+;; |<mod>_u|                  : func |<mod>_s| --> Bool               || evaluates to true if all assumptions hold in the state
+;; |<mod>_a <id>|             : func |<mod>_s| --> Bool               || evaluates to true if assertion cell <id> holds in the state
+;; |<mod>_u <id>|             : func |<mod>_s| --> Bool               || evaluates to true if all assumption cell <id> holds in the state
+;; |<mod>_c <id>|             : func |<mod>_s| --> Bool               || evaluates to true if cover cell <id> holds in the state

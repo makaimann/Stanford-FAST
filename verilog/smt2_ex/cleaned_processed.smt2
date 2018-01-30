@@ -1,5 +1,3 @@
-;; This was produced using cvc4 --dump=assertions:post-everything cleaned_unrolled.smt2
-
 (set-option :produce-models true)
 (set-info :notes "CVC4 always dumps the most general, all-supported logic (below), as some internals might require the use of a logic more general than the input.")
 (set-logic ALL)

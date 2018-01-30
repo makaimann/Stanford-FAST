@@ -225,7 +225,7 @@
 (define-fun |$paramod/FIFO/WIDTH=8/DEPTH=8#22| ((state |$paramod/FIFO/WIDTH=8/DEPTH=8_s|)) Bool (= (|$paramod/FIFO/WIDTH=8/DEPTH=8#15| state) #b001)) ; $procmux$310_CMP
 (define-fun |$paramod/FIFO/WIDTH=8/DEPTH=8#23| ((state |$paramod/FIFO/WIDTH=8/DEPTH=8_s|)) Bool (not (or  (= ((_ extract 0 0) (|$paramod/FIFO/WIDTH=8/DEPTH=8#15| state)) #b1) (= ((_ extract 1 1) (|$paramod/FIFO/WIDTH=8/DEPTH=8#15| state)) #b1) (= ((_ extract 2 2) (|$paramod/FIFO/WIDTH=8/DEPTH=8#15| state)) #b1)))) ; $procmux$311_CMP
 
-;; MC: data_out is a bug mux
+;; MC: data_out is a big mux
 (define-fun |$paramod/FIFO/WIDTH=8/DEPTH=8#24| ((state |$paramod/FIFO/WIDTH=8/DEPTH=8_s|)) (_ BitVec 8) (ite (|$paramod/FIFO/WIDTH=8/DEPTH=8#23| state) (|$paramod/FIFO/WIDTH=8/DEPTH=8#14| state) (ite (|$paramod/FIFO/WIDTH=8/DEPTH=8#22| state) (|$paramod/FIFO/WIDTH=8/DEPTH=8#13| state) (ite (|$paramod/FIFO/WIDTH=8/DEPTH=8#21| state) (|$paramod/FIFO/WIDTH=8/DEPTH=8#12| state) (ite (|$paramod/FIFO/WIDTH=8/DEPTH=8#20| state) (|$paramod/FIFO/WIDTH=8/DEPTH=8#11| state) (ite (|$paramod/FIFO/WIDTH=8/DEPTH=8#19| state) (|$paramod/FIFO/WIDTH=8/DEPTH=8#10| state) (ite (|$paramod/FIFO/WIDTH=8/DEPTH=8#18| state) (|$paramod/FIFO/WIDTH=8/DEPTH=8#9| state) (ite (|$paramod/FIFO/WIDTH=8/DEPTH=8#17| state) (|$paramod/FIFO/WIDTH=8/DEPTH=8#8| state) (ite (|$paramod/FIFO/WIDTH=8/DEPTH=8#16| state) (|$paramod/FIFO/WIDTH=8/DEPTH=8#7| state) #b00000000))))))))) ; \data_out
 (define-fun |$paramod/FIFO/WIDTH=8/DEPTH=8_n data_out| ((state |$paramod/FIFO/WIDTH=8/DEPTH=8_s|)) (_ BitVec 8) (|$paramod/FIFO/WIDTH=8/DEPTH=8#24| state))
 ; yosys-smt2-output empty 1
