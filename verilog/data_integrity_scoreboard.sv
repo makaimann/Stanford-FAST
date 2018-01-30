@@ -1,7 +1,6 @@
-//`define SB_SANITY
-`define EMBED
-
-`define ARBITER
+`ifndef OPTIONS
+ `include "options.sv"
+`endif
 
 `ifndef UTILS
  `include "utils.sv"
