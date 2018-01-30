@@ -1,5 +1,6 @@
-//`define SANITY
-`define ARRAY
+`ifndef OPTIONS
+ `include "options.sv"
+`endif
 
 `define FIFO
 `ifndef UTILS

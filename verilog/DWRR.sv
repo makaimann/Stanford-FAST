@@ -1,4 +1,6 @@
-//`define COMB_UPDATE
+`ifndef OPTIONS
+ `include "options.sv"
+`endif
 
 `define DWRR
 `ifndef UTILS
