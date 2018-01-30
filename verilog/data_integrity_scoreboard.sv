@@ -1,4 +1,5 @@
 //`define SB_SANITY
+`define EMBED
 
 `define ARBITER
 
@@ -192,6 +193,22 @@ module Scoreboard(clk, rst, push, pop, start, flat_data_in, input_quantums,
  `ifdef SB_SANITY
    assert property ((cnt != 'd6) | (data_out[0] != 'd11) );
  `endif
+
+   `ifdef EMBED
+   initial begin
+      assume (rst);
+      assume (!start);
+   end
+
+   always @* begin
+      if (!$initstate) begin
+         assume(!rst);
+	 assume(!prop_empty | !prop_pop);
+	 assume(!prop_full | !prop_push);
+         assert(prop_signal);
+      end
+   end
+   `endif
 `endif
 
 

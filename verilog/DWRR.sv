@@ -1,3 +1,5 @@
+//`define COMB_UPDATE
+
 `define DWRR
 `ifndef UTILS
  `include "utils.sv"
@@ -35,11 +37,32 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
    assign done = |done_vec;
 
    //*************** ROUND ROBIN COUNTER ***************//
-   wire [CNTWID-1:0]  		       rr_cnt;
+   wire [CNTWID-1:0] 		       rr_cnt;
    wire [CNTWID-1:0] 		       next_rr_cnt;
 
+   `ifdef COMB_UPDATE
+   generate
+      genvar 			       i;
+      wire [CNTWID-1:0] 	       next_index [CNTWID-1:1];
+      for(i=1; i < NUM_REQS; i=i+1) begin : rr_cnt_indices
+	 assign next_index[i] = rr_cnt + i;
+      end
+   endgenerate
+
+   always_comb begin : comb_update
+      next_rr_cnt = 0;
+      for(int j = 1; j < NUM_REQS; j=j+1)
+	if (reqs[next_index[j]] == 1'b1) begin
+	   next_rr_cnt = next_index[j];
+	   break;
+	end
+   end
+
+   `else
    assign next_rr_cnt = done ? rr_cnt + 1 :
 			       rr_cnt;
+
+   `endif
 
    FF #(.WIDTH(CNTWID)) ff_rrcnt(.clk(clk),
 				 .en(done), //TODO Figure out if this is the correct enable signal
