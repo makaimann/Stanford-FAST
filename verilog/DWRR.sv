@@ -24,7 +24,7 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
    output wire [NUM_REQS-1:0] 	         gnt;
 
    //******************** PACK QUANTUMS ****************//
-   wire [NUM_REQS-1:0] 			 quantums [QWID-1:0];
+   wire [QWID-1:0] 			 quantums [NUM_REQS-1:0];
    generate
       genvar 				 i;
       for(i = 0; i < NUM_REQS; i=i+1) begin : pack_quantums
