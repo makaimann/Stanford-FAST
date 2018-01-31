@@ -62,8 +62,8 @@ module Scoreboard(clk, rst, push, pop, start, flat_data_in, input_quantums,
                       );
 `endif
   parameter DEPTH = 8;
-  parameter WIDTH = 8;
-  parameter QWID  = 8; // Quantum widths
+  parameter WIDTH = 128;
+  parameter QWID  = 128; // Quantum widths
 
   `ifdef ARBITER
    parameter NUM_REQS = 4; // Number of requestors
