@@ -2,9 +2,6 @@ import magma as m
 from magma import cache_definition
 from mantle import Mux, DefineRegister
 
-WIDTH = 8
-DEPTH = 8
-
 @cache_definition
 def DefineFIFO(WIDTH, DEPTH):
     PTRWID = DEPTH.bit_length()
@@ -44,7 +41,7 @@ def DefineFIFO(WIDTH, DEPTH):
 
             ######################### full and empty logic ########################
             m.wire(io.empty, wrPtr.O == rdPtr.O)
-            m.wire(io.full, (wrPtr.O[:PTRWID-1] == rdPtr.O[:PTRWID-1]) & (wrPtr.O[PTRWID-1] != rdPtr.O[PTRWID-1]))
+            m.wire(io.full, (wrPtr.O[1:PTRWID] == rdPtr.O[1:PTRWID]) & (wrPtr.O[0] != rdPtr.O[0]))
             ######################### end full and empty logic ####################
 
             ########################### entry logic ###############################
@@ -54,22 +51,16 @@ def DefineFIFO(WIDTH, DEPTH):
             entryReg = DefineRegister(WIDTH, init=0, has_ce=True, has_reset=False, _type=m.Bits)
             for i in range(DEPTH):
                 entry = entryReg(name="entry" + str(i))
-                m.wire(entry.CE, io.push & m.bit(m.uint(wrPtr.O[:PTRWID-1]) == m.uint(i, PTRWID-1)))
+                m.wire(entry.CE, io.push & m.bit(m.uint(wrPtr.O[1:PTRWID]) == m.uint(i, PTRWID-1)))
                 m.wire(entry.I, io.data_in)
                 entries.append(entry)
-
-            # Read
-
-            # # Decode ptr
-            # dec = Decoder(PTRWID-1)
-            # m.wire(dec.I, rdPtr.O[:PTRWID-1])
 
             # Connect mux
             outmux = Mux(DEPTH, WIDTH)
             for i in range(DEPTH):
                 m.wire(getattr(outmux, "I" + str(i)), entries[i].O)
 
-            m.wire(rdPtr.O[:PTRWID-1], outmux.S)
+            m.wire(rdPtr.O[1:PTRWID], outmux.S)
             m.wire(outmux.O, io.data_out)
 
             ########################### end entry logic ###########################
@@ -78,10 +69,14 @@ def DefineFIFO(WIDTH, DEPTH):
 
 
 if __name__ == "__main__":
-    F = DefineFIFO(8, 8)
-    
-    # Compile verilog
-    m.compile("build/fifo", F, include_coreir=False)
 
-    with open("build/fifo.v", "r") as fifo_verilog:
-        print(fifo_verilog.read())
+    WIDTH = 4
+    DEPTH = 4
+
+    F = DefineFIFO(WIDTH, DEPTH)
+
+    # Compile verilog
+    m.compile("build/fifo", F, output="coreir")
+
+    with open("build/fifo.json", "r") as fifo_coreir:
+        print(fifo_coreir.read())
