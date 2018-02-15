@@ -13,4 +13,5 @@ prep -top Scoreboard
 data_integrity_scoreboard.sv
 fifo.sv
 utils.sv
+options.sv
 DWRR.sv

@@ -41,24 +41,32 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
    //*************** ROUND ROBIN COUNTER ***************//
    wire [CNTWID-1:0] 		       rr_cnt;
    wire [CNTWID-1:0] 		       next_rr_cnt;
+   wire [CNTWID-1:0] 		       new_index [NUM_REQS-1:0];
 
    `ifdef COMB_UPDATE
-   generate
-      genvar 			       i;
-      wire [CNTWID-1:0] 	       next_index [CNTWID-1:1];
-      for(i=1; i < NUM_REQS; i=i+1) begin : rr_cnt_indices
-	 assign next_index[i] = rr_cnt + i;
-      end
-   endgenerate
-
-   always_comb begin : comb_update
-      next_rr_cnt = 0;
-      for(int j = 1; j < NUM_REQS; j=j+1)
-	if (reqs[next_index[j]] == 1'b1) begin
-	   next_rr_cnt = next_index[j];
-	   break;
-	end
+   wire [NUM_REQS-1:0] new_reqs;
+   wire [NUM_REQS-1:0] pri_reqs;
+   genvar k;
+   for (k=0; k < NUM_REQS; k=k+1) begin : reorder
+      assign new_index[k] = (rr_cnt + k + 1) < NUM_REQS ? rr_cnt + k + 1
+                                                        : rr_cnt + k + 1 - NUM_REQS;
+      assign new_reqs[k] = reqs[new_index[k]];
    end
+   //TODO: given the reordered reqs, combinationally decide next_rr_cnt
+
+   PRIDEC #(.WIDTH(NUM_REQS)) priority_decoder (.vec(new_reqs),
+			       .out_vec(pri_reqs));
+
+   reg [CNTWID-1:0] rr_cnt_update;
+   integer 	     n;
+   always @* begin
+      rr_cnt_update = 'd0;
+      for( n=0; n < NUM_REQS; n=n+1) begin
+	     rr_cnt_update = rr_cnt_update | ({NUM_REQS{pri_reqs[n]}} & new_index[n]);
+      end
+   end
+
+   assign next_rr_cnt = rr_cnt_update;
 
    `else
    assign next_rr_cnt = done ? rr_cnt + 1 :
