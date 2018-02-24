@@ -87,13 +87,13 @@ def DefineScoreboard(DATAWID, DEPTH, ARBITER, NUM_REQS, QWID):
             mpt = DefineMagicPacketTracker(DEPTH)()
 
             # wire up magic packet tracker
-            m.wire(io.push[0], mpt.push)
             m.wire(en.O, m.bits(mpt.captured))
             m.wire(io.rst, mpt.rst)
             m.wireclock(io, mpt)
 
             if not ARBITER:
-                m.wire(io.pop[0], mpt.pop)
+                m.wire(io.push, mpt.push)
+                m.wire(io.pop, mpt.pop)
 
                 fifo = DefineFIFO(DATAWID, DEPTH)()
                 # wire up fifo
@@ -103,6 +103,7 @@ def DefineScoreboard(DATAWID, DEPTH, ARBITER, NUM_REQS, QWID):
                 m.wire(io.data_in, fifo.data_in)
                 m.wireclock(io, fifo)
             else:
+                m.wire(io.push[0], mpt.push)
                 fifos = list()
                 for i in range(NUM_REQS):
                     f = DefineFIFO(DATAWID, DEPTH)(name="fifo_{}".format(i))
@@ -134,7 +135,7 @@ def DefineScoreboard(DATAWID, DEPTH, ARBITER, NUM_REQS, QWID):
 
 if __name__ == "__main__":
 
-    sb = DefineScoreboard(DATAWID=8, DEPTH=8, ARBITER=True, NUM_REQS=4, QWID=8)
+    sb = DefineScoreboard(DATAWID=8, DEPTH=8, ARBITER=False, NUM_REQS=4, QWID=8)
 
     # Compile coreir
     m.compile("build/data_integrity_scoreboard", sb, output="coreir")
