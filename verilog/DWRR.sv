@@ -110,14 +110,20 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
    				                      .Q(def_cnt[i]));
 
    	     wire [QWID-1:0] dc_plus_quant;
+
+         `ifdef COMB_UPDATE
    	     assign dc_plus_quant = (next_selected[i]) ? def_cnt[i] + quantums[i] :
-   	                         		                    def_cnt[i];
+   	                         	def_cnt[i];
+         assign done_vec[i] = selected[i] & (~reqs[i] | (next_def_cnt[i] < PSIZE));
+         `else
+         assign dc_plus_quant = (~selected[i] & next_selected[i]) ? def_cnt[i] + quantums[i] :
+   	                         	def_cnt[i];
+         assign done_vec[i] = selected[i] & (~reqs[i] | (def_cnt[i] < PSIZE));
+         `endif
 
    	     assign next_def_cnt[i] = (rst | selected_and_empty[i]) ? 0 :
    				                  gnt[i] ? dc_plus_quant - PSIZE :
    				                  dc_plus_quant;
-
-         assign done_vec[i] = selected[i] & (~reqs[i] | (next_def_cnt[i] < PSIZE));
       end
    endgenerate
 
