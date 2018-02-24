@@ -62,9 +62,9 @@ module Scoreboard(clk, rst, push, start, flat_data_in, input_quantums,
   module Scoreboard(clk, rst, push, pop, start, flat_data_in,
                        data_out_vld, prop_signal);
 `endif
-  parameter DEPTH = 8;
-  parameter WIDTH = 8;
-  parameter QWID  = 8; // Quantum widths
+  parameter DEPTH = `FIFO_DEPTH;
+  parameter WIDTH = `FIFO_DWIDTH;
+  parameter QWID  = `ARB_QWID; // Quantum widths
 
   `ifdef ARBITER
    input wire [NUM_REQS*QWID-1:0]            input_quantums;
