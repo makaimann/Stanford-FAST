@@ -1,3 +1,6 @@
+// Code your design here
+`define DESIGN
+
 `ifndef OPTIONS
  `include "options.sv"
 `endif
@@ -29,9 +32,9 @@ module MagicPacketTracker(clk, rst, push, pop, captured,
   output wire [CNTWID-1:0] next_cnt;
 
   FF #(.WIDTH(CNTWID)) ff_cnt (.clk(clk),
-                              .en(push | pop | rst | captured),
-                              .D(next_cnt),
-                              .Q(cnt));
+                               .en(push | pop | rst | captured),
+                               .D(next_cnt),
+                               .Q(cnt));
 
   //************ Intermediate Signal **************//
   wire [CNTWID-1:0] ssa_cnt;
@@ -54,23 +57,22 @@ endmodule
 `ifdef ARBITER
 // if using arbiter, pop signal is connected to arbiter gnt
 module Scoreboard(clk, rst, push, start, flat_data_in, input_quantums,
-                       data_out_vld, prop_signal
-                      );
+                       data_out_vld, prop_signal);
 `else
-module Scoreboard(clk, rst, push, pop, start, flat_data_in, input_quantums,
-                       data_out_vld, prop_signal
-                      );
+  module Scoreboard(clk, rst, push, pop, start, flat_data_in,
+                       data_out_vld, prop_signal);
 `endif
   parameter DEPTH = 8;
   parameter WIDTH = 8;
   parameter QWID  = 8; // Quantum widths
 
   `ifdef ARBITER
+   input wire [NUM_REQS*QWID-1:0]            input_quantums;
    parameter NUM_REQS = 4; // Number of requestors
    wire [NUM_REQS-1:0]                 pop;
   `else
    parameter NUM_REQS = 1;
-   input wire                          pop;
+    input wire [NUM_REQS-1:0]          pop;
   `endif
 
   parameter CNTWID = $clog2(DEPTH) + 1;
@@ -80,7 +82,6 @@ module Scoreboard(clk, rst, push, pop, start, flat_data_in, input_quantums,
   input wire [NUM_REQS-1:0]                 push;
   input wire                                start;
   input wire [NUM_REQS*WIDTH-1:0]           flat_data_in;
-  input wire [NUM_REQS*QWID-1:0]            input_quantums;
 
   output wire                               data_out_vld;
   output wire                               prop_signal;
@@ -94,7 +95,7 @@ module Scoreboard(clk, rst, push, pop, start, flat_data_in, input_quantums,
      genvar 		    i;
 
      for(i=0; i < NUM_REQS; i=i+1) begin : pack_data_in
-	assign data_in[i] = flat_data_in[(i+1)*WIDTH-1:i*WIDTH];
+	    assign data_in[i] = flat_data_in[(i+1)*WIDTH-1:i*WIDTH];
      end
   endgenerate
 
@@ -142,18 +143,17 @@ module Scoreboard(clk, rst, push, pop, start, flat_data_in, input_quantums,
 								.input_quantums(input_quantums),
 								.gnt(gnt));
    generate
-      genvar 	   i;
       for(i=0; i < NUM_REQS; i=i+1) begin : gen_fifos
-	 FIFO #(.WIDTH(WIDTH), .DEPTH(DEPTH)) f (.clk(clk),
-						 .rst(rst),
-						 .push(push[i]),
-						 .pop(pop[i]),
-						 .data_in(data_in[i]),
-						 .full(full[i]),
-						 .empty(empty[i]),
-						 .data_out(data_out[i]));
-	 assign reqs[i] = ~empty[i]; // For now assuming every non-empty fifo is requesting
-	 assign pop[i] = gnt[i];
+	     FIFO #(.WIDTH(WIDTH), .DEPTH(DEPTH)) f (.clk(clk),
+						                         .rst(rst),
+						                         .push(push[i]),
+						                         .pop(pop[i]),
+						                         .data_in(data_in[i]),
+						                         .full(full[i]),
+						                         .empty(empty[i]),
+						                         .data_out(data_out[i]));
+	     assign reqs[i] = ~empty[i]; // For now assuming every non-empty fifo is requesting
+	     assign pop[i] = gnt[i];
       end
    endgenerate
 
@@ -161,7 +161,7 @@ module Scoreboard(clk, rst, push, pop, start, flat_data_in, input_quantums,
   FIFO #(.WIDTH(WIDTH), .DEPTH(DEPTH)) f (.clk(clk),
                                           .rst(rst),
                                           .push(push),
-                                          .pop(pop),
+                                          .pop(pop[0]),
                                           .data_in(data_in[0]),
                                           .full(full),
                                           .empty(empty),
@@ -184,8 +184,6 @@ module Scoreboard(clk, rst, push, pop, start, flat_data_in, input_quantums,
   assign prop_full = full[0];
 
 
-
-  wire 	   prop_signal;
   assign prop_signal = ~data_out_vld | (magic_packet == data_out[0]);
 
 `ifdef FORMAL
@@ -202,14 +200,12 @@ module Scoreboard(clk, rst, push, pop, start, flat_data_in, input_quantums,
    always @* begin
       if (!$initstate) begin
          assume(!rst);
-	 assume(!prop_empty | !prop_pop);
-	 assume(!prop_full | !prop_push);
+	     assume(!prop_empty | !prop_pop);
+	     assume(!prop_full | !prop_push);
          assert(prop_signal);
       end
    end
    `endif
 `endif
-
-
 
 endmodule

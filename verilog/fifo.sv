@@ -66,7 +66,7 @@ module FIFO(clk, rst, push, pop, data_in,
 
    always @(posedge clk) begin
       if (push) begin
-	 entries[wrPtr[PTRWID-2:0]] <= data_in;
+	     entries[wrPtr[PTRWID-2:0]] <= data_in;
       end
    end
 `else
