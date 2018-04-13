@@ -82,6 +82,8 @@ Namespace * CoreIRUtils(Context *c) {
       uint width = args.at("width")->get<int>();
       uint num = args.at("num")->get<int>();
 
+      Generator *replicate = global->getGenerator("replicate");
+
       ostringstream oss;
       for (uint i = 0; i < num; ++i) {
         oss << i;
@@ -93,7 +95,6 @@ Namespace * CoreIRUtils(Context *c) {
         def->addInstance(andstr, "coreir.and", {{"width", Const::make(c, width)}});
         // TODO
         // Extend the select bit and then AND with the corresponding in value
-        Generator *replicate = global->getGenerator("replicate");
         def->addInstance(repl, replicate, {{"num", Const::make(c, width)}});
         def->connect(sel, repl + ".in");
         def->connect(repl + ".out", andstr + ".in0");
@@ -111,8 +112,8 @@ Namespace * CoreIRUtils(Context *c) {
         string andstr = "and_" + oss.str();
         string orstr = "or_chain_" + oss.str();
         def->addInstance(orstr, "coreir.or", {{"width", Const::make(c, width)}});
-        def->connect(andstr + ".out", orstr + ".in0");
-        def->connect(prevname + ".out", orstr + ".in1");
+        def->connect(prevname + ".out", orstr + ".in0");
+        def->connect(andstr + ".out", orstr + ".in1");
         prevname = orstr;
         ostringstream().swap(oss);
       }

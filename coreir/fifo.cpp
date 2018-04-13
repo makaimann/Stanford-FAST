@@ -135,6 +135,7 @@ int main() {
 
       // connect mux to data out
       def->connect(mux + ".out", "self.data_out");
+      // def->connect("entry0.out", "self.data_out");
 
   });
 
@@ -150,8 +151,8 @@ int main() {
 
   Instance* f = topdef->getInstances().at("f");
   // c->runPasses({"rungenerators","cullzexts","removeconstduplicates","packconnections","flattentypes","flatten","deletedeadinstances"});
-  //c->runPasses({"rungenerators","flatten"});
-  c->runPasses({"rungenerators"});
+  c->runPasses({"rungenerators","flatten"});
+  //c->runPasses({"rungenerators"});
 
   Module *fModuleRef = f->getModuleRef();
   //cout << "Printing the generated module!" << endl;
