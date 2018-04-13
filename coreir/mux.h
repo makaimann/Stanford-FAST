@@ -1,9 +1,11 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <math.h>
 #include "coreir.h"
-#include <map>
+#include <utility>
 
+using namespace CoreIR;
 using namespace std;
 
 Namespace * CoreIRUtils(Context *c) {
@@ -16,13 +18,13 @@ Namespace * CoreIRUtils(Context *c) {
         [](Context *c, Values args) {
           uint num = args.at("num")->get<int>();
           return c->Record({{"in", c->BitIn()},
-                            {"out", c->Bit().Arr(num)}});
+                            {"out", c->Bit()->Arr(num)}});
         });
 
   Generator *replicate = util->newGeneratorDecl("replicate", replicateTypeGen, {{"num", c->Int()}});
-  paraMux->setGeneratorDefFromFun([](Context *c, Values args, ModuleDef *def) {
+  replicate->setGeneratorDefFromFun([](Context *c, Values args, ModuleDef *def) {
       uint num = args.at("num")->get<int>();
-      def->addInstance("concat_1", {{"width0", Const::make(c, 1)}, {"width1", Const::make(c, 1)}});
+      def->addInstance("concat_1", "coreir.concat", {{"width0", Const::make(c, 1)}, {"width1", Const::make(c, 1)}});
       def->connect("concat_1.in0", "self.in");
       def->connect("concat_1.in1", "self.in");
       string prevname = "concat_1";
@@ -30,16 +32,16 @@ Namespace * CoreIRUtils(Context *c) {
       ostringstream oss;
       for(uint i = 2; i < num; i=2*i) {
         oss << i;
-        string c = "concat_" + oss.str();
-        def->addInstance(c, {{"width0", Const::make(c, i)}, {"width1", Const::make(c, i)}});
-        def->connect(prevname + ".out", c + ".in0");
-        def->connect(prevname + ".out", c + ".in1");
-        prevname = c;
+        string con = "concat_" + oss.str();
+        def->addInstance(con, "coreir.concat", {{"width0", Const::make(c, i)}, {"width1", Const::make(c, i)}});
+        def->connect(prevname + ".out", con + ".in0");
+        def->connect(prevname + ".out", con + ".in1");
+        prevname = con;
         ostringstream().swap(oss);
       }
 
       if (num % 2 == 1) {
-        def->addInstance("concat_1p", {{"width0", Const::make(c, num - 1)}, {"width1", Const::make(c, 1)}});
+        def->addInstance("concat_1p", "coreir.concat", {{"width0", Const::make(c, num - 1)}, {"width1", Const::make(c, 1)}});
         def->connect(prevname + ".out", "concat_1p.in0");
         def->connect("self.in", "concat_1p.in1");
         def->connect("concat_1p.out", "self.out");
@@ -55,8 +57,9 @@ Namespace * CoreIRUtils(Context *c) {
      [](Context *c, Values args) {
        uint width = args.at("width")->get<int>();
        uint num = args.at("num")->get<int>();
-       Type intype = c->BitIn()->Arr(width);
-       map<string, Type*> interface;
+       Type *intype = c->BitIn()->Arr(width);
+
+       vector<pair<string, Type*>> interface;
 
        ostringstream oss;
        for (uint i = 0; i < num; ++i) {
@@ -64,34 +67,37 @@ Namespace * CoreIRUtils(Context *c) {
          string n = "in" + oss.str();
          string sel = "sel" + oss.str();
          ostringstream().swap(oss);
-         interface[n] = intype;
-         interface[sel] = c->BitIn();
+         interface.push_back({n, intype});
+         interface.push_back({sel, c->BitIn()});
        }
-       interface["out"] = c->Flip(intype);
+       interface.push_back({"out", c->Flip(intype)});
        return c->Record(interface);
      });
 
-  Generator *paraMux = util->newGeneratorDecl("paraMux", paraMuxTypeGen, muxparams);
+  Generator * paraMux = util->newGeneratorDecl("paraMux", paraMuxTypeGen, muxparams);
   paraMux->setGeneratorDefFromFun([](Context *c, Values args, ModuleDef *def) {
+
+      Namespace *util = c->getNamespace("util");
+
       uint width = args.at("width")->get<int>();
       uint num = args.at("num")->get<int>();
 
       ostringstream oss;
       for (uint i = 0; i < num; ++i) {
         oss << i;
-        string and = "and_" + oss.str();
+        string andstr = "and_" + oss.str();
         string repl = "repl_" + oss.str();
         string sel = "self.sel" + oss.str();
         string in = "self.in" + oss.str();
 
-        def->addInstance(and, "coreir.and", {{"width", Const::make(c, width)}});
+        def->addInstance(andstr, "coreir.and", {{"width", Const::make(c, width)}});
         // TODO
         // Extend the select bit and then AND with the corresponding in value
         Generator *replicate = util->getGenerator("replicate");
         def->addInstance(repl, replicate, {{"num", Const::make(c, width)}});
         def->connect(sel, repl + ".in");
-        def->connect(repl + ".out", and + ".in0");
-        def->connect(in, and + ".in1");
+        def->connect(repl + ".out", andstr + ".in0");
+        def->connect(in, andstr + ".in1");
         ostringstream().swap(oss);
       }
 
@@ -102,11 +108,11 @@ Namespace * CoreIRUtils(Context *c) {
       string prevname = "or_chain_0";
       for (uint i = 2; i < num; ++i) {
         oss << i;
-        string and = "and_" + oss.str();
-        string or = "or_chain_" + oss.str();
-        def->connect(and + ".out", or + ".in0");
-        def->connect(prevname + ".out", or + ".in1");
-        prevname = or;
+        string andstr = "and_" + oss.str();
+        string orstr = "or_chain_" + oss.str();
+        def->connect(andstr + ".out", orstr + ".in0");
+        def->connect(prevname + ".out", orstr + ".in1");
+        prevname = orstr;
         ostringstream().swap(oss);
       }
       // Connect to interface output
