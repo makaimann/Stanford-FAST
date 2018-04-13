@@ -26,7 +26,7 @@ int main() {
 
         return c->Record({
             {"clk", c->Named("coreir.clkIn")},
-            {"rst", c->Named("coreir.arstIn")},
+            {"rst", c->BitIn()},
             {"push", c->BitIn()},
             {"pop", c->BitIn()},
             {"data_in", c->Array(width, c->BitIn())},
@@ -44,13 +44,22 @@ int main() {
 
       Values wArg({{"width", Const::make(c, width)}});
       Values pwArg({{"width", Const::make(c, ptrWidth)}});
-      Values mregArgs({{"width", Const::make(c, ptrWidth)},{"has_en", Const::make(c, true)},{"has_rst", Const::make(c, true)}});
-      Values zPtrInit({{"init", Const::make(c, ptrWidth, 0)}});
 
+      def->addInstance("zero", "coreir.const", pwArg, {{"value", Const::make(c, ptrWidth, 0)}});
       def->addInstance("one", "coreir.const", pwArg, {{"value", Const::make(c, ptrWidth, 1)}});
 
-      def->addInstance("wrPtr", "mantle.reg", mregArgs, zPtrInit);
-      def->addInstance("rdPtr", "mantle.reg", mregArgs, zPtrInit);
+      def->addInstance("wrPtr", "coreir.reg", pwArg);
+      def->addInstance("rdPtr", "coreir.reg", pwArg);
+      def->addInstance("wrPtrEn", "coreir.mux", pwArg);
+      def->addInstance("rdPtrEn", "coreir.mux", pwArg);
+      def->addInstance("wrPtrRst", "coreir.mux", pwArg);
+      def->addInstance("rdPtrRst", "coreir.mux", pwArg);
+
+      // mantle.reg generator is stale -- still uses coreir.regrst
+      // Values mregArgs({{"width", Const::make(c, ptrWidth)},{"has_en", Const::make(c, true)},{"has_rst", Const::make(c, true)}});
+      // Values zPtrInit({{"init", Const::make(c, ptrWidth, 0)}});
+      // def->addInstance("wrPtr", "mantle.reg", mregArgs, zPtrInit);
+      // def->addInstance("rdPtr", "mantle.reg", mregArgs, zPtrInit);
 
       def->addInstance("wrPtrp1", "coreir.add", pwArg);
       def->addInstance("rdPtrp1", "coreir.add", pwArg);
@@ -66,23 +75,32 @@ int main() {
       }
 
       // Connections
+      def->connect("self.clk", "wrPtr.clk");
+      def->connect("self.clk", "rdPtr.clk");
+
       def->connect("one.out", "wrPtrp1.in0");
       def->connect("wrPtr.out", "wrPtrp1.in1");
 
       def->connect("one.out", "rdPtrp1.in0");
       def->connect("rdPtr.out", "rdPtrp1.in1");
 
-      def->connect("self.rst", "wrPtr.rst");
-      def->connect("self.rst", "rdPtr.rst");
-      def->connect("self.clk", "wrPtr.clk");
-      def->connect("self.clk", "rdPtr.clk");
+      def->connect("self.rst", "wrPtrRst.sel");
+      def->connect("self.rst", "rdPtrRst.sel");
+      def->connect("self.push", "wrPtrEn.sel");
+      def->connect("self.pop", "rdPtrEn.sel");
 
-      def->connect("self.push", "wrPtr.en");
-      def->connect("self.pop", "rdPtr.en");
+      def->connect("wrPtr.out", "wrPtrEn.in0");
+      def->connect("rdPtr.out", "rdPtrEn.in0");
+      def->connect("wrPtrp1.out", "wrPtrEn.in1");
+      def->connect("rdPtrp1.out", "rdPtrEn.in1");
+      def->connect("wrPtrEn.out", "wrPtrRst.in0");
+      def->connect("rdPtrEn.out", "rdPtrRst.in0");
+      def->connect("zero.out", "wrPtrRst.in1");
+      def->connect("zero.out", "rdPtrRst.in1");
 
       // Mux for data_out
-      Namespace *util = c->getNamespace("util");
-      Generator *paraMux = util->getGenerator("paraMux");
+      Namespace *global = c->getGlobal();
+      Generator *paraMux = global->getGenerator("paraMux");
       string mux = "data_out_mux";
       def->addInstance(mux, paraMux,
                        {{"width", Const::make(c, width)},
@@ -101,7 +119,7 @@ int main() {
         def->connect("wrPtr.out", entryEn + ".in0");
         def->connect(con + ".out", entryEn + ".in1");
 
-        string rdPtrEn = "rdPtrEn_" + oss.str();
+        string rdPtrEn = "rdPtrEn_eq_" + oss.str();
         def->addInstance(rdPtrEn, "coreir.eq", {{"width", Const::make(c, ptrWidth)}});
         def->connect("rdPtr.out", rdPtrEn + ".in0");
         def->connect(con + ".out", rdPtrEn + ".in1");
@@ -131,14 +149,16 @@ int main() {
   top->print();
 
   Instance* f = topdef->getInstances().at("f");
-
+  // c->runPasses({"rungenerators","cullzexts","removeconstduplicates","packconnections","flattentypes","flatten","deletedeadinstances"});
+  //c->runPasses({"rungenerators","flatten"});
   c->runPasses({"rungenerators"});
 
   Module *fModuleRef = f->getModuleRef();
-  cout << "Printing the generated module!" << endl;
-  fModuleRef->print();
+  //cout << "Printing the generated module!" << endl;
+  //fModuleRef->print();
 
-  saveToFile(global, "fifo.json", top);
+  saveToFile(global, "fifo.json", fModuleRef);
+  // saveToFile(global, "fifo.json");
   deleteContext(c);
   return 0;
 }

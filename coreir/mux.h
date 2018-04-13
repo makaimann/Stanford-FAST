@@ -9,10 +9,10 @@ using namespace CoreIR;
 using namespace std;
 
 Namespace * CoreIRUtils(Context *c) {
-  Namespace *util= c->newNamespace("util");
+  Namespace * global= c->getGlobal();
   Params muxparams = Params({{"width", c->Int()}, {"num", c->Int()}});
 
-  TypeGen *replicateTypeGen = util->newTypeGen(
+  TypeGen *replicateTypeGen = global->newTypeGen(
         "ReplicateTypeGen",
         Params({{"num", c->Int()}}),
         [](Context *c, Values args) {
@@ -21,12 +21,12 @@ Namespace * CoreIRUtils(Context *c) {
                             {"out", c->Bit()->Arr(num)}});
         });
 
-  Generator *replicate = util->newGeneratorDecl("replicate", replicateTypeGen, {{"num", c->Int()}});
+  Generator *replicate = global->newGeneratorDecl("replicate", replicateTypeGen, {{"num", c->Int()}});
   replicate->setGeneratorDefFromFun([](Context *c, Values args, ModuleDef *def) {
       uint num = args.at("num")->get<int>();
       def->addInstance("concat_1", "coreir.concat", {{"width0", Const::make(c, 1)}, {"width1", Const::make(c, 1)}});
-      def->connect("concat_1.in0", "self.in");
-      def->connect("concat_1.in1", "self.in");
+      def->connect("self.in", "concat_1.in0.0");
+      def->connect("self.in", "concat_1.in1.0");
       string prevname = "concat_1";
 
       ostringstream oss;
@@ -51,7 +51,7 @@ Namespace * CoreIRUtils(Context *c) {
       }
     });
 
-  TypeGen *paraMuxTypeGen = util->newTypeGen(
+  TypeGen *paraMuxTypeGen = global->newTypeGen(
      "ParaMuxTypeGen",
      muxparams,
      [](Context *c, Values args) {
@@ -74,10 +74,10 @@ Namespace * CoreIRUtils(Context *c) {
        return c->Record(interface);
      });
 
-  Generator * paraMux = util->newGeneratorDecl("paraMux", paraMuxTypeGen, muxparams);
+  Generator * paraMux = global->newGeneratorDecl("paraMux", paraMuxTypeGen, muxparams);
   paraMux->setGeneratorDefFromFun([](Context *c, Values args, ModuleDef *def) {
 
-      Namespace *util = c->getNamespace("util");
+      Namespace *global = c->getNamespace("global");
 
       uint width = args.at("width")->get<int>();
       uint num = args.at("num")->get<int>();
@@ -93,7 +93,7 @@ Namespace * CoreIRUtils(Context *c) {
         def->addInstance(andstr, "coreir.and", {{"width", Const::make(c, width)}});
         // TODO
         // Extend the select bit and then AND with the corresponding in value
-        Generator *replicate = util->getGenerator("replicate");
+        Generator *replicate = global->getGenerator("replicate");
         def->addInstance(repl, replicate, {{"num", Const::make(c, width)}});
         def->connect(sel, repl + ".in");
         def->connect(repl + ".out", andstr + ".in0");
@@ -103,13 +103,14 @@ Namespace * CoreIRUtils(Context *c) {
 
       // Now do a chain of ors on all the and outputs
       def->addInstance("or_chain_1", "coreir.or", {{"width", Const::make(c, width)}});
-      def->connect("and_0.out", "or_chain1.in0");
-      def->connect("and_1.out", "or_chain1.in1");
-      string prevname = "or_chain_0";
+      def->connect("and_0.out", "or_chain_1.in0");
+      def->connect("and_1.out", "or_chain_1.in1");
+      string prevname = "or_chain_1";
       for (uint i = 2; i < num; ++i) {
         oss << i;
         string andstr = "and_" + oss.str();
         string orstr = "or_chain_" + oss.str();
+        def->addInstance(orstr, "coreir.or", {{"width", Const::make(c, width)}});
         def->connect(andstr + ".out", orstr + ".in0");
         def->connect(prevname + ".out", orstr + ".in1");
         prevname = orstr;
@@ -119,5 +120,5 @@ Namespace * CoreIRUtils(Context *c) {
       def->connect(prevname + ".out", "self.out");
     });
 
-  return util;
+  return global;
 }
