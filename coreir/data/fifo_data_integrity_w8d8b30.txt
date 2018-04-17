@@ -1,0 +1,55 @@
+# TRANSLATION INFO
+python CoSA.py -i ./examples/fast/scoreboard.json,./examples/fast/reset_seq.ets -a ./examples/fast/assumptions.txt --safety -k 30 -p ./examples/fast/property.txt --smt2 scoreboard.smt2 --vcd --prefix trace --abstract-clock -v2
+Statistics (System 1):
+  Variables:	398
+  StateVars:	13
+  Inputs:	0
+  Outputs:	0
+Safety verification for property "(self.prop_signal = 1_1)":
+
+0.00 k=0
+0.01 k=1
+0.01 k=2
+0.01 k=3
+0.02 k=4
+0.05 k=5
+0.09 k=6
+0.18 k=7
+0.37 k=8
+0.70 k=9
+1.26 k=10
+2.25 k=11
+3.63 k=12
+5.98 k=13
+10.84 k=14
+18.31 k=15
+35.68 k=16
+57.61 k=17
+103.10 k=18
+146.67 k=19
+225.73 k=20
+271.55 k=21
+342.87 k=22
+407.12 k=23
+542.88 k=24
+654.96 k=25
+802.38 k=26
+1014.85 k=27
+1217.21 k=28
+1451.55 k=29
+1779.50 k=30
+
+CVC4 Lazy
+## 0.006949 unsat
+## 0.037951 unsat
+## 0.070062 unsat
+## 0.210044 unsat
+## 0.407225 unsat
+## 0.597632 unsat
+## 1.029758 unsat
+## 2.319328 unsat
+## 6.757535 unsat
+## 22.937033 unsat
+## 88.577159 unsat
+## 425.742491 unsat
+## 1680.695418 unsat
