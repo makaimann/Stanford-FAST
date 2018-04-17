@@ -37,9 +37,9 @@ module FIFO(clk, rst, push, pop, data_in,
 
   FF #(.WIDTH(PTRWID)) ff_wrPtr (.clk(clk),
                                  .en(clkEn),
-                        	 .D(wrPtrNxt),
-                        	 .Q(wrPtr)
-  				);
+                        	     .D(wrPtrNxt),
+                        	     .Q(wrPtr)
+  				                 );
 
   //************** rdPtr logic ****************//
 

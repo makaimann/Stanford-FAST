@@ -3,17 +3,13 @@
 #include <sstream>
 #include <math.h>
 #include "coreir.h"
-#include "mux.h"
+#include <utility>
 
 using namespace CoreIR;
 using namespace std;
 
-int main() {
-  Context *c = newContext();
+Namespace * CoreIRFIFO(Context *c) {
   Namespace *global = c->getGlobal();
-
-  // Load utils
-  CoreIRUtils(c);
 
   Params fifoParams({{"width", c->Int()}, {"depth", c->Int()}});
 
@@ -40,7 +36,7 @@ int main() {
   fifo->setGeneratorDefFromFun([](Context *c, Values args, ModuleDef *def) {
       uint width = args.at("width")->get<int>();
       uint depth = args.at("depth")->get<int>();
-      uint ptrWidth = static_cast<uint>(log2(depth) + 0.5);
+      uint ptrWidth = static_cast<uint>(log2(depth) + 0.5) + 1;
 
       Values wArg({{"width", Const::make(c, width)}});
       Values pwArg({{"width", Const::make(c, ptrWidth)}});
@@ -48,8 +44,8 @@ int main() {
       def->addInstance("zero", "coreir.const", pwArg, {{"value", Const::make(c, ptrWidth, 0)}});
       def->addInstance("one", "coreir.const", pwArg, {{"value", Const::make(c, ptrWidth, 1)}});
 
-      def->addInstance("wrPtr", "coreir.reg", pwArg);
-      def->addInstance("rdPtr", "coreir.reg", pwArg);
+      def->addInstance("wrPtr", "coreir.reg", pwArg, {{"init", Const::make(c, BitVector(ptrWidth, 0))}});;
+      def->addInstance("rdPtr", "coreir.reg", pwArg, {{"init", Const::make(c, BitVector(ptrWidth, 0))}});
       def->addInstance("wrPtrEn", "coreir.mux", pwArg);
       def->addInstance("rdPtrEn", "coreir.mux", pwArg);
       def->addInstance("wrPtrRst", "coreir.mux", pwArg);
@@ -70,7 +66,8 @@ int main() {
       for (uint i = 0; i < depth; ++i) {
         oss << i;
         def->addInstance("entry" + oss.str(), "mantle.reg", {{"width", Const::make(c, width)}, {"has_en", Const::make(c, true)}}, zDataInit);
-        def->addInstance("entryEn" + oss.str(), "coreir.eq", pwArg);
+        def->addInstance("wrPtrEq" + oss.str(), "coreir.eq", {{"width", Const::make(c, ptrWidth - 1)}});
+        def->addInstance("entryEn" + oss.str(), "coreir.and", {{"width", Const::make(c, 1)}});
         ostringstream().swap(oss);
       }
 
@@ -97,6 +94,36 @@ int main() {
       def->connect("rdPtrEn.out", "rdPtrRst.in0");
       def->connect("zero.out", "wrPtrRst.in1");
       def->connect("zero.out", "rdPtrRst.in1");
+      def->connect("wrPtrRst.out", "wrPtr.in");
+      def->connect("rdPtrRst.out", "rdPtr.in");
+
+      // full and empty instances
+      def->addInstance("emptyEq", "coreir.eq", pwArg);
+      def->addInstance("fullCalc", "coreir.and", {{"width", Const::make(c, 1)}});
+      def->addInstance("fullEq_1", "coreir.eq", {{"width", Const::make(c, 1)}});
+      def->addInstance("fullEq_2", "coreir.eq", {{"width", Const::make(c, ptrWidth - 1)}});
+      def->addInstance("rdPtrSlice", "coreir.slice", {{"width", Const::make(c, ptrWidth)}, {"hi", Const::make(c, ptrWidth - 1)}, {"lo", Const::make(c, 0)}});
+      def->addInstance("wrPtrSlice", "coreir.slice", {{"width", Const::make(c, ptrWidth)}, {"hi", Const::make(c, ptrWidth - 1)}, {"lo", Const::make(c, 0)}});
+      def->addInstance("notfullEq_1", "coreir.not", {{"width", Const::make(c, 1)}});
+
+      // full and empty connections
+      def->connect("rdPtr.out", "emptyEq.in0");
+      def->connect("wrPtr.out", "emptyEq.in1");
+      def->connect("rdPtr.out", "rdPtrSlice.in");
+      def->connect("wrPtr.out", "wrPtrSlice.in");
+      Instance * rdPtr = def->getInstances().at("rdPtr");
+      Instance * wrPtr = def->getInstances().at("wrPtr");
+      Instance * fullEq_1 = def->getInstances().at("fullEq_1");
+      def->connect(rdPtr->sel("out")->sel(ptrWidth - 1), fullEq_1->sel("in0")->sel(0));
+      def->connect(wrPtr->sel("out")->sel(ptrWidth - 1), fullEq_1->sel("in1")->sel(0));
+      def->connect("rdPtrSlice.out", "fullEq_2.in0");
+      def->connect("wrPtrSlice.out", "fullEq_2.in1");
+      def->connect("fullEq_1.out", "notfullEq_1.in.0");
+      def->connect("notfullEq_1.out", "fullCalc.in0");
+      def->connect("fullEq_2.out", "fullCalc.in1.0");
+
+      def->connect("emptyEq.out", "self.empty");
+      def->connect("fullCalc.out.0", "self.full");
 
       // Mux for data_out
       Namespace *global = c->getGlobal();
@@ -109,26 +136,32 @@ int main() {
       for (uint i = 0; i < depth; ++i) {
         oss << i;
         string entry = "entry" + oss.str();
+        string wrPtrEq = "wrPtrEq" + oss.str();
         string entryEn = "entryEn" + oss.str();
         string con = "const_" + oss.str();
 
-        def->addInstance(con, "coreir.const", pwArg, {{"value", Const::make(c, ptrWidth, i)}});
+        def->addInstance(con, "coreir.const", {{"width", Const::make(c, ptrWidth - 1)}}, {{"value", Const::make(c, ptrWidth - 1, i)}});
+
+        def->connect("self.clk", entry + ".clk");
 
         def->connect("self.data_in", entry + ".in");
-        def->connect(entryEn + ".out", entry + ".en");
-        def->connect("wrPtr.out", entryEn + ".in0");
-        def->connect(con + ".out", entryEn + ".in1");
 
-        string rdPtrEn = "rdPtrEn_eq_" + oss.str();
-        def->addInstance(rdPtrEn, "coreir.eq", {{"width", Const::make(c, ptrWidth)}});
-        def->connect("rdPtr.out", rdPtrEn + ".in0");
-        def->connect(con + ".out", rdPtrEn + ".in1");
+        def->connect("self.push", entryEn + ".in0.0");
+        def->connect(wrPtrEq + ".out", entryEn + ".in1.0");
+        def->connect(entryEn + ".out.0", entry + ".en");
+        def->connect("wrPtrSlice.out", wrPtrEq + ".in0");
+        def->connect(con + ".out", wrPtrEq + ".in1");
+
+        string rdPtrEq = "rdPtrEq_eq_" + oss.str();
+        def->addInstance(rdPtrEq, "coreir.eq", {{"width", Const::make(c, ptrWidth - 1)}});
+        def->connect("rdPtrSlice.out", rdPtrEq + ".in0");
+        def->connect(con + ".out", rdPtrEq + ".in1");
 
         // connect mux
         string in = ".in" + oss.str();
         string sel = ".sel" + oss.str();
         def->connect(entry + ".out", mux + in);
-        def->connect(rdPtrEn + ".out", mux + sel);
+        def->connect(rdPtrEq + ".out", mux + sel);
 
         ostringstream().swap(oss);
       }
@@ -138,28 +171,5 @@ int main() {
       // def->connect("entry0.out", "self.data_out");
 
   });
-
-  Module* top = global->newModuleDecl("top", c->Record({}));
-  ModuleDef* topdef = top->newModuleDef();
-  topdef->addInstance("f", "global.fifo",
-                      {{"width", Const::make(c, 8)},
-                       {"depth", Const::make(c, 8)}});
-
-  top->setDef(topdef);
-  fifo->print();
-  top->print();
-
-  Instance* f = topdef->getInstances().at("f");
-  // c->runPasses({"rungenerators","cullzexts","removeconstduplicates","packconnections","flattentypes","flatten","deletedeadinstances"});
-  c->runPasses({"rungenerators","flatten"});
-  //c->runPasses({"rungenerators"});
-
-  Module *fModuleRef = f->getModuleRef();
-  //cout << "Printing the generated module!" << endl;
-  //fModuleRef->print();
-
-  saveToFile(global, "fifo.json", fModuleRef);
-  // saveToFile(global, "fifo.json");
-  deleteContext(c);
-  return 0;
-}
+  return global;
+  }
