@@ -71,7 +71,7 @@ Namespace * CoreIRFIFO(Context *c) {
       // Wire clocks
       def->connect("self.clk", "wrPtr.clk");
       def->connect("self.clk", "rdPtr.clk");
-      def->connect("self.clk", "mem.clk")
+      def->connect("self.clk", "mem.clk");
 
       def->connect("one.out", "wrPtrp1.in0");
       def->connect("wrPtr.out", "wrPtrp1.in1");
@@ -94,14 +94,6 @@ Namespace * CoreIRFIFO(Context *c) {
       def->connect("zero.out", "rdPtrRst.in1");
       def->connect("wrPtrRst.out", "wrPtr.in");
       def->connect("rdPtrRst.out", "rdPtr.in");
-
-      // Connect the rest of the memory
-      def->connect("self.data_in", "mem.wdata");
-      def->connect("wrPtr.out", "mem.waddr");
-      def->connect("self.push", "mem.wen");
-      def->connect("self.data_out", "mem.rdata");
-      def->connect("rdPtr.out", "mem.raddr");
-
 
       // full and empty instances
       def->addInstance("emptyEq", "coreir.eq", pwArg);
@@ -130,6 +122,13 @@ Namespace * CoreIRFIFO(Context *c) {
 
       def->connect("emptyEq.out", "self.empty");
       def->connect("fullCalc.out.0", "self.full");
+
+      // Connect the rest of the memory
+      def->connect("self.data_in", "mem.wdata");
+      def->connect("wrPtrSlice.out", "mem.waddr");
+      def->connect("self.push", "mem.wen");
+      def->connect("mem.rdata", "self.data_out");
+      def->connect("rdPtrSlice.out", "mem.raddr");
 
 
   });
