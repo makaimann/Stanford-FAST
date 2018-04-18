@@ -1,0 +1,197 @@
+TITLE: Comparing Yosys and CoSA flows for FIFO W=8, D=8 Data Integrity
+
+QF_BV/SAT
+
+Solver: JG
+## 0.01 XXXXXX Checking assertions in step 0..
+## 0.01 XXXXXX Checking assertions in step 1..
+## 0.01 XXXXXX Checking assertions in step 2..
+## 0.01 XXXXXX Checking assertions in step 3..
+## 0.01 XXXXXX Checking assertions in step 4..
+## 0.01 XXXXXX Checking assertions in step 5..
+## 0.02 XXXXXX Checking assertions in step 6..
+## 0.02 XXXXXX Checking assertions in step 7..
+## 0.03 XXXXXX Checking assertions in step 8..
+## 0.03 XXXXXX Checking assertions in step 9..
+## 0.05 XXXXXX Checking assertions in step 10..
+## 0.05 XXXXXX Checking assertions in step 11..
+## 0.06 XXXXXX Checking assertions in step 12..
+## 0.08 XXXXXX Checking assertions in step 13..
+## 0.8 XXXXXX Checking assertions in step 14..
+## 1.12 XXXXXX Checking assertions in step 15..
+## 2.33 XXXXXX Checking assertions in step 16..
+## 4.04 XXXXXX Checking assertions in step 17..
+## 5.03 XXXXXX Checking assertions in step 18..
+## 7.89 XXXXXX Checking assertions in step 19..
+## 10.86 XXXXXX Checking assertions in step 20..
+## 15.61 XXXXXX Checking assertions in step 21..
+## 22.26 XXXXXX Checking assertions in step 22..
+## 37.17 XXXXXX Checking assertions in step 23..
+## 56.88 XXXXXX Checking assertions in step 24..
+## 77.84 XXXXXX Checking assertions in step 25..
+## 112.29 XXXXXX Checking assertions in step 26..
+## 167.53 XXXXXX Checking assertions in step 27..
+## 253.95 XXXXXX Checking assertions in step 28..
+## 372.78 XXXXXX Checking assertions in step 29..
+## 548.39 XXXXX  Status: PASSED
+
+Solver: cvc4-cadical yosys
+##   0:00:00  Checking assertions in step 0..
+##   0:00:00  Checking assertions in step 1..
+##   0:00:00  Checking assertions in step 2..
+##   0:00:00  Checking assertions in step 3..
+##   0:00:00  Checking assertions in step 4..
+##   0:00:00  Checking assertions in step 5..
+##   0:00:00  Checking assertions in step 6..
+##   0:00:01  Checking assertions in step 7..
+##   0:00:01  Checking assertions in step 8..
+##   0:00:01  Checking assertions in step 9..
+##   0:00:02  Checking assertions in step 10..
+##   0:00:03  Checking assertions in step 11..
+##   0:00:03  Checking assertions in step 12..
+##   0:00:04  Checking assertions in step 13..
+##   0:00:05  Checking assertions in step 14..
+##   0:00:07  Checking assertions in step 15..
+##   0:00:09  Checking assertions in step 16..
+##   0:00:12  Checking assertions in step 17..
+##   0:00:15  Checking assertions in step 18..
+##   0:00:19  Checking assertions in step 19..
+##   0:00:23  Checking assertions in step 20..
+##   0:00:30  Checking assertions in step 21..
+##   0:00:38  Checking assertions in step 22..
+##   0:00:47  Checking assertions in step 23..
+##   0:01:03  Checking assertions in step 24..
+##   0:01:21  Checking assertions in step 25..
+##   0:01:42  Checking assertions in step 26..
+##   0:02:06  Checking assertions in step 27..
+##   0:02:35  Checking assertions in step 28..
+##   0:03:09  Checking assertions in step 29..
+##   0:03:44  Status: PASSED
+
+Solver: boolector-cadical yosys
+##   0:00:00  Checking assertions in step 0..
+##   0:00:00  Checking assertions in step 1..
+##   0:00:00  Checking assertions in step 2..
+##   0:00:00  Checking assertions in step 3..
+##   0:00:00  Checking assertions in step 4..
+##   0:00:00  Checking assertions in step 5..
+##   0:00:00  Checking assertions in step 6..
+##   0:00:00  Checking assertions in step 7..
+##   0:00:00  Checking assertions in step 8..
+##   0:00:00  Checking assertions in step 9..
+##   0:00:00  Checking assertions in step 10..
+##   0:00:00  Checking assertions in step 11..
+##   0:00:01  Checking assertions in step 12..
+##   0:00:01  Checking assertions in step 13..
+##   0:00:01  Checking assertions in step 14..
+##   0:00:02  Checking assertions in step 15..
+##   0:00:03  Checking assertions in step 16..
+##   0:00:04  Checking assertions in step 17..
+##   0:00:06  Checking assertions in step 18..
+##   0:00:08  Checking assertions in step 19..
+##   0:00:10  Checking assertions in step 20..
+##   0:00:14  Checking assertions in step 21..
+##   0:00:20  Checking assertions in step 22..
+##   0:00:28  Checking assertions in step 23..
+##   0:00:38  Checking assertions in step 24..
+##   0:00:51  Checking assertions in step 25..
+##   0:01:10  Checking assertions in step 26..
+##   0:01:33  Checking assertions in step 27..
+##   0:01:59  Checking assertions in step 28..
+##   0:02:37  Checking assertions in step 29..
+##   0:03:18  Status: PASSED
+
+Solver: cvc4-cadical cosa
+## 0.03 unsat at step 0
+## 0.08 unsat at step 1
+## 0.17 unsat at step 2
+## 0.33 unsat at step 3
+## 0.51 unsat at step 4
+## 0.73 unsat at step 5
+## 0.99 unsat at step 6
+## 1.31 unsat at step 7
+## 1.73 unsat at step 8
+## 2.32 unsat at step 9
+## 2.96 unsat at step 10
+## 3.73 unsat at step 11
+## 4.56 unsat at step 12
+## 5.45 unsat at step 13
+## 6.64 unsat at step 14
+## 8.11 unsat at step 15
+## 9.86 unsat at step 16
+## 12.06 unsat at step 17
+## 14.72 unsat at step 18
+## 18.19 unsat at step 19
+## 21.96 unsat at step 20
+## 27.13 unsat at step 21
+## 34.35 unsat at step 22
+## 41.65 unsat at step 23
+## 52.57 unsat at step 24
+## 64.71 unsat at step 25
+## 82.18 unsat at step 26
+## 105.74 unsat at step 27
+## 129.58 unsat at step 28
+## 154.89 unsat at step 29
+## 193.21 unsat at step 30
+
+Solver: boolector-cadical cosa
+## 0.01 unsat at step 0
+## 0.01 unsat at step 1
+## 0.03 unsat at step 2
+## 0.05 unsat at step 3
+## 0.07 unsat at step 4
+## 0.11 unsat at step 5
+## 0.15 unsat at step 6
+## 0.21 unsat at step 7
+## 0.32 unsat at step 8
+## 0.46 unsat at step 9
+## 0.64 unsat at step 10
+## 0.87 unsat at step 11
+## 1.17 unsat at step 12
+## 1.59 unsat at step 13
+## 2.14 unsat at step 14
+## 2.82 unsat at step 15
+## 3.68 unsat at step 16
+## 5.07 unsat at step 17
+## 6.64 unsat at step 18
+## 8.91 unsat at step 19
+## 12.70 unsat at step 20
+## 16.52 unsat at step 21
+## 23.17 unsat at step 22
+## 30.04 unsat at step 23
+## 42.69 unsat at step 24
+## 56.39 unsat at step 25
+## 74.95 unsat at step 26
+## 95.31 unsat at step 27
+## 124.11 unsat at step 28
+## 167.35 unsat at step 29
+## 211.08 unsat at step 30
+
+QF_ABV
+
+Solver: cvc4-array cosa
+## 0.01 unsat at step 0
+## 0.03 unsat at step 1
+## 0.06 unsat at step 2
+## 0.12 unsat at step 3
+## 0.19 unsat at step 4
+## 0.28 unsat at step 5
+## 0.45 unsat at step 6
+## 0.89 unsat at step 7
+## 3.34 unsat at step 8
+## 15.22 unsat at step 9
+## 108.58 unsat at step 10
+## 318.83 unsat at step 11
+## 1458.29 unsat at step 12
+
+Solver: cvc4-array yosys
+##   0:00:00  Checking assertions in step 0..
+##   0:00:00  Checking assertions in step 1..
+##   0:00:00  Checking assertions in step 2..
+##   0:00:00  Checking assertions in step 3..
+##   0:00:00  Checking assertions in step 4..
+##   0:00:00  Checking assertions in step 5..
+##   0:00:02  Checking assertions in step 6..
+##   0:00:13  Checking assertions in step 7..
+##   0:01:44  Checking assertions in step 8..
+##   0:15:43  Checking assertions in step 9..

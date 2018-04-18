@@ -1,3 +1,5 @@
+# Using the smt2 output, not the API
+
 # TRANSLATION INFO
 python CoSA.py -i ./examples/fast/scoreboard.json,./examples/fast/reset_seq.ets -a ./examples/fast/assumptions.txt --safety -k 30 -p ./examples/fast/property.txt --smt2 scoreboard.smt2 --vcd --prefix trace --abstract-clock -v2
 Statistics (System 1):
@@ -53,3 +55,219 @@ CVC4 Lazy
 ## 88.577159 unsat
 ## 425.742491 unsat
 ## 1680.695418 unsat
+
+CVC4 cadical
+./bsmt.py cvc4 scoreboard.smt2 --options='--bitblast=eager --bv-sat-solver=cadical'
+## 0.03 unsat at step 0
+## 0.08 unsat at step 1
+## 0.17 unsat at step 2
+## 0.33 unsat at step 3
+## 0.51 unsat at step 4
+## 0.73 unsat at step 5
+## 0.99 unsat at step 6
+## 1.31 unsat at step 7
+## 1.73 unsat at step 8
+## 2.32 unsat at step 9
+## 2.96 unsat at step 10
+## 3.73 unsat at step 11
+## 4.56 unsat at step 12
+## 5.45 unsat at step 13
+## 6.64 unsat at step 14
+## 8.11 unsat at step 15
+## 9.86 unsat at step 16
+## 12.06 unsat at step 17
+## 14.72 unsat at step 18
+## 18.19 unsat at step 19
+## 21.96 unsat at step 20
+## 27.13 unsat at step 21
+## 34.35 unsat at step 22
+## 41.65 unsat at step 23
+## 52.57 unsat at step 24
+## 64.71 unsat at step 25
+## 82.18 unsat at step 26
+## 105.74 unsat at step 27
+## 129.58 unsat at step 28
+## 154.89 unsat at step 29
+## 193.21 unsat at step 30
+
+Boolector cadical
+## 0.01 unsat at step 0
+## 0.01 unsat at step 1
+## 0.03 unsat at step 2
+## 0.05 unsat at step 3
+## 0.07 unsat at step 4
+## 0.11 unsat at step 5
+## 0.15 unsat at step 6
+## 0.21 unsat at step 7
+## 0.32 unsat at step 8
+## 0.46 unsat at step 9
+## 0.64 unsat at step 10
+## 0.87 unsat at step 11
+## 1.17 unsat at step 12
+## 1.59 unsat at step 13
+## 2.14 unsat at step 14
+## 2.82 unsat at step 15
+## 3.68 unsat at step 16
+## 5.07 unsat at step 17
+## 6.64 unsat at step 18
+## 8.91 unsat at step 19
+## 12.70 unsat at step 20
+## 16.52 unsat at step 21
+## 23.17 unsat at step 22
+## 30.04 unsat at step 23
+## 42.69 unsat at step 24
+## 56.39 unsat at step 25
+## 74.95 unsat at step 26
+## 95.31 unsat at step 27
+## 124.11 unsat at step 28
+## 167.35 unsat at step 29
+## 211.08 unsat at step 30
+
+Solver: cvc4-array cosa
+## 0.01 unsat at step 0
+## 0.03 unsat at step 1
+## 0.06 unsat at step 2
+## 0.12 unsat at step 3
+## 0.19 unsat at step 4
+## 0.28 unsat at step 5
+## 0.45 unsat at step 6
+## 0.89 unsat at step 7
+## 3.34 unsat at step 8
+## 15.22 unsat at step 9
+## 108.58 unsat at step 10
+## 318.83 unsat at step 11
+## 1458.29 unsat at step 12
+
+Solver: cvc4-array yosys
+##   0:00:00  Solver: cvc4
+##   0:00:00  Checking assertions in step 0..
+##   0:00:00  Checking assertions in step 1..
+##   0:00:00  Checking assertions in step 2..
+##   0:00:00  Checking assertions in step 3..
+##   0:00:00  Checking assertions in step 4..
+##   0:00:00  Checking assertions in step 5..
+##   0:00:02  Checking assertions in step 6..
+##   0:00:13  Checking assertions in step 7..
+##   0:01:44  Checking assertions in step 8..
+##   0:15:43  Checking assertions in step 9..
+ (1054 seconds -- 17:34) -<SIGTERM>
+
+
+
+Array 
+python CoSA.py -i ./examples/fast/scoreboard_array.json,./examples/fast/reset_seq.ets -a ./examples/fast/assumptions.txt --safety -k 30 -p ./examples/fast/property.txt --smt2 scoreboard_array.smt2 --vcd --prefix trace --abstract-clock -v2
+/home/makai/.virtualenvs/fast/lib/python3.6/site-packages/pyximport/pyximport.py:51: DeprecationWarning: the imp module is deprecated in favour of importlib; see the module's documentation for alternative uses
+  import imp
+/home/makai/.virtualenvs/fast/lib/python3.6/importlib/_bootstrap.py:219: ImportWarning: can't resolve package from __spec__ or __package__, falling back on __name__ and __path__
+  return f(*args, **kwds)
+Parsing file "./examples/fast/scoreboard_array.json"... 
+Reading CoreIR system... 
+Starting encoding... 
+Adding clock behavior to "self.clk" input
+DONE
+Parsing file "./examples/fast/reset_seq.ets"... 
+DONE
+Adding 1 assumptions... 
+Statistics (System 1):
+  Variables:	152
+  StateVars:	6
+  Inputs:	0
+  Outputs:	0
+Safety verification for property "(self.prop_signal = 1_1)":
+
+Solving for k=0
+Timer "Solve": 0.00 sec
+Total time: 0.00 sec
+No counterexample found with k=0
+
+Solving for k=1
+Timer "Solve": 0.00 sec
+Total time: 0.00 sec
+No counterexample found with k=1
+
+Solving for k=2
+Timer "Solve": 0.00 sec
+Total time: 0.00 sec
+No counterexample found with k=2
+
+Solving for k=3
+Timer "Solve": 0.00 sec
+Total time: 0.01 sec
+No counterexample found with k=3
+
+Solving for k=4
+Timer "Solve": 0.01 sec
+Total time: 0.02 sec
+No counterexample found with k=4
+
+Solving for k=5
+Timer "Solve": 0.02 sec
+Total time: 0.03 sec
+No counterexample found with k=5
+
+Solving for k=6
+Timer "Solve": 0.05 sec
+Total time: 0.08 sec
+No counterexample found with k=6
+
+Solving for k=7
+Timer "Solve": 0.14 sec
+Total time: 0.22 sec
+No counterexample found with k=7
+
+Solving for k=8
+Timer "Solve": 0.40 sec
+Total time: 0.63 sec
+No counterexample found with k=8
+
+Solving for k=9
+Timer "Solve": 0.76 sec
+Total time: 1.39 sec
+No counterexample found with k=9
+
+Solving for k=10
+Timer "Solve": 2.42 sec
+Total time: 3.81 sec
+No counterexample found with k=10
+
+Solving for k=11
+Timer "Solve": 7.58 sec
+Total time: 11.38 sec
+No counterexample found with k=11
+
+Solving for k=12
+Timer "Solve": 13.54 sec
+Total time: 24.93 sec
+No counterexample found with k=12
+
+Solving for k=13
+Timer "Solve": 63.78 sec
+Total time: 88.71 sec
+No counterexample found with k=13
+
+Solving for k=14
+Timer "Solve": 63.96 sec
+Total time: 152.67 sec
+No counterexample found with k=14
+
+Solving for k=15
+Timer "Solve": 139.43 sec
+Total time: 292.10 sec
+No counterexample found with k=15
+
+Solving for k=16
+Timer "Solve": 255.04 sec
+Total time: 547.14 sec
+No counterexample found with k=16
+
+Solving for k=17
+Timer "Solve": 496.66 sec
+Total time: 1043.80 sec
+No counterexample found with k=17
+
+Solving for k=18
+Timer "Solve": 1164.53 sec
+Total time: 2208.33 sec
+No counterexample found with k=18
+
+
