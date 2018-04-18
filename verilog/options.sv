@@ -10,7 +10,7 @@
 `define ARRAY
 
 // DWRR Arbiter Options
-`define COMB_UPDATE
+//`define COMB_UPDATE
 
 // Parameters
 `define FIFO_DEPTH 8

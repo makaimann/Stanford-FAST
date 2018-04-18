@@ -71,3 +71,6 @@ for l in lines.split("\n"):
         proc_lines.append(l)
 
     idx += 1
+
+# for i, t in enumerate(times):
+#     print("## {:.2f} unsat at step {}".format(t, i))
