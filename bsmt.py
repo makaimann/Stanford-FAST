@@ -2,17 +2,20 @@
 import subprocess
 import argparse
 import time
+import sys
 
 parser = argparse.ArgumentParser(description='Takes an incremental smt2 file and calls the provided solver repeatedly')
 parser.add_argument('solver', metavar='<solver>', help='The solver to use')
 parser.add_argument('input_file', metavar='<input_file>', help='The incremental benchmark')
 parser.add_argument('--options', metavar='solver options', action='store', type=str, help='solver options to use')
+parser.add_argument('-q', action='store_true', help='print less output')
 
 args = parser.parse_args()
 
 solver = args.solver
 input_file = args.input_file
 options = args.options
+quiet = args.q
 
 cmd = [solver]
 
@@ -61,7 +64,12 @@ for l in lines.split("\n"):
         total_time += t
         times.append(total_time)
 
-        print("## {:.2f} {} at step {}".format(total_time, output[0].rstrip(), step))
+        if not quiet:
+            print("## {:.2f} {} at step {}".format(total_time, output[0].rstrip(), step))
+        else:
+            print("## {:.2f} step {}".format(total_time, step))
+        sys.stdout.flush()
+
         step += 1
 
         if output[1] is not None and output[1].strip() != "":
@@ -72,5 +80,6 @@ for l in lines.split("\n"):
 
     idx += 1
 
-# for i, t in enumerate(times):
-#     print("## {:.2f} unsat at step {}".format(t, i))
+# if quiet:
+#     for i, t in enumerate(times):
+#         print("## {:.2f} at step {}".format(t, i))

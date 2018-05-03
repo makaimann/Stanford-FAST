@@ -57,6 +57,9 @@ Namespace * CoreIRUtils(Context *c) {
      [](Context *c, Values args) {
        uint width = args.at("width")->get<int>();
        uint num = args.at("num")->get<int>();
+       ASSERT((num & (num - 1)) == 0, "num should be a power of 2.")
+       ASSERT(num > 0, "num should be greater than 0")
+       uint l2d = static_cast<uint>(log2(num));
        Type *intype = c->BitIn()->Arr(width);
 
        vector<pair<string, Type*>> interface;
@@ -65,17 +68,69 @@ Namespace * CoreIRUtils(Context *c) {
        for (uint i = 0; i < num; ++i) {
          oss << i;
          string n = "in" + oss.str();
-         string sel = "sel" + oss.str();
          ostringstream().swap(oss);
          interface.push_back({n, intype});
-         interface.push_back({sel, c->BitIn()});
        }
+       interface.push_back({"sel", c->BitIn()->Arr(l2d)});
        interface.push_back({"out", c->Flip(intype)});
        return c->Record(interface);
      });
 
   Generator * paraMux = global->newGeneratorDecl("paraMux", paraMuxTypeGen, muxparams);
-  paraMux->setGeneratorDefFromFun([](Context *c, Values args, ModuleDef *def) {
+
+  Generator * paraMux = global->newGeneratorDecl("paraMux", paraMuxOrrTypeGen, muxparams);
+  paraMuxOrr->setGeneratorDefFromFun([](Context *c, Values args, ModuleDef *def) {
+
+      Namespace *global = c->getNamespace("global");
+
+      uint width = args.at("width")->get<int>();
+      uint num = args.at("num")->get<int>();
+      uint l2d = static_cast<uint>(log2(num));
+
+      // Generate a mux tree
+      ostringstream oss;
+      ostringstream oss2;
+      for (uint i=0; i < l2d; ++i) {
+        oss << i;
+        uint n = static_cast<uint>(pow(2, l2d - i - 1));
+        for (uint j=0; j < n; ++j) {
+          oss2 << j;
+          string mux_name = "mux_b" + oss.str() + "_" + oss2.str();
+          def->addInstance(mux_name, "coreir.mux", {{"width", Const::make(c, width)}});
+          def->connect("self.sel." + oss.str(), mux_name + ".sel");
+          // TODO: Finish connections
+          ostringstream().swap(oss2);
+        }
+        ostringstream().swap(oss);
+      }
+
+    });
+
+  TypeGen *paraMuxOrrTypeGen = global->newTypeGen(
+         "ParaMuxOrrTypeGen",
+         muxparams,
+         [](Context *c, Values args) {
+           uint width = args.at("width")->get<int>();
+           uint num = args.at("num")->get<int>();
+           Type *intype = c->BitIn()->Arr(width);
+
+           vector<pair<string, Type*>> interface;
+
+           ostringstream oss;
+           for (uint i = 0; i < num; ++i) {
+             oss << i;
+             string n = "in" + oss.str();
+             string sel = "sel" + oss.str();
+             ostringstream().swap(oss);
+             interface.push_back({n, intype});
+             interface.push_back({sel, c->BitIn()});
+           }
+           interface.push_back({"out", c->Flip(intype)});
+           return c->Record(interface);
+         });
+
+  Generator * paraMuxOrr = global->newGeneratorDecl("paraMuxOrr", paraMuxOrrTypeGen, muxparams);
+  paraMuxOrr->setGeneratorDefFromFun([](Context *c, Values args, ModuleDef *def) {
 
       Namespace *global = c->getNamespace("global");
 
