@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import subprocess
 import argparse
 import time
@@ -22,7 +22,7 @@ cmd = [solver]
 if options:
     cmd += options.split(" ")
 
-if solver == 'cvc4':
+if 'cvc4' in solver:
     cmd.append('--lang=smt')
 
 # preprocess the input file
@@ -41,7 +41,7 @@ stderr = []
 # Note: only handles push and pop by one right now
 for l in lines.split("\n"):
     if "(push 1)" in l or "(push)" in l:
-        proc_lines.append(";; {}".format(l))
+        proc_lines.append(";; {0}".format(l))
         push = idx
     elif "(pop 1)" in l or "(pop)" in l:
         assert push is not None
@@ -53,21 +53,21 @@ for l in lines.split("\n"):
         # Set up the echo command and direct the output to a pipe
         p1 = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                               stdin=subprocess.PIPE,
-                              stderr=subprocess.PIPE,
-                              encoding='utf8')
+                              stderr=subprocess.PIPE)
 
         # Run the command
         start = time.time()
-        output = p1.communicate('\n'.join(proc_lines + ["(check-sat)"]))
+        output = p1.communicate(('\n'.join(proc_lines + ["(check-sat)"]).encode('utf-8')))
+        output = tuple([o.decode('utf-8') for o in output])
         t = time.time() - start
 
         total_time += t
         times.append(total_time)
 
         if not quiet:
-            print("## {:.2f} {} at step {}".format(total_time, output[0].rstrip(), step))
+            print("## {0:.2f} {1} at step {2}".format(total_time, output[0].rstrip(), step))
         else:
-            print("## {:.2f} step {}".format(total_time, step))
+            print("## {0:.2f} step {1}".format(total_time, step))
         sys.stdout.flush()
 
         step += 1
