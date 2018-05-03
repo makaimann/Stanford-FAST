@@ -1,9 +1,10 @@
 `define UTILS
 
-module FF(clk, en, D, Q);
+module FF(rst, clk, en, D, Q);
   parameter WIDTH = 1;
   parameter INIT  = 0;
 
+  input wire                rst;
   input wire                clk;
   input wire                en;
   input wire   [WIDTH-1:0]  D;
@@ -11,7 +12,10 @@ module FF(clk, en, D, Q);
   output reg   [WIDTH-1:0]  Q = INIT;
 
   always @ (posedge clk) begin
-    if(en) begin
+    if (rst) begin
+       Q <= INIT;
+    end
+    else if(en) begin
       Q <= D;
     end
   end

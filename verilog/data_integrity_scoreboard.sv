@@ -31,7 +31,8 @@ module MagicPacketTracker(clk, rst, push, pop, captured,
   output wire [CNTWID-1:0] cnt;
   output wire [CNTWID-1:0] next_cnt;
 
-  FF #(.WIDTH(CNTWID)) ff_cnt (.clk(clk),
+  FF #(.WIDTH(CNTWID)) ff_cnt (.rst(rst),
+			       .clk(clk),
                                .en(push | pop | rst | captured),
                                .D(next_cnt),
                                .Q(cnt));
@@ -106,7 +107,8 @@ module Scoreboard(clk, rst, push, start, flat_data_in, input_quantums,
 
   assign next_en = en | (start & push);
 
-  FF #(.WIDTH(1)) ff_en (.clk(clk),
+  FF #(.WIDTH(1)) ff_en (.rst(rst),
+			 .clk(clk),
                          .en(~en), // only need to update once
                          .D(next_en),
                          .Q(en));
@@ -125,7 +127,8 @@ module Scoreboard(clk, rst, push, start, flat_data_in, input_quantums,
 
   wire [WIDTH-1:0] magic_packet;
 
-  FF #(.WIDTH(WIDTH)) ff_magic_packet (.clk(clk),
+  FF #(.WIDTH(WIDTH)) ff_magic_packet (.rst(rst),
+				       .clk(clk),
                                        .en(start & push[0] & ~en),
                                        .D(data_in[0]),
                                        .Q(magic_packet));
