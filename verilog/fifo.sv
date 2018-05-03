@@ -35,11 +35,12 @@ module FIFO(clk, rst, push, pop, data_in,
                         push ? wrPtr + 1 :
                              wrPtr;
 
-  FF #(.WIDTH(PTRWID)) ff_wrPtr (.clk(clk),
+  FF #(.WIDTH(PTRWID)) ff_wrPtr (.rst(rst),
+				 .clk(clk),
                                  .en(clkEn),
-                        	     .D(wrPtrNxt),
-                        	     .Q(wrPtr)
-  				                 );
+                        	 .D(wrPtrNxt),
+                        	 .Q(wrPtr)
+  				);
 
   //************** rdPtr logic ****************//
 
@@ -50,7 +51,8 @@ module FIFO(clk, rst, push, pop, data_in,
                         pop ? rdPtr + 1 :
                             rdPtr;
 
-  FF #(.WIDTH(PTRWID)) ff_rdPtr (.clk(clk),
+  FF #(.WIDTH(PTRWID)) ff_rdPtr (.rst(rst),
+				 .clk(clk),
                                  .en(clkEn),
                                  .D(rdPtrNxt),
                                  .Q(rdPtr));
@@ -74,7 +76,8 @@ module FIFO(clk, rst, push, pop, data_in,
   generate
     genvar i;
     for(i = 0; i < DEPTH; i = i + 1) begin : entry_gen
-      FF #(.WIDTH(WIDTH)) ff_entry_inst(.clk(clk),
+      FF #(.WIDTH(WIDTH)) ff_entry_inst(.rst(rst),
+					.clk(clk),
                                         .en(push & (wrPtr[PTRWID-2:0] == i)),
                                         .D(data_in),
                                         .Q(entries[i])
