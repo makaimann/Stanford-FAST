@@ -1,0 +1,246 @@
+Solver: CVC4 Cadical QF_BV Functional encoding
+## 0.05 b'unsat' at step 0
+## 0.13 b'unsat' at step 1
+## 0.23 b'unsat' at step 2
+## 0.42 b'unsat' at step 3
+## 0.60 b'unsat' at step 4
+## 0.87 b'unsat' at step 5
+## 1.17 b'unsat' at step 6
+## 1.46 b'unsat' at step 7
+## 1.79 b'unsat' at step 8
+## 2.22 b'unsat' at step 9
+## 2.85 b'unsat' at step 10
+## 3.42 b'unsat' at step 11
+## 4.07 b'unsat' at step 12
+## 5.14 b'unsat' at step 13
+## 6.07 b'unsat' at step 14
+## 7.20 b'unsat' at step 15
+## 8.83 b'unsat' at step 16
+## 10.63 b'unsat' at step 17
+## 12.98 b'unsat' at step 18
+## 16.04 b'unsat' at step 19
+## 19.87 b'unsat' at step 20
+## 24.55 b'unsat' at step 21
+## 30.63 b'unsat' at step 22
+## 38.64 b'unsat' at step 23
+## 48.04 b'unsat' at step 24
+## 59.00 b'unsat' at step 25
+## 73.30 b'unsat' at step 26
+## 87.63 b'unsat' at step 27
+## 107.30 b'unsat' at step 28
+## 128.81 b'unsat' at step 29
+## 151.23 b'unsat' at step 30
+## 182.21 b'unsat' at step 31
+## 221.54 b'unsat' at step 32
+## 261.28 b'unsat' at step 33
+## 317.45 b'unsat' at step 34
+## 381.57 b'unsat' at step 35
+## 454.26 b'unsat' at step 36
+## 535.95 b'unsat' at step 37
+## 641.00 b'unsat' at step 38
+## 737.43 b'unsat' at step 39
+## 855.67 b'unsat' at step 40
+## 997.23 b'unsat' at step 41
+## 1164.00 b'unsat' at step 42
+## 1360.66 b'unsat' at step 43
+## 1534.64 b'unsat' at step 44
+## 1748.50 b'unsat' at step 45
+## 1974.72 b'unsat' at step 46
+## 2327.73 b'unsat' at step 47
+## 2643.78 b'unsat' at step 48
+## 3020.35 b'unsat' at step 49
+## 3370.52 b'unsat' at step 50
+## 3944.91 b'unsat' at step 51
+## 4522.19 b'unsat' at step 52
+## 5085.46 b'unsat' at step 53
+## 5548.19 b'unsat' at step 54
+## 6486.68 b'unsat' at step 55
+## 7486.53 b'unsat' at step 56
+## 8199.41 b'unsat' at step 57
+## 9236.59 b'unsat' at step 58
+## 10274.91 b'unsat' at step 59
+## 11247.03 b'unsat' at step 60
+## 13064.15 b'unsat' at step 61
+## 14558.33 b'unsat' at step 62
+## 16304.59 b'unsat' at step 63
+## 18593.74 b'unsat' at step 64
+## 20886.48 b'unsat' at step 65
+## 23014.41 b'unsat' at step 66
+## 25865.32 b'unsat' at step 67
+## 28174.99 b'unsat' at step 68
+## 31448.96 b'unsat' at step 69
+## 33490.00 b'unsat' at step 70
+## 37614.12 b'unsat' at step 71
+## 43222.05 b'unsat' at step 72
+## 46801.67 b'unsat' at step 73
+## 51358.73 b'unsat' at step 74
+## 56083.55 b'unsat' at step 75
+## 60549.16 b'unsat' at step 76
+## 66049.26 b'unsat' at step 77
+## 69714.07 b'unsat' at step 78
+## 75092.82 b'unsat' at step 79
+## 80187.78 b'unsat' at step 80
+## 85427.06 b'unsat' at step 81
+## 91548.51 b'unsat' at step 82
+## 100939.36 b'unsat' at step 83
+## 109317.56 b'unsat' at step 84
+## 117664.68 b'unsat' at step 85
+## 123323.76 b'unsat' at step 86
+## 129953.83 b'unsat' at step 87
+## 137380.87 b'unsat' at step 88
+## 146066.62 b'unsat' at step 89
+## 154908.07 b'unsat' at step 90
+## 169041.12 b'unsat' at step 91
+## 177660.98 b'unsat' at step 92
+## 188003.03 b'unsat' at step 93
+## 200366.68 b'unsat' at step 94
+
+Solver: cvc4-minisat functional qf_bv
+## 0.17 b'unsat' at step 0
+## 0.23 b'unsat' at step 1
+## 0.31 b'unsat' at step 2
+## 0.44 b'unsat' at step 3
+## 0.65 b'unsat' at step 4
+## 0.85 b'unsat' at step 5
+## 1.10 b'unsat' at step 6
+## 1.40 b'unsat' at step 7
+## 1.76 b'unsat' at step 8
+## 2.29 b'unsat' at step 9
+## 2.96 b'unsat' at step 10
+## 3.78 b'unsat' at step 11
+## 5.05 b'unsat' at step 12
+## 6.88 b'unsat' at step 13
+## 9.33 b'unsat' at step 14
+## 14.66 b'unsat' at step 15
+## 20.55 b'unsat' at step 16
+## 27.35 b'unsat' at step 17
+## 42.77 b'unsat' at step 18
+## 57.41 b'unsat' at step 19
+## 80.49 b'unsat' at step 20
+## 109.91 b'unsat' at step 21
+## 165.16 b'unsat' at step 22
+## 241.05 b'unsat' at step 23
+## 358.53 b'unsat' at step 24
+## 548.54 b'unsat' at step 25
+## 972.95 b'unsat' at step 26
+## 1576.23 b'unsat' at step 27
+## 1959.62 b'unsat' at step 28
+## 2425.58 b'unsat' at step 29
+## 3269.17 b'unsat' at step 30
+## 4911.78 b'unsat' at step 31
+## 7119.21 b'unsat' at step 32
+## 13136.34 b'unsat' at step 33
+## 14548.68 b'unsat' at step 34
+## STILL RUNNING
+
+Solver: JasperGold
+## 0.00 at step  1
+## 0.00 at step  2
+## 0.00 at step  3
+## 0.00 at step  4
+## 0.01 at step  5
+## 4.38 at step 17
+## 8.50 at step 19
+## 18.00 at step 21
+## 27.32 at step 22
+## 36.62 at step 23
+## 58.07 at step 24
+## 95.28 at step 25
+## 129.43 at step 26
+## 219.52 at step 27
+## 323.06 at step 28
+## 604.54 at step 29
+## 816.05 at step 30
+## 1343.82 at step 31
+## 2126.68 at step 32
+## 2699.16 at step 33
+## 3885.91 at step 34
+## 6078.00 at step 35
+## 11955.30 at step 36
+## 17047.78 at step 37
+## 27051.56 at step 38
+## 39555.29 at step 39
+## 61611.69 at step 40
+## 82329.40 at step 41
+## STILL RUNNING
+
+Solver: cvc4-minisat functional qf_bv
+## 0.17 b'unsat' at step 0
+## 0.23 b'unsat' at step 1
+## 0.31 b'unsat' at step 2
+## 0.44 b'unsat' at step 3
+## 0.65 b'unsat' at step 4
+## 0.85 b'unsat' at step 5
+## 1.10 b'unsat' at step 6
+## 1.40 b'unsat' at step 7
+## 1.76 b'unsat' at step 8
+## 2.29 b'unsat' at step 9
+## 2.96 b'unsat' at step 10
+## 3.78 b'unsat' at step 11
+## 5.05 b'unsat' at step 12
+## 6.88 b'unsat' at step 13
+## 9.33 b'unsat' at step 14
+## 14.66 b'unsat' at step 15
+## 20.55 b'unsat' at step 16
+## 27.35 b'unsat' at step 17
+## 42.77 b'unsat' at step 18
+## 57.41 b'unsat' at step 19
+## 80.49 b'unsat' at step 20
+## 109.91 b'unsat' at step 21
+## 165.16 b'unsat' at step 22
+## 241.05 b'unsat' at step 23
+## 358.53 b'unsat' at step 24
+## 548.54 b'unsat' at step 25
+## 972.95 b'unsat' at step 26
+## 1576.23 b'unsat' at step 27
+## 1959.62 b'unsat' at step 28
+## 2425.58 b'unsat' at step 29
+## 3269.17 b'unsat' at step 30
+## 4911.78 b'unsat' at step 31
+## 7119.21 b'unsat' at step 32
+## 13136.34 b'unsat' at step 33
+## 14548.68 b'unsat' at step 34
+## 20067.70 b'unsat' at step 35
+## 23884.46 b'unsat' at step 36
+## 28762.34 b'unsat' at step 37
+## 38872.46 b'unsat' at step 38
+## 49544.41 b'unsat' at step 39
+## 60574.01 b'unsat' at step 40
+## 91560.39 b'unsat' at step 41
+## 105869.88 b'unsat' at step 42
+## 148376.69 b'' at step 43
+
+Solver: cvc4-minisat functional qf_abv
+## 0.11 b'unsat' at step 0
+## 0.14 b'unsat' at step 1
+## 0.17 b'unsat' at step 2
+## 0.22 b'unsat' at step 3
+## 0.27 b'unsat' at step 4
+## 0.34 b'unsat' at step 5
+## 0.46 b'unsat' at step 6
+## 0.98 b'unsat' at step 7
+## 3.65 b'unsat' at step 8
+## 17.76 b'unsat' at step 9
+## 111.12 b'unsat' at step 10
+## 477.50 b'unsat' at step 11
+## 1922.48 b'unsat' at step 12
+## 15129.48 b'unsat' at step 13
+## 51509.75 b'unsat' at step 14
+
+Solver: cvc4-cadical functional qf_abv
+## 0.12 b'unsat' at step 0
+## 0.15 b'unsat' at step 1
+## 0.20 b'unsat' at step 2
+## 0.26 b'unsat' at step 3
+## 0.33 b'unsat' at step 4
+## 0.42 b'unsat' at step 5
+## 0.57 b'unsat' at step 6
+## 0.89 b'unsat' at step 7
+## 1.81 b'unsat' at step 8
+## 10.92 b'unsat' at step 9
+## 42.03 b'unsat' at step 10
+## 175.03 b'unsat' at step 11
+## 773.34 b'unsat' at step 12
+## 1757.61 b'unsat' at step 13
+## 5411.34 b'unsat' at step 14
+## 37593.16 b'unsat' at step 15
