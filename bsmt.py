@@ -8,6 +8,7 @@ parser = argparse.ArgumentParser(description='Takes an incremental smt2 file and
 parser.add_argument('solver', metavar='<solver>', help='The solver to use')
 parser.add_argument('input_file', metavar='<input_file>', help='The incremental benchmark')
 parser.add_argument('--options', metavar='solver options', action='store', type=str, help='solver options to use')
+parser.add_argument('--incremental', action='store_true', help='run the solver in incremental mode')
 parser.add_argument('-q', action='store_true', help='print less output')
 
 args = parser.parse_args()
@@ -15,6 +16,7 @@ args = parser.parse_args()
 solver = args.solver
 input_file = args.input_file
 options = args.options
+incremental = args.incremental
 quiet = args.q
 
 cmd = [solver]
@@ -24,6 +26,9 @@ if options:
 
 if 'cvc4' in solver:
     cmd.append('--lang=smt')
+
+if incremental and ('cvc4' in solver or 'boolector' in solver):
+    cmd.append('--incremental')
 
 # preprocess the input file
 with open(input_file) as f:
@@ -40,10 +45,10 @@ step = 0
 stderr = []
 # Note: only handles push and pop by one right now
 for l in lines.split("\n"):
-    if "(push 1)" in l or "(push)" in l:
+    if not incremental and ("(push 1)" in l or "(push)" in l):
         proc_lines.append(";; {0}".format(l))
         push = idx
-    elif "(pop 1)" in l or "(pop)" in l:
+    elif not incremental and ("(pop 1)" in l or "(pop)" in l):
         assert push is not None
         assert 'push' in proc_lines[push]
         idx = push-1
