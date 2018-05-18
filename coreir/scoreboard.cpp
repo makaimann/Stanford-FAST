@@ -115,7 +115,7 @@ int main() {
   uint cntWidth = static_cast<uint>(log2(depth) + 0.5) + 1;
   Values wArg({{"width", Const::make(c, width)}});
   Values cwArg({{"width", Const::make(c, cntWidth)}});
-  Values dArg({{"depth", Const::make(c, width)}});
+  Values dArg({{"depth", Const::make(c, depth)}});
   Values wOne({{"width", Const::make(c, 1)}});
 
   Module *scoreboard = global->newModuleDecl("scoreboard",
