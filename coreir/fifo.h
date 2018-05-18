@@ -127,9 +127,9 @@ Namespace * CoreIRFIFO(Context *c) {
 
       // Mux for data_out
       Namespace *global = c->getGlobal();
-      Generator *paraMux = global->getGenerator("paraMux");
+      Generator *paraMuxOrr = global->getGenerator("paraMuxOrr");
       string mux = "data_out_mux";
-      def->addInstance(mux, paraMux,
+      def->addInstance(mux, paraMuxOrr,
                        {{"width", Const::make(c, width)},
                         {"num", Const::make(c, depth)}});
 

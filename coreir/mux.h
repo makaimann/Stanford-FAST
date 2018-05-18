@@ -77,9 +77,7 @@ Namespace * CoreIRUtils(Context *c) {
      });
 
   Generator * paraMux = global->newGeneratorDecl("paraMux", paraMuxTypeGen, muxparams);
-
-  Generator * paraMux = global->newGeneratorDecl("paraMux", paraMuxOrrTypeGen, muxparams);
-  paraMuxOrr->setGeneratorDefFromFun([](Context *c, Values args, ModuleDef *def) {
+  paraMux->setGeneratorDefFromFun([](Context *c, Values args, ModuleDef *def) {
 
       Namespace *global = c->getNamespace("global");
 
