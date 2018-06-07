@@ -2,11 +2,15 @@
 `define DESIGN
 
 `ifndef OPTIONS
- `include "options.sv"
+ `include "options.v"
 `endif
 
-`ifndef UTILS
- `include "utils.sv"
+`ifndef FF
+ `include "FF.v"
+`endif
+
+`ifndef PRIDEC
+ `include "pridec.v"
 `endif
 
 `ifndef FIFO
@@ -17,43 +21,9 @@
  `include "DWRR.sv"
 `endif
 
-module MagicPacketTracker(clk, rst, push, pop, captured,
-                          cnt, next_cnt);
-  parameter DEPTH = 8;
-  parameter CNTWID = $clog2(DEPTH) + 1;
-
-  input wire clk;
-  input wire rst;
-  input wire push;
-  input wire pop;
-  input wire captured;
-
-  output wire [CNTWID-1:0] cnt;
-  output wire [CNTWID-1:0] next_cnt;
-
-  FF #(.WIDTH(CNTWID)) ff_cnt (.rst(rst),
-			       .clk(clk),
-                               .en(push | pop | rst | captured),
-                               .D(next_cnt),
-                               .Q(cnt));
-
-  //************ Intermediate Signal **************//
-  wire [CNTWID-1:0] ssa_cnt;
-
-  assign ssa_cnt = ((cnt < DEPTH) & push & ~captured) ? cnt + 1 :
-                                                        cnt;
-
-  //************ Compute Next Value ***************//
-  // Using Single Static Assignment.
-  // Increments/Decrements until magic packet captured
-  // Then only decrements until magic packet exits
-  // Behavior after exit is undefined/unimportant
-  assign next_cnt = rst ? 0 :
-                          ((ssa_cnt > 0) & pop) ? ssa_cnt - 1 :
-                                                  ssa_cnt;
-
-endmodule
-
+`ifndef MAGICPACKETTRACKER
+ `include "MagicPacketTracker.v"
+`endif
 
 `ifdef ARBITER
 // if using arbiter, pop signal is connected to arbiter gnt
@@ -147,7 +117,7 @@ module Scoreboard(clk, rst, push, start, flat_data_in, input_quantums,
 								.gnt(gnt));
    generate
       for(i=0; i < NUM_REQS; i=i+1) begin : gen_fifos
-	     FIFO #(.WIDTH(WIDTH), .DEPTH(DEPTH)) f (.clk(clk),
+	     fifo #(.WIDTH(WIDTH), .DEPTH(DEPTH)) f (.clk(clk),
 						                         .rst(rst),
 						                         .push(push[i]),
 						                         .pop(pop[i]),
@@ -161,7 +131,7 @@ module Scoreboard(clk, rst, push, start, flat_data_in, input_quantums,
    endgenerate
 
 `else // !`ifdef ARBITER
-  FIFO #(.WIDTH(WIDTH), .DEPTH(DEPTH)) f (.clk(clk),
+  fifo #(.WIDTH(WIDTH), .DEPTH(DEPTH)) f (.clk(clk),
                                           .rst(rst),
                                           .push(push),
                                           .pop(pop[0]),
@@ -194,7 +164,6 @@ module Scoreboard(clk, rst, push, start, flat_data_in, input_quantums,
    assert property ((cnt != 'd6) | (data_out[0] != 'd11) );
  `endif
 
-   `ifdef EMBED
    initial begin
       assume (rst);
       assume (!start);
@@ -208,7 +177,6 @@ module Scoreboard(clk, rst, push, start, flat_data_in, input_quantums,
          assert(prop_signal);
       end
    end
-   `endif
 `endif
 
 endmodule

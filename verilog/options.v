@@ -2,7 +2,6 @@
 
 // Data Integrity Scoreboard Options
 //`define SB_SANITY
-//`define EMBED
 //`define ARBITER
 
 // FIFO Options
