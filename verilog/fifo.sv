@@ -1,13 +1,13 @@
 `ifndef OPTIONS
- `include "options.sv"
+ `include "options.v"
 `endif
 
 `define FIFO
-`ifndef UTILS
- `include "utils.sv"
+`ifndef FF
+ `include "FF.v"
 `endif
 
-module FIFO(clk, rst, push, pop, data_in,
+module fifo(clk, rst, push, pop, data_in,
             full, empty, data_out);
   parameter WIDTH = 8;
   parameter DEPTH = 8;
@@ -31,28 +31,28 @@ module FIFO(clk, rst, push, pop, data_in,
 
   wire  [PTRWID-1:0] wrPtrNxt;
 
-  assign wrPtrNxt = rst ? 0 :
-                        push ? wrPtr + 1 :
-                             wrPtr;
+  assign wrPtrNxt = rst ? {PTRWID{1'b0}} :
+                          push ? wrPtr + {{(PTRWID-1){1'b0}}, 1'b1} :
+                                 wrPtr;
 
   FF #(.WIDTH(PTRWID)) ff_wrPtr (.rst(rst),
-				 .clk(clk),
+				                 .clk(clk),
                                  .en(clkEn),
-                        	 .D(wrPtrNxt),
-                        	 .Q(wrPtr)
-  				);
+                        	     .D(wrPtrNxt),
+                        	     .Q(wrPtr)
+  				                 );
 
   //************** rdPtr logic ****************//
 
   logic [PTRWID-1:0] rdPtr;
   wire  [PTRWID-1:0] rdPtrNxt;
 
-  assign rdPtrNxt = rst ? 0 :
-                        pop ? rdPtr + 1 :
-                            rdPtr;
+  assign rdPtrNxt = rst ? {PTRWID{1'b0}} :
+                          pop ? rdPtr + {{(PTRWID-1){1'b0}}, 1'b1} :
+                                rdPtr;
 
   FF #(.WIDTH(PTRWID)) ff_rdPtr (.rst(rst),
-				 .clk(clk),
+				                 .clk(clk),
                                  .en(clkEn),
                                  .D(rdPtrNxt),
                                  .Q(rdPtr));
@@ -77,11 +77,11 @@ module FIFO(clk, rst, push, pop, data_in,
     genvar i;
     for(i = 0; i < DEPTH; i = i + 1) begin : entry_gen
       FF #(.WIDTH(WIDTH)) ff_entry_inst(.rst(rst),
-					.clk(clk),
+					                    .clk(clk),
                                         .en(push & (wrPtr[PTRWID-2:0] == i)),
                                         .D(data_in),
                                         .Q(entries[i])
-      				       );
+      				                    );
     end
   endgenerate
 `endif

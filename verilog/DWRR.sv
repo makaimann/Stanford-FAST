@@ -1,10 +1,10 @@
 `ifndef OPTIONS
- `include "options.sv"
+ `include "options.v"
 `endif
 
 `define DWRR
-`ifndef UTILS
- `include "utils.sv"
+`ifndef FF
+ `include "FF.v"
 `endif
 
 module DWRR(clk, rst, blk, reqs, input_quantums,
