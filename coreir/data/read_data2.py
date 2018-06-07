@@ -14,13 +14,15 @@ parser.add_argument('--log', action='store_true')
 args = parser.parse_args()
 
 input_file = args.input_file
-include_timeout = args.timeout is not None
 timeout = None
 if args.timeout:
     timeout = int(args.timeout)
-else:
-    # default timeout
-    timeout = 10000
+# else:
+#     # default timeout
+#     timeout = 10000
+
+include_timeout = timeout > 0
+
 log = args.log
 SolverH = "Solver: "
 TitleH = "TITLE: "
@@ -49,10 +51,13 @@ for line in text.split("\n"):
     if SolverH in line:
         solver = line[line.find(SolverH)+len(SolverH):].strip()
         assert solver not in solvers, "Should not have repeats"
-    elif "##" in line:
+    elif line[0:2] == '##':
         vals = line.split()
         t = read_time(vals[1])
-        s = int(line[line.find("step ")+len("step "):].replace("..", ""))
+        if 'Status:' in line:
+            s = steps[solver][-1] + 1
+        else:
+            s = int(line[line.find("step ")+len("step "):].replace("..", ""))
         assert solver is not None
         data[solver].append(t)
         steps[solver].append(s)
@@ -68,23 +73,33 @@ markers = ['^', 'o', '>', 'o', '>', '*']
 linestyles = ['-', '-.', ':', '-', '-.', '-', '-.']
 s = 0
 s2 = 0
+
 for solver, times in data.items():
-    assert solver in steps
-    sps = steps[solver]
     # interpolate if needed
+    sps = steps[solver]
     if not all(np.diff(sps) == 1):
         times = list(np.interp(range(max(sps) + 1), sps, times))
-    if len(times) < max_steps:
+        if len(times) > max_steps:
+            max_steps = len(times)
+        data[solver] = times
+
+
+for solver, times in data.items():
+    assert solver in steps
+    print(solver, len(times), max_steps, include_timeout)
+    if len(times) <= max_steps and include_timeout:
         times += [timeout]*(max_steps - len(times))
     times = np.array(times)
     plt.plot(times, label=solver, linewidth=2, marker=markers[s], linestyle=linestyles[s2])
-    print(solver, times)
     s = (s+1)%len(markers)
     s2 = (s2+1)%len(linestyles)
 
 if include_timeout:
     to = np.array([timeout, timeout])
     plt.plot([0, max_steps], to, 'r--', label='timeout', linewidth=2)
+
+# temp
+# plt.axvline(x=31, color='k', linestyle='--', label='JasperGold Low memory warning started here')
 
 if log:
     ax.set_yscale('log')

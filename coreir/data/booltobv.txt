@@ -1,4 +1,23 @@
-cvc4 qf_abv cosa functional
+TITLE: CVC4 Array Encodings of FIFO W=8 D=8 Data Integrity
+
+Solver: cvc4 qf_abv cosa
+## 0.02 b'unsat' at step 0
+## 0.05 b'unsat' at step 1
+## 0.09 b'unsat' at step 2
+## 0.16 b'unsat' at step 3
+## 0.29 b'unsat' at step 4
+## 0.40 b'unsat' at step 5
+## 0.53 b'unsat' at step 6
+## 0.85 b'unsat' at step 7
+## 1.99 b'unsat' at step 8
+## 14.96 b'unsat' at step 9
+## 61.06 b'unsat' at step 10
+## 187.75 b'unsat' at step 11
+## 968.15 b'unsat' at step 12
+## 5037.83 b'unsat' at step 13
+## 201600 b'unsat' at step 14
+
+Solver: cvc4 qf_abv cosa bool-to-bv ite
 ## 0.17 unsat at step 0
 ## 0.20 unsat at step 1
 ## 0.25 unsat at step 2
@@ -15,8 +34,10 @@ cvc4 qf_abv cosa functional
 ## 1474.87 unsat at step 13
 ## 7512.69 unsat at step 14
 ## 78800.79 unsat at step 15
+;; timeout
+## 201600 unsat at step 16
 
-cvc4 qf_abv cosa functional incremental
+Solver: cvc4 qf_abv cosa bool-to-bv ite incremental
 ## 0.18 unsat at step 0
 ## 0.22 unsat at step 1
 ## 0.28 unsat at step 2
@@ -34,3 +55,5 @@ cvc4 qf_abv cosa functional incremental
 ## 7975.68 unsat at step 14
 ## 22326.78 unsat at step 15
 ## 74988.17 unsat at step 16
+;; timeout
+## 201600 unsat at step 17

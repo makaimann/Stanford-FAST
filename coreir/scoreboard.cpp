@@ -3,7 +3,7 @@
 #include <sstream>
 #include <math.h>
 #include "coreir.h"
-#define ARRAY
+//#define ARRAY
 #ifdef ARRAY
  #include "fifo_mem.h"
 #else
