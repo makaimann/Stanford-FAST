@@ -1,4 +1,4 @@
-analyze -sv {./Scoreboard.sv} ; analyze -sv {./DWRR.sv} ; analyze -sv {./fifo.sv} ; analyze {./options.v} ; analyze {./FF.v} ; analyze {./pridec.v} ;
+analyze -sv {./Scoreboard.sv} ; analyze -sv {./DWRR.sv} ; analyze -sv {./fifo.sv} ; analyze -verilog {./options.v} ; analyze -verilog {./FF.v} ; analyze -sv {./pridec.sv} ;
 elaborate -top {Scoreboard} ;
 
 clock clk;

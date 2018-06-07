@@ -10,7 +10,7 @@
 `endif
 
 `ifndef PRIDEC
- `include "pridec.v"
+ `include "pridec.sv"
 `endif
 
 `ifndef FIFO
