@@ -8,7 +8,7 @@
 `endif
 
 module DWRR(clk, rst, blk, reqs, input_quantums,
-	    gnt);
+	        gnt);
    parameter NUM_REQS = 4; // Number of requestors
    parameter QWID     = 8; // Quantum widths  //TODO: Should have assumption that quantum widths are > than data packet size. Simplifies but not needed for correctness
    parameter PSIZE    = 8; // Data packet size
@@ -75,9 +75,10 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
    `endif
 
    FF #(.WIDTH(CNTWID)) ff_rrcnt(.clk(clk),
-				 .en(done), //TODO Figure out if this is the correct enable signal
-				 .D(next_rr_cnt),
-				 .Q(rr_cnt));
+                                 .rst(rst),
+				                 .en(done), //TODO Figure out if this is the correct enable signal
+				                 .D(next_rr_cnt),
+				                 .Q(rr_cnt));
 
    //**************** ROUND ROBIN SELECTOR *************//
    wire [NUM_REQS-1:0] 		       selected;
@@ -105,6 +106,7 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
    generate
       for(i = 0; i < NUM_REQS; i=i+1) begin : deficit_counters
    	     FF #(.WIDTH(QWID)) ff_defcnt(.clk(clk),
+                                      .rst(rst),
    				                      .en(next_selected[i] | selected[i]), //TODO Double check enable signal
    				                      .D(next_def_cnt[i]),
    				                      .Q(def_cnt[i]));

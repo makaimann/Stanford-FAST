@@ -2,7 +2,8 @@
 
 // Data Integrity Scoreboard Options
 //`define SB_SANITY
-//`define ARBITER
+`define ARBITER
+`define TAGS
 
 // FIFO Options
 //`define SANITY

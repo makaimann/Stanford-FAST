@@ -1,5 +1,6 @@
 initial
 assume [rst]
+assume (not [en])
 
 always -1
 assume (not [rst])

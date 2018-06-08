@@ -97,5 +97,7 @@ module fifo(clk, rst, push, pop, data_in,
  `endif
 `endif
 
+ assume property (@ (posedge clk) ((!empty | !pop) & (!full | !push)));
+
 
 endmodule
