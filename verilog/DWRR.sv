@@ -10,14 +10,14 @@
 module DWRR(clk, rst, blk, reqs, input_quantums,
 	    gnt);
    parameter NUM_REQS = 4; // Number of requestors
-   parameter QWID     = 8; // Quantum widths  //TODO: Should have assumption that quantum widths are > than data packet size. Simplifies but not needed for correctness
+   parameter QWID     = 8; // Quantum widths
    parameter PSIZE    = 8; // Data packet size
    parameter CNTWID   = $clog2(NUM_REQS);
 
    //********************* INTERFACE *******************//
-   input wire 			         clk;
-   input wire 			         rst;
-   input wire 			         blk;
+   input wire                            clk;
+   input wire                            rst;
+   input wire                            blk;
    input wire [NUM_REQS-1:0]             reqs;
    input wire [NUM_REQS*QWID-1:0]        input_quantums;
 
@@ -35,7 +35,7 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
    //************** COMMUNICATION SIGNALS **************//
 
    wire [NUM_REQS-1:0] 		       done_vec;
-   wire 			       done;
+   wire                            done;
    assign done = |done_vec;
 
    //*************** ROUND ROBIN COUNTER ***************//
@@ -52,10 +52,9 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
                                                         : rr_cnt + k + 1 - NUM_REQS;
       assign new_reqs[k] = reqs[new_index[k]];
    end
-   //TODO: given the reordered reqs, combinationally decide next_rr_cnt
 
-   PRIDEC #(.WIDTH(NUM_REQS)) priority_decoder (.vec(new_reqs),
-			       .out_vec(pri_reqs));
+   pridec #(.WIDTH(NUM_REQS)) priority_decoder (.vec(new_reqs),
+			                                    .out_vec(pri_reqs));
 
    reg [CNTWID-1:0] rr_cnt_update;
    integer 	     n;
@@ -70,22 +69,23 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
 
    `else
    assign next_rr_cnt = done ? rr_cnt + 1 :
-			       rr_cnt;
+			            rr_cnt;
 
    `endif
 
    FF #(.WIDTH(CNTWID)) ff_rrcnt(.clk(clk),
-				 .en(done), //TODO Figure out if this is the correct enable signal
-				 .D(next_rr_cnt),
-				 .Q(rr_cnt));
+                                 .rst(rst),
+				                 .en(done),
+				                 .D(next_rr_cnt),
+				                 .Q(rr_cnt));
 
    //**************** ROUND ROBIN SELECTOR *************//
    wire [NUM_REQS-1:0] 		       selected;
    wire [NUM_REQS-1:0] 		       next_selected;
    generate
       for(i = 0; i < NUM_REQS; i=i+1) begin : selected_logic
-	 assign selected[i] = rr_cnt == i;
-	 assign next_selected[i] = next_rr_cnt == i;
+	     assign selected[i] = rr_cnt == i;
+	     assign next_selected[i] = next_rr_cnt == i;
       end
    endgenerate
 
@@ -105,6 +105,7 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
    generate
       for(i = 0; i < NUM_REQS; i=i+1) begin : deficit_counters
    	     FF #(.WIDTH(QWID)) ff_defcnt(.clk(clk),
+                                      .rst(rst),
    				                      .en(next_selected[i] | selected[i]), //TODO Double check enable signal
    				                      .D(next_def_cnt[i]),
    				                      .Q(def_cnt[i]));
