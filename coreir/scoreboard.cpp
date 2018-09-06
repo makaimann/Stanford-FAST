@@ -53,7 +53,7 @@ int main() {
       def->addInstance("cnt", "coreir.reg", cwArg, {{"init", Const::make(c, BitVector(cntWidth, 0))}});
       def->connect("self.clk", "cnt.clk");
 
-      def->addInstance("cnt_lt_depth", "coreir.ult", cwArg);
+      def->addInstance("cnt_neq_depth", "coreir.neq", cwArg);
       def->addInstance("depth", "coreir.const", cwArg, {{"value", Const::make(c, cntWidth, depth)}});
       def->addInstance("ssa_cnt_and1", "coreir.and", wOne);
       def->addInstance("ssa_cnt_and2", "coreir.and", wOne);
@@ -63,9 +63,9 @@ int main() {
       def->addInstance("one", "coreir.const", cwArg, {{"value", Const::make(c, cntWidth, 1)}});
 
       // ssa_cnt connections
-      def->connect("cnt.out", "cnt_lt_depth.in0");
-      def->connect("depth.out", "cnt_lt_depth.in1");
-      def->connect("cnt_lt_depth.out", "ssa_cnt_and1.in0.0");
+      def->connect("cnt.out", "cnt_neq_depth.in0");
+      def->connect("depth.out", "cnt_neq_depth.in1");
+      def->connect("cnt_neq_depth.out", "ssa_cnt_and1.in0.0");
       def->connect("self.push", "ssa_cnt_and1.in1.0");
       def->connect("self.captured", "not_captured.in.0");
       def->connect("ssa_cnt_and1.out", "ssa_cnt_and2.in0");
@@ -83,16 +83,16 @@ int main() {
       // Behavior after exit is undefined/unimportant
 
       def->addInstance("next_cnt", "coreir.mux", cwArg);
-      def->addInstance("ssa_cnt_gt_0", "coreir.ugt", cwArg);
+      def->addInstance("ssa_cnt_neq_0", "coreir.neq", cwArg);
       def->addInstance("zero", "coreir.const", cwArg, {{"value", Const::make(c, cntWidth, 0)}});
       def->addInstance("next_cnt_and1", "coreir.and", wOne);
       def->addInstance("ssa_cnt_m1", "coreir.sub", cwArg);
       def->addInstance("decr_mux", "coreir.mux", cwArg);
 
       // next_cnt connections
-      def->connect("ssa_cnt.out", "ssa_cnt_gt_0.in0");
-      def->connect("zero.out", "ssa_cnt_gt_0.in1");
-      def->connect("ssa_cnt_gt_0.out", "next_cnt_and1.in0.0");
+      def->connect("ssa_cnt.out", "ssa_cnt_neq_0.in0");
+      def->connect("zero.out", "ssa_cnt_neq_0.in1");
+      def->connect("ssa_cnt_neq_0.out", "next_cnt_and1.in0.0");
       def->connect("self.pop", "next_cnt_and1.in1.0");
       def->connect("ssa_cnt.out", "ssa_cnt_m1.in0");
       def->connect("one.out", "ssa_cnt_m1.in1");
@@ -186,15 +186,15 @@ int main() {
 
   sbdef->addInstance("data_out_vld_and1", "coreir.and", wOne);
   sbdef->addInstance("data_out_vld_and2", "coreir.and", wOne);
-  sbdef->addInstance("cnt_gt_0", "coreir.ugt", cwArg);
+  sbdef->addInstance("cnt_neq_0", "coreir.neq", cwArg);
   sbdef->addInstance("zero", "coreir.const", cwArg, {{"value", Const::make(c, cntWidth, 0)}});
   sbdef->addInstance("next_cnt_eq0", "coreir.eq", cwArg);
 
   // data_out_vld connections
-  sbdef->connect("mpt.cnt", "cnt_gt_0.in0");
-  sbdef->connect("zero.out", "cnt_gt_0.in1");
+  sbdef->connect("mpt.cnt", "cnt_neq_0.in0");
+  sbdef->connect("zero.out", "cnt_neq_0.in1");
   sbdef->connect("en.out", "data_out_vld_and1.in0");
-  sbdef->connect("cnt_gt_0.out", "data_out_vld_and1.in1.0");
+  sbdef->connect("cnt_neq_0.out", "data_out_vld_and1.in1.0");
   sbdef->connect("mpt.next_cnt", "next_cnt_eq0.in0");
   sbdef->connect("zero.out", "next_cnt_eq0.in1");
   sbdef->connect("data_out_vld_and1.out", "data_out_vld_and2.in0");
@@ -219,7 +219,15 @@ int main() {
 
   c->runPasses({"rungenerators","flatten"});
 
-  saveToFile(global, "scoreboard.json", scoreboard);
+  string fname;
+
+  #ifdef ARRAY
+    fname = "scoreboard_array.json";
+  #else
+    fname = "scoreboard.json";
+  #endif
+
+  saveToFile(global, fname, scoreboard);
 
   return 0;
 }

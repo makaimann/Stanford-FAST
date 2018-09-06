@@ -57,8 +57,8 @@ Namespace * CoreIRUtils(Context *c) {
      [](Context *c, Values args) {
        uint width = args.at("width")->get<int>();
        uint num = args.at("num")->get<int>();
-       ASSERT((num & (num - 1)) == 0, "num should be a power of 2.")
-       ASSERT(num > 0, "num should be greater than 0")
+       ASSERT((num & (num - 1)) == 0, "num should be a power of 2.");
+       ASSERT(num > 0, "num should be greater than 0");
        uint l2d = static_cast<uint>(log2(num));
        Type *intype = c->BitIn()->Arr(width);
 
