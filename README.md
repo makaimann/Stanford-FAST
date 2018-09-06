@@ -1,14 +1,17 @@
 # Formal At Scale Technology
 
-This repo currently contains circular pointer FIFO and data integrity scoreboard implementations in both Magma and Verilog.
-The Magma circuit instances have not been tested or formally verified yet, but that will happen soon. The Verilog implementation
-has a bounded proof of data integrity for WIDTH=8 and DEPTH=8. A Deficit Weighted Round Robin Arbiter implementation is upcoming.
-Check back for updates.
+This repo currently contains circular pointer FIFO and data integrity scoreboard implementations in Verilog, Magma, and CoreIR.
+The modules are all parameterized and the current target is to improve bounded model checking of data integrity with WIDTH=8 and
+DEPTH=8, with the hope that improving BMC on these parameter values would also help with larger values. The Verilog implementation
+also contains a Deficit Weighted Round Robin Arbiter. This can be used in combination with the FIFO to create difficult verification
+challenges of composed arbiters and FIFOs.
+
+The data integrity scoreboard keeps track of the number of elements, non-deterministically selects a "magic packet", and checks that
+this packet exits when it should.
 
 ## Known Bugs
-* Yosys fails to fetch model when using `--unroll` and/or CVC4. Therefore, the generated .vcd file is incomplete. I (Makai) will look into this when I get a chance and submit a pull request. For now, if you're trying to look at counter examples, use yosys-smtbmc with `-s z3` and without `--unroll`.
-* As of now, Z3 will return incorrect counter examples in incremental mode with -nomem set in the yosys translation. There is a corresponding GitHub [issue](https://github.com/Z3Prover/z3/issues/1458).
-* For some reason, setting the width to 128 or larger overconstrains the verification query. In other words, setting the width to 128 makes the solvers return UNSAT even without the necessary environmental assumptions. I have no idea why...
+* The arbiter fails liveness checks if the quantum values are not fixed at the packet size. This needs further investigation.
+* On some systems, Yosys fails to produce a .vcd file for SMT solvers other than z3.
 
 ## Required Software
 * [Yosys](https://github.com/YosysHQ/yosys)
