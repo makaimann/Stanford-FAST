@@ -35,7 +35,7 @@ variable to `coreir`.**
 ## Verilog Flow
 In the Verilog directory are SystemVerilog implementations with embedded data integrity assertions and the necessary
 assumptions. The script `check.sh` uses Yosys to read in these files, process the circuit and produce SMT-LIB
-("disb.smt2"). Then it calls the `yosys-smtbmc` script (comes bundled with Yosys) with CVC4 as the underlying SMT solver
+("Scoreboard.smt2"). Then it calls the `yosys-smtbmc` script (comes bundled with Yosys) with CVC4 as the underlying SMT solver
 for a bounded model checking run. Adding `-i` to the `yosys-smtbmc` invocation would start a k-induction run. If a
 counter example is found, it is written to "disb.vcd".
 
