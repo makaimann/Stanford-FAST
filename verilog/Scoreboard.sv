@@ -38,8 +38,8 @@ module Scoreboard(clk, rst, push, start, flat_data_in, input_quantums,
   parameter QWID  = `ARB_QWID; // Quantum widths
 
   `ifdef ARBITER
+   parameter NUM_REQS = `NUM_REQS; // Number of requestors
    input wire [NUM_REQS*QWID-1:0]            input_quantums;
-   parameter NUM_REQS = 4; // Number of requestors
    wire [NUM_REQS-1:0]                 pop;
   `else
    parameter NUM_REQS = 1;
