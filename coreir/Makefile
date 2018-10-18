@@ -11,5 +11,11 @@ scoreboard:
 scoreboard_array:
 	$(CXX) $(CXXFLAGS) -DARRAY=1 scoreboard.cpp -o scoreboard_array.out $(INCLUDE_FLAGS) $(LDLIB_FLAGS) $(LIB_FLAGS)
 
+scoreboard_arith:
+	$(CXX) $(CXXFLAGS) scoreboard_arith.cpp -o scoreboard_arith.out $(INCLUDE_FLAGS) $(LDLIB_FLAGS) $(LIB_FLAGS)
+
+scoreboard_arith_array:
+	$(CXX) $(CXXFLAGS) -DARRAY=1 scoreboard_arith.cpp -o scoreboard_arith_array.out $(INCLUDE_FLAGS) $(LDLIB_FLAGS) $(LIB_FLAGS)
+
 clean:
-	rm *.json *.out
+	rm *.json *.out || true

@@ -27,13 +27,11 @@ module fifo(clk, rst, push, pop, data_in,
 
   //************** wrPtr logic *****************//
 
+ (* keep *)
   logic [PTRWID-1:0] wrPtr;
-
   wire  [PTRWID-1:0] wrPtrNxt;
 
-  assign wrPtrNxt = rst ? {PTRWID{1'b0}} :
-                          push ? wrPtr + {{(PTRWID-1){1'b0}}, 1'b1} :
-                                 wrPtr;
+  assign wrPtrNxt = rst ? {PTRWID{1'b0}} : wrPtr + {{(PTRWID-1){1'b0}}, push};
 
   FF #(.WIDTH(PTRWID)) ff_wrPtr (.rst(rst),
 				                 .clk(clk),
@@ -44,12 +42,11 @@ module fifo(clk, rst, push, pop, data_in,
 
   //************** rdPtr logic ****************//
 
+  (* keep *)
   logic [PTRWID-1:0] rdPtr;
   wire  [PTRWID-1:0] rdPtrNxt;
 
-  assign rdPtrNxt = rst ? {PTRWID{1'b0}} :
-                          pop ? rdPtr + {{(PTRWID-1){1'b0}}, 1'b1} :
-                                rdPtr;
+  assign rdPtrNxt = rst ? {PTRWID{1'b0}} : rdPtr + {{(PTRWID-1){1'b0}}, pop};
 
   FF #(.WIDTH(PTRWID)) ff_rdPtr (.rst(rst),
 				                 .clk(clk),
@@ -65,11 +62,12 @@ module fifo(clk, rst, push, pop, data_in,
 
 `ifdef ARRAY
    reg [WIDTH-1:0]   entries [DEPTH-1:0];
+   wire [WIDTH-1:0]  input_data;
+
+   assign input_data = push ? data_in : entries[wrPtr[PTRWID-2:0]];
 
    always @(posedge clk) begin
-      if (push) begin
-	     entries[wrPtr[PTRWID-2:0]] <= data_in;
-      end
+	    entries[wrPtr[PTRWID-2:0]] <= input_data;
    end
 `else
   wire [WIDTH-1:0] entries [DEPTH-1:0];

@@ -23,15 +23,14 @@ module MagicPacketTracker(clk, rst, push, pop, captured,
   //************ Intermediate Signal **************//
   wire [CNTWID-1:0] ssa_cnt;
 
-  assign ssa_cnt = ((cnt < DEPTH) & push & ~captured) ? cnt + {{(CNTWID-1){1'b0}}, 1'b1} :
-                                                        cnt;
+  assign ssa_cnt =  cnt + {{(CNTWID-1){1'b0}}, ((cnt != DEPTH) & push & ~captured)};
+
 
   //************ Compute Next Value ***************//
   // Using Single Static Assignment.
   // Increments/Decrements until magic packet captured
   // Then only decrements until magic packet exits
   // Behavior after exit is undefined/unimportant
-  assign next_cnt = rst ? {CNTWID{1'b0}} : ((ssa_cnt > 0) & pop) ? ssa_cnt - {{(CNTWID-1){1'b0}}, 1'b1} :
-                                        ssa_cnt;
+  assign next_cnt = rst ? {CNTWID{1'b0}} : ssa_cnt - {{(CNTWID-1){1'b0}}, ((ssa_cnt != 0) & pop)};
 
 endmodule

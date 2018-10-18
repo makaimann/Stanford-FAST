@@ -143,7 +143,7 @@ module Scoreboard(clk, rst, push, start, flat_data_in, input_quantums,
 
 
 
-  assign data_out_vld = en & (cnt > 0) & (next_cnt == 0); //There was at least one packet stored, and now it's exiting
+  assign data_out_vld = en & (cnt != 0) & (next_cnt == 0); //There was at least one packet stored, and now it's exiting
 
   // used in data_integrity.smtc
   wire 	       prop_push;
@@ -160,23 +160,29 @@ module Scoreboard(clk, rst, push, start, flat_data_in, input_quantums,
   assign prop_signal = ~data_out_vld | (magic_packet == data_out[0]);
 
 `ifdef FORMAL
+   // assume property (!prop_empty | !prop_pop);
+   // assume property (!prop_full | !prop_push);
  `ifdef SB_SANITY
    assert property ((cnt != 'd6) | (data_out[0] != 'd11) );
  `endif
 
-   initial begin
-      assume (rst);
-      assume (!start);
-   end
+   assume property (!rst);
+   assume property (!prop_empty | !prop_pop);
+   assume property (!prop_full | !prop_push);
 
-   always @* begin
-      if (!$initstate) begin
-         assume(!rst);
-	     assume(!prop_empty | !prop_pop);
-	     assume(!prop_full | !prop_push);
-         assert(prop_signal);
-      end
-   end
+   // initial begin
+   //    assume (rst);
+   //    assume (!start);
+   // end
+
+   // always @* begin
+   //    if (!$initstate) begin
+   //       assume(!rst);
+   //       assume(!prop_empty | !prop_pop);
+   //       assume(!prop_full | !prop_push);
+   //       //assert(prop_signal);
+   //    end
+   // end
 `endif
 
 endmodule
