@@ -118,13 +118,13 @@ module Scoreboard(clk, rst, push, start, flat_data_in, input_quantums,
    generate
       for(i=0; i < NUM_REQS; i=i+1) begin : gen_fifos
 	     fifo #(.WIDTH(WIDTH), .DEPTH(DEPTH)) f (.clk(clk),
-						                         .rst(rst),
-						                         .push(push[i]),
-						                         .pop(pop[i]),
-						                         .data_in(data_in[i]),
-						                         .full(full[i]),
-						                         .empty(empty[i]),
-						                         .data_out(data_out[i]));
+						     .rst(rst),
+						     .push(push[i]),
+						     .pop(pop[i]),
+						     .data_in(data_in[i]),
+						     .full(full[i]),
+						     .empty(empty[i]),
+						     .data_out(data_out[i]));
 	     assign reqs[i] = ~empty[i]; // For now assuming every non-empty fifo is requesting
 	     assign pop[i] = gnt[i];
       end
