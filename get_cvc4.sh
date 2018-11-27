@@ -15,11 +15,10 @@ cd CVC4
 echo "Getting ANTLR, CaDiCaL, and cryptominisat"
 ./contrib/get-antlr-3.4 && ./contrib/get-cadical && ./contrib/get-cryptominisat
 
-echo "Setting up build system"
-./autogen.sh
-
 echo "Configuring CVC4 with best options for hardware verification"
-./configure production-staticbinary --with-cadical --with-cryptominisat
+./configure.sh production --static --cadical --cryptominisat
+
+cd build
 
 make -j$(nproc)
 
