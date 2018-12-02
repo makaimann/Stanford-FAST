@@ -8,7 +8,7 @@
  `include "DWRR.sv"
 `endif
 
-module arbitrated_fifos(clk, rst, push, flat_data_in, quantums,
+module arbitrated_fifos(clk, rst, push, reqs, flat_data_in, quantums,
 			gnt, data_out);
 
    parameter NUM_REQS   =    `NUM_REQS,
@@ -18,8 +18,10 @@ module arbitrated_fifos(clk, rst, push, flat_data_in, quantums,
 
    input 		      clk, rst;
    input [NUM_REQS-1:0]       push;
-   input [NUM_REQS*QWID-1:0]  quantums;
+   input [NUM_REQS-1:0]       reqs;
    input [NUM_REQS*WIDTH-1:0] flat_data_in;
+   input [NUM_REQS*QWID-1:0]  quantums;
+
 
    output reg [WIDTH-1:0]     data_out;
    output [NUM_REQS-1:0]      gnt;
@@ -29,8 +31,7 @@ module arbitrated_fifos(clk, rst, push, flat_data_in, quantums,
    wire [NUM_REQS-1:0] 	      empty;
    wire [NUM_REQS-1:0] 	      full;
 
-   wire [NUM_REQS-1:0] 	      reqs;
-
+   wire [NUM_REQS-1:0] 	      guarded_reqs;
 
    // Unpack data_in
 
@@ -47,7 +48,7 @@ module arbitrated_fifos(clk, rst, push, flat_data_in, quantums,
    DWRR #(.NUM_REQS(NUM_REQS), .QWID(QWID), .PSIZE(WIDTH)) arb (.clk(clk),
 								.rst(rst),
 								.blk(1'b0),
-								.reqs(reqs),
+								.reqs(guarded_reqs),
 								.input_quantums(quantums),
 								.gnt(gnt));
    generate
@@ -61,7 +62,7 @@ module arbitrated_fifos(clk, rst, push, flat_data_in, quantums,
 						 .empty(empty[i]),
 						 .data_out(fifo_data_out[i]));
 	 // For now assuming every non-empty fifo is requesting
-	 assign reqs[i] = ~empty[i];
+	 assign guarded_reqs[i] = reqs[i] & ~empty[i];
       end
    endgenerate
 
@@ -76,7 +77,7 @@ module arbitrated_fifos(clk, rst, push, flat_data_in, quantums,
 
 endmodule
 
-module top(clk, rst, push0, push1, flat_data_in0, flat_data_in1, quantums,
+module top(clk, rst, push0, push1, reqs0, reqs1, flat_data_in0, flat_data_in1, quantums,
 	   pop0, pop1, data_out0, data_out1);
 
    parameter NUM_REQS   =    `NUM_REQS,
@@ -86,17 +87,13 @@ module top(clk, rst, push0, push1, flat_data_in0, flat_data_in1, quantums,
 
    input 		      clk, rst;
    input [NUM_REQS-1:0]       push0, push1;
+   input [NUM_REQS-1:0]       reqs0, reqs1;
    
    input [NUM_REQS*QWID-1:0]  quantums;
    input [NUM_REQS*WIDTH-1:0] flat_data_in0, flat_data_in1;
 
    output [NUM_REQS-1:0]      pop0, pop1;
    output [WIDTH-1:0] 	      data_out0, data_out1;
-
-
-
-   // assuming quantums are stable -- this is the regular use-case
-   assume property (@(posedge clk) $stable(quantums));
 
    arbitrated_fifos
 
@@ -108,6 +105,7 @@ module top(clk, rst, push0, push1, flat_data_in0, flat_data_in1, quantums,
    af0 (.clk(clk),
 	.rst(rst),
 	.push(push0),
+	.reqs(reqs0),
 	.gnt(pop0),
 	.flat_data_in(flat_data_in0),
 	.quantums(quantums),
@@ -123,6 +121,7 @@ module top(clk, rst, push0, push1, flat_data_in0, flat_data_in1, quantums,
    af1 (.clk(clk),
 	.rst(rst),
 	.push(push1),
+	.reqs(reqs1),
 	.gnt(pop1),
 	.flat_data_in(flat_data_in1),
 	.quantums(quantums),
