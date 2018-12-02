@@ -43,7 +43,10 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
    wire [CNTWID-1:0] 		       next_rr_cnt;
    wire [CNTWID-1:0] 		       new_index [NUM_REQS-1:0];
 
-   `ifdef COMB_UPDATE
+`ifdef SLOW_UPDATE
+   assign next_rr_cnt = done ? rr_cnt + 1 : rr_cnt;
+
+`else
    wire [NUM_REQS-1:0] new_reqs;
    wire [NUM_REQS-1:0] pri_reqs;
    genvar k;
@@ -56,28 +59,26 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
    pridec #(.WIDTH(NUM_REQS)) priority_decoder (.vec(new_reqs),
 			                                    .out_vec(pri_reqs));
 
-   reg [CNTWID-1:0] rr_cnt_update;
+   // allow jumping to the next requestor
+   reg [CNTWID-1:0] rr_cnt_jump;
    integer 	     n;
    always @* begin
-      rr_cnt_update = 'd0;
+      rr_cnt_jump = rr_cnt; // default to current value
       for( n=0; n < NUM_REQS; n=n+1) begin
-	     rr_cnt_update = rr_cnt_update | ({NUM_REQS{pri_reqs[n]}} & new_index[n]);
+         if (pri_reqs[n])
+           rr_cnt_jump = new_index[n];
       end
    end
 
-   assign next_rr_cnt = rr_cnt_update;
+   assign next_rr_cnt = rr_cnt_jump;
 
-   `else
-   assign next_rr_cnt = done ? rr_cnt + 1 :
-			            rr_cnt;
-
-   `endif
+`endif // !`ifdef SLOW_UPDATE
 
    FF #(.WIDTH(CNTWID)) ff_rrcnt(.clk(clk),
                                  .rst(rst),
-				                 .en(done),
-				                 .D(next_rr_cnt),
-				                 .Q(rr_cnt));
+				                         .en(done),
+				                         .D(next_rr_cnt),
+				                         .Q(rr_cnt));
 
    //**************** ROUND ROBIN SELECTOR *************//
    wire [NUM_REQS-1:0] 		       selected;
@@ -95,10 +96,10 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
    wire [QWID-1:0]       next_def_cnt [NUM_REQS-1:0];
 
    // Useful signal for driving done_vec
-   wire [NUM_REQS-1:0] selected_and_empty;
+   wire [NUM_REQS-1:0] selected_and_not_req;
    generate
       for(i = 0; i < NUM_REQS; i=i+1) begin : when_to_pass
-	     assign selected_and_empty[i] = selected[i] & ~reqs[i];
+	     assign selected_and_not_req[i] = selected[i] & ~reqs[i];
       end
    endgenerate
 
@@ -112,17 +113,19 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
 
    	     wire [QWID-1:0] dc_plus_quant;
 
-         `ifdef COMB_UPDATE
+         `ifdef SLOW_UPDATE
+         assign dc_plus_quant = (~selected[i] & next_selected[i]) ? def_cnt[i] + quantums[i] :
+   	                     def_cnt[i];
+         assign done_vec[i] = selected[i] & (~reqs[i] | (def_cnt[i] < PSIZE));
+
+         `else
    	     assign dc_plus_quant = (next_selected[i]) ? def_cnt[i] + quantums[i] :
    	                         	def_cnt[i];
          assign done_vec[i] = selected[i] & (~reqs[i] | (next_def_cnt[i] < PSIZE));
-         `else
-         assign dc_plus_quant = (~selected[i] & next_selected[i]) ? def_cnt[i] + quantums[i] :
-   	                         	def_cnt[i];
-         assign done_vec[i] = selected[i] & (~reqs[i] | (def_cnt[i] < PSIZE));
          `endif
 
-   	     assign next_def_cnt[i] = (rst | selected_and_empty[i]) ? 0 :
+         // might be better for partial order reductions to not reset when not requesting
+   	     assign next_def_cnt[i] = (rst | selected_and_not_req[i]) ? 0 :
    				                  gnt[i] ? dc_plus_quant - PSIZE :
    				                  dc_plus_quant;
       end

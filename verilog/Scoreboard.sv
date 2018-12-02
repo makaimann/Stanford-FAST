@@ -166,10 +166,6 @@ module Scoreboard(clk, rst, push, start, flat_data_in, input_quantums,
    assert property ((cnt != 'd6) | (data_out[0] != 'd11) );
  `endif
 
-   assume property (!rst);
-   assume property (!prop_empty | !prop_pop);
-   assume property (!prop_full | !prop_push);
-
    // initial begin
    //    assume (rst);
    //    assume (!start);

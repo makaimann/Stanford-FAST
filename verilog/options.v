@@ -2,14 +2,14 @@
 
 // Data Integrity Scoreboard Options
 //`define SB_SANITY
-//`define ARBITER
+`define ARBITER
 
 // FIFO Options
 //`define SANITY
 `define ARRAY
 
 // DWRR Arbiter Options
-//`define COMB_UPDATE
+//`define SLOW_UPDATE
 
 // Parameters
 `define FIFO_DEPTH 8
