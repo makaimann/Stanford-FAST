@@ -116,18 +116,19 @@ module DWRR(clk, rst, blk, reqs, input_quantums,
          `ifdef SLOW_UPDATE
          assign dc_plus_quant = (~selected[i] & next_selected[i]) ? def_cnt[i] + quantums[i] :
    	                     def_cnt[i];
-         assign done_vec[i] = selected[i] & (~reqs[i] | (def_cnt[i] < PSIZE));
+         assign done_vec[i] = gnt[i] & (selected[i] & (~reqs[i] | (def_cnt[i] < PSIZE)));
 
          `else
    	     assign dc_plus_quant = (next_selected[i]) ? def_cnt[i] + quantums[i] :
    	                         	def_cnt[i];
-         assign done_vec[i] = selected[i] & (~reqs[i] | (next_def_cnt[i] < PSIZE));
+         assign done_vec[i] = gnt[i] & (selected[i] & (~reqs[i] | (next_def_cnt[i] < PSIZE)));
          `endif
 
          // might be better for partial order reductions to not reset when not requesting
-   	     assign next_def_cnt[i] = (rst | selected_and_not_req[i]) ? 0 :
-   				                  gnt[i] ? dc_plus_quant - PSIZE :
-   				                  dc_plus_quant;
+   	     assign next_def_cnt[i] = rst ? 0 :
+                                  selected_and_not_req[i] ? def_cnt[i] :
+   				                        gnt[i] ? dc_plus_quant - PSIZE :
+   				                        dc_plus_quant;
       end
    endgenerate
 
