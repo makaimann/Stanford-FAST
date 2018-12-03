@@ -69,6 +69,10 @@ assume -name stable_quantums {$stable(quantums)}
 # quantum should be large enough
 assume -name large_enough_quantums { (quantums[7:0] >= 8) && (quantums[15:8] >= 8)}
 assume -name no_rst {!rst}
+# basic true assumption about scoreboard state
+# holds and can be proven after a reset sequence
+assume -name match_sb0_fifo {!sb0.ff_en.Q |-> ((af0.gen_fifos[0].f.wrPtr - af0.gen_fifos[0].f.rdPtr) == sb0.mpt.ff_cnt.Q)}
+assume -name match_sb1_fifo {!sb1.ff_en.Q |-> ((af1.gen_fifos[0].f.wrPtr - af1.gen_fifos[0].f.rdPtr) == sb1.mpt.ff_cnt.Q)}
 
 cover -name eq_then_not "${EQ} ##1 !${EQ}"
 
