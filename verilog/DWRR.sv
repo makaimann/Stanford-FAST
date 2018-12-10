@@ -7,6 +7,10 @@
  `include "FF.v"
 `endif
 
+`ifndef PRIDEC
+ `include "pridec.sv"
+`endif
+
 module DWRR(clk, rst, blk, reqs, input_quantums,
 	    gnt);
    parameter NUM_REQS = 4; // Number of requestors
