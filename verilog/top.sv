@@ -7,7 +7,7 @@
 `endif
 
 module top(clk, rst, start, push, flat_data_in, reqs, quantums,
-           data_out, prop_signal);
+           empty, full, data_out, prop_signal);
 
    parameter NUM_REQS   =    `NUM_REQS,
         	   WIDTH      =    `FIFO_DWIDTH,
@@ -19,6 +19,8 @@ module top(clk, rst, start, push, flat_data_in, reqs, quantums,
    input  [NUM_REQS-1:0]       push, reqs;
    input  [NUM_REQS*WIDTH-1:0] flat_data_in;
    input  [NUM_REQS*QWID-1:0]  quantums;
+   output [NUM_REQS-1:0]       empty;
+   output [NUM_REQS-1:0]       full;
    output [WIDTH-1:0]          data_out;
    output                      prop_signal;
 
@@ -51,6 +53,8 @@ module top(clk, rst, start, push, flat_data_in, reqs, quantums,
 	     .gnt(pop),
 	     .flat_data_in(flat_data_in),
 	     .quantums(quantums),
+       .empty(empty),
+       .full(full),
 	     .data_out(data_out));
 
    SimpleScoreboard

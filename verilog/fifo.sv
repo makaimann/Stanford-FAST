@@ -18,7 +18,7 @@ module fifo(clk, rst, push, pop, data_in,
   input wire push;
   input wire pop;
   input wire [WIDTH-1:0] data_in;
-
+  (* keep *)
   output wire full;
   output wire empty;
   output wire [WIDTH-1:0] data_out;
