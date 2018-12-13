@@ -18,9 +18,10 @@ module arbitrated_fifos(clk, rst, push, reqs, flat_data_in, quantums,
    parameter NUM_REQS   =    `NUM_REQS,
              WIDTH      =    `FIFO_DWIDTH,
              DEPTH      =    `FIFO_DEPTH,
-             QWID       =    `ARB_QWID;
+             QWID       =    `ARB_QWID,
+             ABSTRACT   =     0;
 
-   input            clk, rst;
+   input                      clk, rst;
    input [NUM_REQS-1:0]       push;
    input [NUM_REQS-1:0]       reqs;
    input [NUM_REQS*WIDTH-1:0] flat_data_in;
@@ -28,7 +29,8 @@ module arbitrated_fifos(clk, rst, push, reqs, flat_data_in, quantums,
 
    output [NUM_REQS-1:0]      empty;
    output [NUM_REQS-1:0]      full;
-   output [NUM_REQS-1:0]      gnt;
+   (* keep *)
+   output reg [NUM_REQS-1:0]  gnt;
    output reg [WIDTH-1:0]     data_out;
 
    wire [WIDTH-1:0]         fifo_data_out [NUM_REQS-1:0];
@@ -46,13 +48,21 @@ module arbitrated_fifos(clk, rst, push, reqs, flat_data_in, quantums,
       end
    endgenerate
 
-
-   DWRR #(.NUM_REQS(NUM_REQS), .QWID(QWID), .PSIZE(WIDTH)) arb (.clk(clk),
-                .rst(rst),
-                .blk(1'b0),
-                .reqs(guarded_reqs),
-                .input_quantums(quantums),
-                .gnt(gnt));
+   if (ABSTRACT) begin
+      assume property ((reqs != 0) | (gnt == 0));
+      assume property ((reqs == 0) | (|(gnt & reqs)));
+      assume property ((reqs == 0) || ((gnt != 0) && ((gnt & (gnt - 1)) == 0)));
+   end
+   else begin
+      DWRR
+        #(.NUM_REQS(NUM_REQS), .QWID(QWID), .PSIZE(WIDTH))
+      arb (.clk(clk),
+           .rst(rst),
+           .blk(1'b0),
+           .reqs(guarded_reqs),
+           .input_quantums(quantums),
+           .gnt(gnt));
+   end
    generate
       for(i=0; i < NUM_REQS; i=i+1) begin : gen_fifos
          fifo #(.WIDTH(WIDTH), .DEPTH(DEPTH)) f (.clk(clk),
