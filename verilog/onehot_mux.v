@@ -13,7 +13,7 @@ module onehot_mux(onehot,
    generate
       genvar                   i;
       for(i = 0; i < CHANNELS; i = i+1) begin: unpack_inputs
-         assign unpacked_i_data[i] = i_data[(i*WIDTH):WIDTH];
+         assign unpacked_i_data[i] = i_data[((i+1)*WIDTH)-1:i*WIDTH];
       end
    endgenerate
 
