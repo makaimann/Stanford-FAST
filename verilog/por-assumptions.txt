@@ -1,0 +1,15 @@
+((!'empty'[0:0] | !'reqs'[0:0]) = 1_1)
+((!'empty'[1:1] | !'reqs'[1:1]) = 1_1)
+((!'full'[0:0] | !'push'[0:0]) = 1_1)
+((!'full'[1:1] | !'push'[1:1]) = 1_1)
+# Force sequential
+(('push'[0:0] & 'push'[1:1]) = 0_1)
+((!('push'[0:0] | 'push'[1:1]) | ('reqs' bvcomp 0_2)) = 1_1)
+# No stutter
+(('push'[0:0] | 'push'[1:1] | 'reqs'[0:0] | 'reqs'[1:1]) = 1_1)
+# POR
+((!'push'[1:1] | !next('push'[0:0])) = 1_1)
+# not sure if we need all three?
+((('reqs' bvcomp 0_2) | ((next('push') bvcomp 0_2) | !('full' bvcomp 0_2))) = 1_1)
+((!'reqs'[0:0] | (!next('push'[0:0]) | 'full'[0:0])) = 1_1)
+((!'reqs'[1:1] | (!next('push'[1:1]) | 'full'[1:1])) = 1_1)

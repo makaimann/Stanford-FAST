@@ -1,0 +1,83 @@
+[GENERAL]
+model_file: top.sv[top],reset.ets
+abstract_clock: True
+vcd: True
+
+[DEFAULT]
+bmc_length: 17
+solver_name: btor
+precondition: reset_done
+
+[NEVER RESET DONE]
+description: "Basic cover for reset sequence"
+formula: !reset_done
+verification: safety
+assumptions: assumptions.txt
+expected: False
+
+[FULL SANITY]
+description: "Check that full is wired correctly"
+formula: 'full'[0:0] = af.gen_fifos[0].f.full
+verification: safety
+assumptions: assumptions.txt
+expected: True
+prove: True
+
+[GNT_COVER]
+description: "Check that arbiter can grant"
+formula: 'pop'[0:0] = 0_1
+verification: safety
+assumptions: assumptions.txt
+expected: False
+
+[DATA_OUT_VLD_COVER]
+description: "Check that the data can exit"
+formula: 'data_out_vld' = 0_1
+verification: safety
+assumptions: assumptions.txt
+expected: False
+
+[ABS_ARB_GNT_COVER]
+description: "Testing gnt_i"
+formula: 'gnt_i' = next('gnt_i')
+verification: safety
+assumptions: assumptions.txt
+expected: False
+
+[DATA INTEGRITY]
+description: "Check data integrity of the N FIFOs + Arbiter"
+formula: 'prop_signal' = 1_1
+verification: safety
+assumptions: assumptions.txt
+expected: Unknown
+smt2_tracing: data-integrity.smt2
+# bmc_length: 10
+# skip_solving: True
+
+[POR COVER]
+description: "Check that POR of the N FIFOs + Arbiter hasn't overconstrained the system"
+bmc_length: 20
+formula: 'full' != 1_2
+verification: safety
+assumptions: por-assumptions.txt
+expected: False
+
+[CHECK POR]
+description: "Check that POR is actually working"
+bmc_length: 20
+formula: ('reqs'[0:0] = 1_1) -> ((next('push'[0:0]) = 0_1) | ('full'[0:0] = 1_1))
+verification: safety
+assumptions: por-assumptions.txt
+expected: True
+prove: True
+
+
+[POR DATA INTEGRITY]
+description: "Check data integrity of the N FIFOs + Arbiter using Partial Order Reduction"
+formula: 'prop_signal' = 1_1
+verification: safety
+assumptions: por-assumptions.txt
+expected: Unknown
+smt2_tracing: por.smt2
+# bmc_length: 10
+# skip_solving: True

@@ -1,0 +1,25 @@
+[GENERAL]
+model_file: fifo_top.sv[fifo_top],reset.ets
+abstract_clock: True
+vcd: True
+
+[DEFAULT]
+bmc_length: 17
+solver_name: btor
+precondition: reset_done
+
+[NEVER RESET DONE]
+description: "Basic cover for reset sequence"
+formula: !reset_done
+verification: safety
+assumptions: fifo-assumptions.txt
+expected: False
+
+[DATA INTEGRITY]
+description: "Check data integrity of the N FIFOs + Arbiter"
+formula: 'prop_signal' = 1_1
+verification: safety
+assumptions: fifo-assumptions.txt
+expected: Unknown
+smt2_tracing: fifo-data-integrity.smt2
+

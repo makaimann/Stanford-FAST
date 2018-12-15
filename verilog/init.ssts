@@ -1,0 +1,18 @@
+INPUT
+
+OUTPUT
+
+STATE
+
+VAR
+
+INIT
+rst = 0_1 ;
+sb.ff_en.Q = 0_1 ;
+(af.gen_fifos[0].f.ff_wrPtr.Q - af.gen_fifos[0].f.ff_rdPtr.Q) = sb.mpt.ff_cnt.Q ;
+sb.mpt.ff_cnt.Q <= 8_4 ;
+
+INVAR
+
+TRANS
+next('rst') = 0_1 ;
