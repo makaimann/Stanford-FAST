@@ -1,0 +1,58 @@
+\documentclass[10pt,twocolumn,letterpaper]{article}
+\usepackage{amsmath}
+
+\begin{document}
+\title{Doubly Linked Lists}
+\maketitle
+
+\section{Operators}
+
+\begin{enumerate}
+\item \textit{head}
+\item \textit{tail}
+\item \textit{rhead}
+\item \textit{rtail}
+\item \textit{append}
+\item \textit{prepend}
+\item \textit{len}
+\end{enumerate}
+
+\section{Special Constants}
+\begin{enumerate}
+\item \textit{nil}
+\end{enumerate}
+
+\section{Axioms}
+
+These have not been proven to be a full axiomatization.
+
+$l_i$ are list constants and $e_i$ are elements.
+
+\begin{equation}
+\begin{aligned}
+&len(\textit{nil}) = 0 \\
+&l = nil \vee len(tail(l)) = len(l) - 1 \\
+&l = nil \vee len(rtail(l)) = len(l) - 1 \\
+&l_1 = l_2 \implies (head(l_1) = head(l_2) \wedge tail(l_1) = tail(l_2)) \\
+&l_1 = l_2 \implies (rhead(l_1) = rhead(l_2) \wedge rtail(l_1) = rtail(l_2)) \\
+&tail(rtail(l)) = rtail(tail(l)) \\
+&len(l) = 1 \implies tail(l) = nil \\
+&len(prepend(l, e)) = len(l) + 1 \\
+&len(append(l, e)) = len(l) + 1 \\
+&head(prepend(l, e)) = e  \\
+&rhead(append(l, e)) = e  \\
+&tail(prepend(l, e)) = l  \\
+&rtail(append(l, e)) = l  \\
+%%&tail(prepend(nil, e)) = nil \\
+%%&rtail(prepend(nil, e)) = nil \\
+%%&tail(append(nil, e)) = nil \\
+%%&rtail(append(nil, e)) = nil
+\end{aligned}
+\end{equation}
+
+\section{Ideas}
+\begin{enumerate}
+\item From Nikolaj Bjorner's thesis: Could express as a word unification problem (with concatenation as primitve operator). But, this is doubly exponential in the worst case.
+\item However, I wonder if it's possible to have concatenation as a 'hidden' operator, used only in decision procedure rules. Not sure if that makes any sense. It would be nice to recognize that two connected FIFOs are equivalent to a single FIFO
+\end{enumerate}
+\end{document}
