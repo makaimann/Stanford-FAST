@@ -22,8 +22,8 @@ formula: 'prop_signal' = 1_1
 verification: safety
 assumptions: assumptions.txt
 expected: Unknown
-smt2_tracing: syminit_data-integrity.smt2
-# bmc_length: 10
+smt2_tracing: abstract_array_syminit_data-integrity.smt2
+# bmc_length: 40
 # skip_solving: True
 
 [POR COVER]
@@ -50,6 +50,6 @@ formula: 'prop_signal' = 1_1
 verification: safety
 assumptions: por-assumptions.txt
 expected: Unknown
-smt2_tracing: syminit_por.smt2
-# bmc_length: 10
+smt2_tracing: abstract_array_syminit_por.smt2
+# bmc_length: 40
 # skip_solving: True

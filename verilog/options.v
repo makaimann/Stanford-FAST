@@ -6,7 +6,7 @@
 
 // FIFO Options
 //`define SANITY
-//`define ARRAY
+`define ARRAY
 
 // DWRR Arbiter Options
 //`define SLOW_UPDATE
