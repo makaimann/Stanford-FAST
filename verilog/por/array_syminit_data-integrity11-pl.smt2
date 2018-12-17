@@ -429,11 +429,13 @@
 (assert (= sb.ff_magic_packet.Q__AT2 (ite (= rst__AT1 #b1) #b00000000 (ite (= (bvand (bvand start__AT1 ((_ extract 0 0) push__AT1)) (bvnot sb.ff_en.Q__AT1)) #b1) ((_ extract 7 0) flat_data_in__AT1) sb.ff_magic_packet.Q__AT1))))
 (assert (= |af.gen_fifos[1].f.ff_rdPtr.Q__AT2| (ite (= rst__AT1 #b1) #b0000 (ite (= (bvor (bvor ((_ extract 1 1) push__AT1) (bvand (bvand (bvand ((_ extract 1 1) reqs__AT1) (bvnot (bvcomp |af.gen_fifos[1].f.ff_rdPtr.Q__AT1| |af.gen_fifos[1].f.ff_wrPtr.Q__AT1|))) (ite (bvule #b00000000000000000000000000001000 ((_ zero_extend 24) |af.arb.deficit_counters[1].ff_defcnt.Q__AT1|)) #b1 #b0)) af.arb.ff_rrcnt.Q__AT1)) rst__AT1) #b1) (bvadd |af.gen_fifos[1].f.ff_rdPtr.Q__AT1| (concat #b000 (bvand (bvand (bvand ((_ extract 1 1) reqs__AT1) (bvnot (bvcomp |af.gen_fifos[1].f.ff_rdPtr.Q__AT1| |af.gen_fifos[1].f.ff_wrPtr.Q__AT1|))) (ite (bvule #b00000000000000000000000000001000 ((_ zero_extend 24) |af.arb.deficit_counters[1].ff_defcnt.Q__AT1|)) #b1 #b0)) af.arb.ff_rrcnt.Q__AT1))) |af.gen_fifos[1].f.ff_rdPtr.Q__AT1|))))
 (push 1)
-(assert (=> (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b1) (= prop_signal__AT2 #b1)))
 ;; Property: START
 
 (assert (not (= prop_signal__AT2 #b1)))
 ;; Property: END
+;; block initial state
+(assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b0))
+
 (check-sat)
 
 (pop 1)
@@ -579,11 +581,13 @@
 (assert (= sb.ff_magic_packet.Q__AT3 (ite (= rst__AT2 #b1) #b00000000 (ite (= (bvand (bvand start__AT2 ((_ extract 0 0) push__AT2)) (bvnot sb.ff_en.Q__AT2)) #b1) ((_ extract 7 0) flat_data_in__AT2) sb.ff_magic_packet.Q__AT2))))
 (assert (= |af.gen_fifos[1].f.ff_rdPtr.Q__AT3| (ite (= rst__AT2 #b1) #b0000 (ite (= (bvor (bvor ((_ extract 1 1) push__AT2) (bvand (bvand (bvand ((_ extract 1 1) reqs__AT2) (bvnot (bvcomp |af.gen_fifos[1].f.ff_rdPtr.Q__AT2| |af.gen_fifos[1].f.ff_wrPtr.Q__AT2|))) (ite (bvule #b00000000000000000000000000001000 ((_ zero_extend 24) |af.arb.deficit_counters[1].ff_defcnt.Q__AT2|)) #b1 #b0)) af.arb.ff_rrcnt.Q__AT2)) rst__AT2) #b1) (bvadd |af.gen_fifos[1].f.ff_rdPtr.Q__AT2| (concat #b000 (bvand (bvand (bvand ((_ extract 1 1) reqs__AT2) (bvnot (bvcomp |af.gen_fifos[1].f.ff_rdPtr.Q__AT2| |af.gen_fifos[1].f.ff_wrPtr.Q__AT2|))) (ite (bvule #b00000000000000000000000000001000 ((_ zero_extend 24) |af.arb.deficit_counters[1].ff_defcnt.Q__AT2|)) #b1 #b0)) af.arb.ff_rrcnt.Q__AT2))) |af.gen_fifos[1].f.ff_rdPtr.Q__AT2|))))
 (push 1)
-(assert (=> (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b1) (= prop_signal__AT3 #b1)))
 ;; Property: START
 
 (assert (not (= prop_signal__AT3 #b1)))
 ;; Property: END
+;; block initial state
+(assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b0))
+
 (check-sat)
 
 (pop 1)
@@ -729,11 +733,13 @@
 (assert (= sb.ff_magic_packet.Q__AT4 (ite (= rst__AT3 #b1) #b00000000 (ite (= (bvand (bvand start__AT3 ((_ extract 0 0) push__AT3)) (bvnot sb.ff_en.Q__AT3)) #b1) ((_ extract 7 0) flat_data_in__AT3) sb.ff_magic_packet.Q__AT3))))
 (assert (= |af.gen_fifos[1].f.ff_rdPtr.Q__AT4| (ite (= rst__AT3 #b1) #b0000 (ite (= (bvor (bvor ((_ extract 1 1) push__AT3) (bvand (bvand (bvand ((_ extract 1 1) reqs__AT3) (bvnot (bvcomp |af.gen_fifos[1].f.ff_rdPtr.Q__AT3| |af.gen_fifos[1].f.ff_wrPtr.Q__AT3|))) (ite (bvule #b00000000000000000000000000001000 ((_ zero_extend 24) |af.arb.deficit_counters[1].ff_defcnt.Q__AT3|)) #b1 #b0)) af.arb.ff_rrcnt.Q__AT3)) rst__AT3) #b1) (bvadd |af.gen_fifos[1].f.ff_rdPtr.Q__AT3| (concat #b000 (bvand (bvand (bvand ((_ extract 1 1) reqs__AT3) (bvnot (bvcomp |af.gen_fifos[1].f.ff_rdPtr.Q__AT3| |af.gen_fifos[1].f.ff_wrPtr.Q__AT3|))) (ite (bvule #b00000000000000000000000000001000 ((_ zero_extend 24) |af.arb.deficit_counters[1].ff_defcnt.Q__AT3|)) #b1 #b0)) af.arb.ff_rrcnt.Q__AT3))) |af.gen_fifos[1].f.ff_rdPtr.Q__AT3|))))
 (push 1)
-(assert (=> (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b1) (= prop_signal__AT4 #b1)))
 ;; Property: START
 
 (assert (not (= prop_signal__AT4 #b1)))
 ;; Property: END
+;; block initial state
+(assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b0))
+
 (check-sat)
 
 (pop 1)
@@ -879,11 +885,13 @@
 (assert (= sb.ff_magic_packet.Q__AT5 (ite (= rst__AT4 #b1) #b00000000 (ite (= (bvand (bvand start__AT4 ((_ extract 0 0) push__AT4)) (bvnot sb.ff_en.Q__AT4)) #b1) ((_ extract 7 0) flat_data_in__AT4) sb.ff_magic_packet.Q__AT4))))
 (assert (= |af.gen_fifos[1].f.ff_rdPtr.Q__AT5| (ite (= rst__AT4 #b1) #b0000 (ite (= (bvor (bvor ((_ extract 1 1) push__AT4) (bvand (bvand (bvand ((_ extract 1 1) reqs__AT4) (bvnot (bvcomp |af.gen_fifos[1].f.ff_rdPtr.Q__AT4| |af.gen_fifos[1].f.ff_wrPtr.Q__AT4|))) (ite (bvule #b00000000000000000000000000001000 ((_ zero_extend 24) |af.arb.deficit_counters[1].ff_defcnt.Q__AT4|)) #b1 #b0)) af.arb.ff_rrcnt.Q__AT4)) rst__AT4) #b1) (bvadd |af.gen_fifos[1].f.ff_rdPtr.Q__AT4| (concat #b000 (bvand (bvand (bvand ((_ extract 1 1) reqs__AT4) (bvnot (bvcomp |af.gen_fifos[1].f.ff_rdPtr.Q__AT4| |af.gen_fifos[1].f.ff_wrPtr.Q__AT4|))) (ite (bvule #b00000000000000000000000000001000 ((_ zero_extend 24) |af.arb.deficit_counters[1].ff_defcnt.Q__AT4|)) #b1 #b0)) af.arb.ff_rrcnt.Q__AT4))) |af.gen_fifos[1].f.ff_rdPtr.Q__AT4|))))
 (push 1)
-(assert (=> (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b1) (= prop_signal__AT5 #b1)))
 ;; Property: START
 
 (assert (not (= prop_signal__AT5 #b1)))
 ;; Property: END
+;; block initial state
+(assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b0))
+
 (check-sat)
 
 (pop 1)
@@ -1029,11 +1037,13 @@
 (assert (= sb.ff_magic_packet.Q__AT6 (ite (= rst__AT5 #b1) #b00000000 (ite (= (bvand (bvand start__AT5 ((_ extract 0 0) push__AT5)) (bvnot sb.ff_en.Q__AT5)) #b1) ((_ extract 7 0) flat_data_in__AT5) sb.ff_magic_packet.Q__AT5))))
 (assert (= |af.gen_fifos[1].f.ff_rdPtr.Q__AT6| (ite (= rst__AT5 #b1) #b0000 (ite (= (bvor (bvor ((_ extract 1 1) push__AT5) (bvand (bvand (bvand ((_ extract 1 1) reqs__AT5) (bvnot (bvcomp |af.gen_fifos[1].f.ff_rdPtr.Q__AT5| |af.gen_fifos[1].f.ff_wrPtr.Q__AT5|))) (ite (bvule #b00000000000000000000000000001000 ((_ zero_extend 24) |af.arb.deficit_counters[1].ff_defcnt.Q__AT5|)) #b1 #b0)) af.arb.ff_rrcnt.Q__AT5)) rst__AT5) #b1) (bvadd |af.gen_fifos[1].f.ff_rdPtr.Q__AT5| (concat #b000 (bvand (bvand (bvand ((_ extract 1 1) reqs__AT5) (bvnot (bvcomp |af.gen_fifos[1].f.ff_rdPtr.Q__AT5| |af.gen_fifos[1].f.ff_wrPtr.Q__AT5|))) (ite (bvule #b00000000000000000000000000001000 ((_ zero_extend 24) |af.arb.deficit_counters[1].ff_defcnt.Q__AT5|)) #b1 #b0)) af.arb.ff_rrcnt.Q__AT5))) |af.gen_fifos[1].f.ff_rdPtr.Q__AT5|))))
 (push 1)
-(assert (=> (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b1) (= prop_signal__AT6 #b1)))
 ;; Property: START
 
 (assert (not (= prop_signal__AT6 #b1)))
 ;; Property: END
+;; block initial state
+(assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b0))
+
 (check-sat)
 
 (pop 1)
@@ -1179,11 +1189,13 @@
 (assert (= sb.ff_magic_packet.Q__AT7 (ite (= rst__AT6 #b1) #b00000000 (ite (= (bvand (bvand start__AT6 ((_ extract 0 0) push__AT6)) (bvnot sb.ff_en.Q__AT6)) #b1) ((_ extract 7 0) flat_data_in__AT6) sb.ff_magic_packet.Q__AT6))))
 (assert (= |af.gen_fifos[1].f.ff_rdPtr.Q__AT7| (ite (= rst__AT6 #b1) #b0000 (ite (= (bvor (bvor ((_ extract 1 1) push__AT6) (bvand (bvand (bvand ((_ extract 1 1) reqs__AT6) (bvnot (bvcomp |af.gen_fifos[1].f.ff_rdPtr.Q__AT6| |af.gen_fifos[1].f.ff_wrPtr.Q__AT6|))) (ite (bvule #b00000000000000000000000000001000 ((_ zero_extend 24) |af.arb.deficit_counters[1].ff_defcnt.Q__AT6|)) #b1 #b0)) af.arb.ff_rrcnt.Q__AT6)) rst__AT6) #b1) (bvadd |af.gen_fifos[1].f.ff_rdPtr.Q__AT6| (concat #b000 (bvand (bvand (bvand ((_ extract 1 1) reqs__AT6) (bvnot (bvcomp |af.gen_fifos[1].f.ff_rdPtr.Q__AT6| |af.gen_fifos[1].f.ff_wrPtr.Q__AT6|))) (ite (bvule #b00000000000000000000000000001000 ((_ zero_extend 24) |af.arb.deficit_counters[1].ff_defcnt.Q__AT6|)) #b1 #b0)) af.arb.ff_rrcnt.Q__AT6))) |af.gen_fifos[1].f.ff_rdPtr.Q__AT6|))))
 (push 1)
-(assert (=> (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b1) (= prop_signal__AT7 #b1)))
 ;; Property: START
 
 (assert (not (= prop_signal__AT7 #b1)))
 ;; Property: END
+;; block initial state
+(assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b0))
+
 (check-sat)
 
 (pop 1)
@@ -1329,11 +1341,13 @@
 (assert (= sb.ff_magic_packet.Q__AT8 (ite (= rst__AT7 #b1) #b00000000 (ite (= (bvand (bvand start__AT7 ((_ extract 0 0) push__AT7)) (bvnot sb.ff_en.Q__AT7)) #b1) ((_ extract 7 0) flat_data_in__AT7) sb.ff_magic_packet.Q__AT7))))
 (assert (= |af.gen_fifos[1].f.ff_rdPtr.Q__AT8| (ite (= rst__AT7 #b1) #b0000 (ite (= (bvor (bvor ((_ extract 1 1) push__AT7) (bvand (bvand (bvand ((_ extract 1 1) reqs__AT7) (bvnot (bvcomp |af.gen_fifos[1].f.ff_rdPtr.Q__AT7| |af.gen_fifos[1].f.ff_wrPtr.Q__AT7|))) (ite (bvule #b00000000000000000000000000001000 ((_ zero_extend 24) |af.arb.deficit_counters[1].ff_defcnt.Q__AT7|)) #b1 #b0)) af.arb.ff_rrcnt.Q__AT7)) rst__AT7) #b1) (bvadd |af.gen_fifos[1].f.ff_rdPtr.Q__AT7| (concat #b000 (bvand (bvand (bvand ((_ extract 1 1) reqs__AT7) (bvnot (bvcomp |af.gen_fifos[1].f.ff_rdPtr.Q__AT7| |af.gen_fifos[1].f.ff_wrPtr.Q__AT7|))) (ite (bvule #b00000000000000000000000000001000 ((_ zero_extend 24) |af.arb.deficit_counters[1].ff_defcnt.Q__AT7|)) #b1 #b0)) af.arb.ff_rrcnt.Q__AT7))) |af.gen_fifos[1].f.ff_rdPtr.Q__AT7|))))
 (push 1)
-(assert (=> (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b1) (= prop_signal__AT8 #b1)))
 ;; Property: START
 
 (assert (not (= prop_signal__AT8 #b1)))
 ;; Property: END
+;; block initial state
+(assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b0))
+
 (check-sat)
 
 (pop 1)
@@ -1479,11 +1493,13 @@
 (assert (= sb.ff_magic_packet.Q__AT9 (ite (= rst__AT8 #b1) #b00000000 (ite (= (bvand (bvand start__AT8 ((_ extract 0 0) push__AT8)) (bvnot sb.ff_en.Q__AT8)) #b1) ((_ extract 7 0) flat_data_in__AT8) sb.ff_magic_packet.Q__AT8))))
 (assert (= |af.gen_fifos[1].f.ff_rdPtr.Q__AT9| (ite (= rst__AT8 #b1) #b0000 (ite (= (bvor (bvor ((_ extract 1 1) push__AT8) (bvand (bvand (bvand ((_ extract 1 1) reqs__AT8) (bvnot (bvcomp |af.gen_fifos[1].f.ff_rdPtr.Q__AT8| |af.gen_fifos[1].f.ff_wrPtr.Q__AT8|))) (ite (bvule #b00000000000000000000000000001000 ((_ zero_extend 24) |af.arb.deficit_counters[1].ff_defcnt.Q__AT8|)) #b1 #b0)) af.arb.ff_rrcnt.Q__AT8)) rst__AT8) #b1) (bvadd |af.gen_fifos[1].f.ff_rdPtr.Q__AT8| (concat #b000 (bvand (bvand (bvand ((_ extract 1 1) reqs__AT8) (bvnot (bvcomp |af.gen_fifos[1].f.ff_rdPtr.Q__AT8| |af.gen_fifos[1].f.ff_wrPtr.Q__AT8|))) (ite (bvule #b00000000000000000000000000001000 ((_ zero_extend 24) |af.arb.deficit_counters[1].ff_defcnt.Q__AT8|)) #b1 #b0)) af.arb.ff_rrcnt.Q__AT8))) |af.gen_fifos[1].f.ff_rdPtr.Q__AT8|))))
 (push 1)
-(assert (=> (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b1) (= prop_signal__AT9 #b1)))
 ;; Property: START
 
 (assert (not (= prop_signal__AT9 #b1)))
 ;; Property: END
+;; block initial state
+(assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b0))
+
 (check-sat)
 
 (pop 1)
@@ -1629,11 +1645,13 @@
 (assert (= sb.ff_magic_packet.Q__AT10 (ite (= rst__AT9 #b1) #b00000000 (ite (= (bvand (bvand start__AT9 ((_ extract 0 0) push__AT9)) (bvnot sb.ff_en.Q__AT9)) #b1) ((_ extract 7 0) flat_data_in__AT9) sb.ff_magic_packet.Q__AT9))))
 (assert (= |af.gen_fifos[1].f.ff_rdPtr.Q__AT10| (ite (= rst__AT9 #b1) #b0000 (ite (= (bvor (bvor ((_ extract 1 1) push__AT9) (bvand (bvand (bvand ((_ extract 1 1) reqs__AT9) (bvnot (bvcomp |af.gen_fifos[1].f.ff_rdPtr.Q__AT9| |af.gen_fifos[1].f.ff_wrPtr.Q__AT9|))) (ite (bvule #b00000000000000000000000000001000 ((_ zero_extend 24) |af.arb.deficit_counters[1].ff_defcnt.Q__AT9|)) #b1 #b0)) af.arb.ff_rrcnt.Q__AT9)) rst__AT9) #b1) (bvadd |af.gen_fifos[1].f.ff_rdPtr.Q__AT9| (concat #b000 (bvand (bvand (bvand ((_ extract 1 1) reqs__AT9) (bvnot (bvcomp |af.gen_fifos[1].f.ff_rdPtr.Q__AT9| |af.gen_fifos[1].f.ff_wrPtr.Q__AT9|))) (ite (bvule #b00000000000000000000000000001000 ((_ zero_extend 24) |af.arb.deficit_counters[1].ff_defcnt.Q__AT9|)) #b1 #b0)) af.arb.ff_rrcnt.Q__AT9))) |af.gen_fifos[1].f.ff_rdPtr.Q__AT9|))))
 (push 1)
-(assert (=> (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b1) (= prop_signal__AT10 #b1)))
 ;; Property: START
 
 (assert (not (= prop_signal__AT10 #b1)))
 ;; Property: END
+;; block initial state
+(assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b0))
+
 (check-sat)
 
 (pop 1)
