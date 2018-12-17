@@ -2,7 +2,7 @@
 import argparse
 import sys
 
-INIT = "(= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b1)"
+NOTINIT = "(= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b0)"
 PROP = "(= prop_signal__AT{} #b1)"
 
 # (!en@{0} ^ en@{1}) -> (!data_out_vld@{2} | (wrPtr@{0} = rdPtr@{2}))
@@ -15,7 +15,7 @@ parser.add_argument("--search-guiding", action="store_true", help="Add search gu
 parser.add_argument("smt2file", metavar="<SMT2 FILE>", help="The SMT2 file to modify")
 parser.add_argument('-f', action="store_true", help='forcibly run without extra checks')
 
-PUSH = "(push 1)"
+CHECKSAT = "(check-sat)"
 
 args = parser.parse_args()
 
@@ -39,17 +39,18 @@ def insert_clauses(genfun, smt2in, start=0):
     smt2out = ""
     for line in smt2in.split("\n"):
         line = line.strip()
-        if line == PUSH:
-            smt2out += PUSH + "\n"
+        if line == CHECKSAT:
             if t >= start:
                 smt2out += genfun(t) + "\n"
+            smt2out += CHECKSAT + "\n"
             t += 1
         else:
             smt2out += line + "\n"
     return smt2out
 
 def add_pl(t):
-    return "(assert (=> {} {}))".format(INIT, PROP.format(t))
+    return ";; block initial state\n(assert {})\n".format(NOTINIT)
+#    return "(assert (=> {} {}))".format(INIT, PROP.format(t))
 
 def add_sg(t):
     smt2 = ";; Search guiding formulas\n\n"
@@ -69,9 +70,10 @@ def add_sg(t):
     return smt2
 
 def add_echo(t):
-    return "\n(echo \"Checking property at bound {}\"\n)\n".format(t)
+    return "\n(echo \"Checking property at bound {}\")\n".format(t)
 
 suffix = ""
+
 if pl:
     suffix += "-pl"
 if sg:
@@ -83,14 +85,14 @@ outfile += suffix + ".smt2"
 f = open(smt2file, "r")
 smt2 = f.read()
 
-if sg:
-    # more unsats than bounds in this case, mark important calls
-    smt2 = insert_clauses(add_echo, smt2)
-
 if pl:
     smt2 = insert_clauses(add_pl, smt2, 2)
 if sg:
     smt2 = insert_clauses(add_sg, smt2, 2)
+
+if sg:
+    # more unsats than bounds in this case, mark important calls
+    smt2 = insert_clauses(add_echo, smt2)
 
 f.close()
 
