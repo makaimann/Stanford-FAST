@@ -34,11 +34,11 @@ module fifo(clk, rst, push, pop, data_in,
   assign wrPtrNxt = rst ? {PTRWID{1'b0}} : wrPtr + {{(PTRWID-1){1'b0}}, push};
 
   FF #(.WIDTH(PTRWID)) ff_wrPtr (.rst(rst),
-				                 .clk(clk),
+                                 .clk(clk),
                                  .en(clkEn),
-                        	     .D(wrPtrNxt),
-                        	     .Q(wrPtr)
-  				                 );
+                                 .D(wrPtrNxt),
+                                 .Q(wrPtr)
+                                 );
 
   //************** rdPtr logic ****************//
 
@@ -49,7 +49,7 @@ module fifo(clk, rst, push, pop, data_in,
   assign rdPtrNxt = rst ? {PTRWID{1'b0}} : rdPtr + {{(PTRWID-1){1'b0}}, pop};
 
   FF #(.WIDTH(PTRWID)) ff_rdPtr (.rst(rst),
-				                 .clk(clk),
+                         .clk(clk),
                                  .en(clkEn),
                                  .D(rdPtrNxt),
                                  .Q(rdPtr));
@@ -67,7 +67,7 @@ module fifo(clk, rst, push, pop, data_in,
    assign input_data = push ? data_in : entries[wrPtr[PTRWID-2:0]];
 
    always @(posedge clk) begin
-	    entries[wrPtr[PTRWID-2:0]] <= input_data;
+      entries[wrPtr[PTRWID-2:0]] <= input_data;
    end
 `else
   wire [WIDTH-1:0] entries [DEPTH-1:0];
@@ -75,11 +75,11 @@ module fifo(clk, rst, push, pop, data_in,
     genvar i;
     for(i = 0; i < DEPTH; i = i + 1) begin : entry_gen
       FF #(.WIDTH(WIDTH)) ff_entry_inst(.rst(rst),
-					                    .clk(clk),
+                                        .clk(clk),
                                         .en(push & (wrPtr[PTRWID-2:0] == i)),
                                         .D(data_in),
                                         .Q(entries[i])
-      				                    );
+                                        );
     end
   endgenerate
 `endif
