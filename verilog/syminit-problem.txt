@@ -4,7 +4,7 @@ abstract_clock: True
 vcd: True
 
 [DEFAULT]
-bmc_length: 10
+bmc_length: 20
 solver_name: btor
 symbolic_init: True
 
@@ -23,7 +23,7 @@ verification: safety
 assumptions: assumptions.txt
 expected: Unknown
 smt2_tracing: abstract_array_syminit_data-integrity.smt2
-# bmc_length: 40
+bmc_length: 10
 # skip_solving: True
 
 [POR COVER]
@@ -56,10 +56,21 @@ smt2_tracing: abstract_array_syminit_por.smt2
 
 [POR_LONGEST_TRACE]
 description: "Check that packet must have exited"
-bmc_length_min = 17
+# bmc_length_min = 17
 formula: 'data_out_vld' = 0_1
 verification: safety
 assumptions: por-assumptions.txt
 expected: Unknown
 smt2_tracing: abstract_array_syminit_por-packet-exits.smt2
 skip_solving: True
+bmc_length: 20
+
+[PROVE_DATA_OUT_VLD_LOW_AFTER_EXIT]
+# not sure this is quite right -- need to show that it stays zero
+description: "Check that once the packet has exited, data_out_vld goes low"
+formula: (data_out_vld = 1_1) -> (next(data_out_vld) = 0_1)
+verification: safety
+assumptions: por-assumptions.txt
+expected: True
+prove: True
+smt2_tracing: syminit_proof.smt2
