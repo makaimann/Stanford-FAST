@@ -44,7 +44,6 @@
                          .D(next_en),
                          .Q(en));
 
-
   MagicPacketTracker #(.DEPTH(DEPTH)) mpt (.clk(clk),
                                            .rst(rst),
                                            .push(push),

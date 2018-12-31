@@ -1,2 +1,4 @@
 ((!'empty' | !'pop') = 1_1)
 ((!'full' | !'push') = 1_1)
+# no stutter
+((push | pop) = 1_1)

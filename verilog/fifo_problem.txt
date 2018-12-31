@@ -4,7 +4,7 @@ abstract_clock: True
 vcd: True
 
 [DEFAULT]
-bmc_length: 17
+bmc_length: 20
 solver_name: btor
 precondition: reset_done
 
@@ -22,4 +22,4 @@ verification: safety
 assumptions: fifo-assumptions.txt
 expected: Unknown
 smt2_tracing: fifo-data-integrity.smt2
-
+skip_solving: True

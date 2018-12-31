@@ -1,17 +1,32 @@
 #!/usr/bin/env python3
 import argparse
+import math
 import sys
 
-NOTINIT = "(= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp sb.mpt.ff_cnt.Q__AT1 (bvsub |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| |af.gen_fifos[0].f.ff_rdPtr.Q__AT1|))) #b0)"
+DEPTH=8
+CNTWIDTH = math.ceil(math.log(DEPTH))
+
 PROP = "(= prop_signal__AT{} #b1)"
 
-# (!en@{0} ^ en@{1}) -> (!data_out_vld@{2} | (wrPtr@{0} = rdPtr@{2}))
+ARB_NOTINIT = "(= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0)"
+
+# (!en@{0} ^ en@{1}) -> (!sb.data_out_vld@{2} | (wrPtr@{0} = rdPtr@{2}))
 # {0} start, {1} = {0}+1, {2} prop time
-SGF = "(=> (and (= sb.ff_en.Q__AT{0} #b0) (= sb.ff_en.Q__AT{0} #b1)) (or (= data_out_vld__AT{2} #b0) (= |af.gen_fifos[0].f.ff_wrPtr.Q__AT{0}| |af.gen_fifos[0].f.ff_rdPtr.Q__AT{2}|)))"
+ARB_SGF = "(=> (and (= sb.ff_en.Q__AT{0} #b0) (= sb.ff_en.Q__AT{1} #b1)) (or (= sb.data_out_vld__AT{2} #b0) (= ((_ extract {3} 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT{0}|) ((_ extract {3} 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT{2}|))))".format("{0}", "{1}", "{2}", CNTWIDTH-1)
+
+# FIFO_NOTINIT = "(= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp f.ff_wrPtr.Q__AT1 (bvadd f.ff_rdPtr.Q__AT1 sb.mpt.ff_cnt.Q__AT1))) #b0)"
+# Trying without rst
+FIFO_NOTINIT = "(= (bvand (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp f.ff_wrPtr.Q__AT1 (bvadd f.ff_rdPtr.Q__AT1 sb.mpt.ff_cnt.Q__AT1))) #b0)"
+
+# (!en@{0} ^ en@{1}) -> (!sb.data_out_vld@{2} | (wrPtr@{0} = rdPtr@{2}))
+# {0} start, {1} = {0}+1, {2} prop time
+FIFO_SGF = "(=> (and (= sb.ff_en.Q__AT{0} #b0) (= sb.ff_en.Q__AT{1} #b1)) (or (= sb.data_out_vld__AT{2} #b0) (= ((_ extract {3} 0) f.ff_wrPtr.Q__AT{0}) ((_ extract {3} 0) f.ff_rdPtr.Q__AT{2}))))".format("{0}", "{1}", "{2}", CNTWIDTH-1)
+
 
 parser = argparse.ArgumentParser("Add proof lifting and search guiding formulas to an smt2 file.\nAssumes that the smt2 file already has a symbolic initial state")
 parser.add_argument("--proof-lifting", action="store_true", help="Add proof-lifing")
 parser.add_argument("--search-guiding", action="store_true", help="Add search guiding formulas")
+parser.add_argument("--fifo-only", action="store_true", help="Only for the FIFO")
 parser.add_argument("smt2file", metavar="<SMT2 FILE>", help="The SMT2 file to modify")
 parser.add_argument('-f', action="store_true", help='forcibly run without extra checks')
 
@@ -22,7 +37,20 @@ args = parser.parse_args()
 pl = args.proof_lifting
 sg = args.search_guiding
 smt2file = args.smt2file
+if args.fifo_only:
+    NOTINIT = FIFO_NOTINIT
+    SGF = FIFO_SGF
+else:
+    NOTINIT = ARB_NOTINIT
+    SGF = ARB_SGF
 force = args.f
+
+LIFTED_PROOF = "(or (not (= prop_signal__AT{0} #b0)) {1})".format("{}", NOTINIT)
+
+if "-pl" in smt2file:
+    pl = False
+if "-sg" in smt2file:
+    sg = False
 
 if not force and not pl and not sg:
     print("Not being asked to do anything...exiting")
@@ -49,8 +77,9 @@ def insert_clauses(genfun, smt2in, start=0):
     return smt2out
 
 def add_pl(t):
+#   return ";; block initial state\n(assert (= prop_signal__AT{} #b0))\n(assert {})\n".format(t, LIFTED_PROOF.format(t))
     return ";; block initial state\n(assert {})\n".format(NOTINIT)
-#    return "(assert (=> {} {}))".format(INIT, PROP.format(t))
+#     return "(assert (=> {} {}))".format(INIT, PROP.format(t))
 
 def add_sg(t):
     smt2 = ";; Search guiding formulas\n\n"
@@ -62,11 +91,14 @@ def add_sg(t):
         formula = SGF.format(i, j, t)
         candidates.append((name, formula))
 
-    final_check = "(check-sat-assuming ((not (and"
+    guides = []
     for name, formula in candidates:
-        final_check += " %s"%name
-        smt2 += "(define-fun {} () Bool {})\n\n".format(name, formula)
-    smt2 += final_check + "))))\n\n"
+        guides.append(name)
+        smt2 += "(declare-const {} Bool)\n".format(name)
+        smt2 += "(assert (= {} {}))\n\n".format(name, formula)
+    smt2 += "(declare-const split_AT{} Bool)\n".format(t)
+    smt2 += "(assert (= split_AT{} (and {})))\n".format(t, " ".join(guides))
+    smt2 += "(check-sat-assuming ((not split_AT{})))\n".format(t)
     return smt2
 
 def add_echo(t):

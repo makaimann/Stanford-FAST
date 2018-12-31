@@ -10,7 +10,7 @@ symbolic_init: True
 
 [FULL SANITY]
 description: "Check that full is wired correctly"
-formula: 'full'[0:0] = af.gen_fifos[0].f.full
+formula: 'full'[0:0] = 'af.gen_fifos[0].f.full'
 verification: safety
 assumptions: assumptions.txt
 expected: True
@@ -53,3 +53,13 @@ expected: Unknown
 smt2_tracing: abstract_array_syminit_por.smt2
 # bmc_length: 40
 # skip_solving: True
+
+[POR_LONGEST_TRACE]
+description: "Check that packet must have exited"
+bmc_length_min = 17
+formula: 'data_out_vld' = 0_1
+verification: safety
+assumptions: por-assumptions.txt
+expected: Unknown
+smt2_tracing: abstract_array_syminit_por-packet-exits.smt2
+skip_solving: True

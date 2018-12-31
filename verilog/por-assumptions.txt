@@ -13,3 +13,7 @@
 ((('reqs' bvcomp 0_2) | ((next('push') bvcomp 0_2) | !('full' bvcomp 0_2))) = 1_1)
 ((!'reqs'[0:0] | (!next('push'[0:0]) | 'full'[0:0])) = 1_1)
 ((!'reqs'[1:1] | (!next('push'[1:1]) | 'full'[1:1])) = 1_1)
+# end
+# start -- saturation experiment
+# (!reqs[0:0] | (!push[1:1] | empty[0:0])) = 1_1
+# end -- saturation experiment
