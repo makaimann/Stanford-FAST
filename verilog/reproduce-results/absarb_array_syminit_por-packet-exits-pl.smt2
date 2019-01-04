@@ -1,36 +1,5 @@
-;; options with cvc4: --incremental --simplification=none --bool-to-bv=ite --no-bitwise-eq --arrays-weak-equiv
-;; Note: using newer version of BoolToBV(ite) which might not be merged into master yet
-;; 2 FIFOs[DEPTH=8, WIDTH=8] -> Arbiter
-;; from por-assumptions.txt
-;; ((!'empty'[0:0] | !'reqs'[0:0]) = 1_1)
-;; ((!'empty'[1:1] | !'reqs'[1:1]) = 1_1)
-;; ((!'full'[0:0] | !'push'[0:0]) = 1_1)
-;; ((!'full'[1:1] | !'push'[1:1]) = 1_1)
-;; # Force sequential
-;; (('push'[0:0] & 'push'[1:1]) = 0_1)
-;; ((!('push'[0:0] | 'push'[1:1]) | ('reqs' bvcomp 0_2)) = 1_1)
-;; # No stutter
-;; (('push'[0:0] | 'push'[1:1] | 'reqs'[0:0] | 'reqs'[1:1]) = 1_1)
-;; # POR
-;; ((!'push'[1:1] | !next('push'[0:0])) = 1_1)
-;; # not sure if we need all three?
-;; ((('reqs' bvcomp 0_2) | ((next('push') bvcomp 0_2) | !('full' bvcomp 0_2))) = 1_1)
-;; ((!'reqs'[0:0] | (!next('push'[0:0]) | 'full'[0:0])) = 1_1)
-;; ((!'reqs'[1:1] | (!next('push'[1:1]) | 'full'[1:1])) = 1_1)
-;; # end
-;; # start -- saturation experiment
-;; # there's a dependency relation between push0 and reqs0 which doesnt allow reordering in general
-;; # (!reqs[0:0] | !next(push[0:0])) = 1_1
-;; (full[0:0] | !push[1:1] | !next(push[0:0])) = 1_1
-;; (full[0:0] | !reqs[1:1] | !next(push[0:0])) = 1_1
-;; # as long as it's still not empty, once you start requesting, don't do anything else
-;; # e.g. !empty -> (op_i -> !next(reqs0))
-;; # using all bv because otherwise cvc4 gets all messed up with booleans
-;; (empty[0:0] | !push[0:0] | !next(reqs[0:0])) = 1_1
-;; (empty[0:0] | !push[1:1] | !next(reqs[0:0])) = 1_1
-;; (empty[0:0] | !reqs[1:1] | !next(reqs[0:0])) = 1_1
-;; # end -- saturation experiment
-;;
+;; can check with any incremental solver
+;; just shows that data_out_vld must be high after second cycle (because of proof-lifting)
 (set-logic QF_ABV)
 (declare-fun |af.gen_fifos[0].f.full__AT0| () (_ BitVec 1))
 (declare-fun |af.gen_fifos[0].f.ff_wrPtr.rst__AT0| () (_ BitVec 1))
@@ -285,11 +254,8 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT0 #b1)))
+(assert (not (= data_out_vld__AT0 #b0)))
 ;; Property: END
-
-(echo "Checking property at bound 0")
-
 (check-sat)
 
 (pop 1)
@@ -561,11 +527,8 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT1 #b1)))
+(assert (not (= data_out_vld__AT1 #b0)))
 ;; Property: END
-
-(echo "Checking property at bound 1")
-
 (check-sat)
 
 (pop 1)
@@ -837,25 +800,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT2 #b1)))
+(assert (not (= data_out_vld__AT2 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop2 Bool)
-(assert (= en1_prop2 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT2 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT2|))))))
-
-(declare-const en2_prop2 Bool)
-(assert (= en2_prop2 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT2 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT2|))))))
-
-(declare-const split_AT2 Bool)
-(assert (= split_AT2 (and en1_prop2 en2_prop2)))
-(check-sat-assuming ((not split_AT2)))
-
-
-(echo "Checking property at bound 2")
 
 (check-sat)
 
@@ -1128,28 +1076,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT3 #b1)))
+(assert (not (= data_out_vld__AT3 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop3 Bool)
-(assert (= en1_prop3 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT3 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT3|))))))
-
-(declare-const en2_prop3 Bool)
-(assert (= en2_prop3 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT3 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT3|))))))
-
-(declare-const en3_prop3 Bool)
-(assert (= en3_prop3 (=> (and (= sb.ff_en.Q__AT2 #b0) (= sb.ff_en.Q__AT3 #b1)) (or (= sb.data_out_vld__AT3 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT2|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT3|))))))
-
-(declare-const split_AT3 Bool)
-(assert (= split_AT3 (and en1_prop3 en2_prop3 en3_prop3)))
-(check-sat-assuming ((not split_AT3)))
-
-
-(echo "Checking property at bound 3")
 
 (check-sat)
 
@@ -1422,31 +1352,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT4 #b1)))
+(assert (not (= data_out_vld__AT4 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop4 Bool)
-(assert (= en1_prop4 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT4 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT4|))))))
-
-(declare-const en2_prop4 Bool)
-(assert (= en2_prop4 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT4 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT4|))))))
-
-(declare-const en3_prop4 Bool)
-(assert (= en3_prop4 (=> (and (= sb.ff_en.Q__AT2 #b0) (= sb.ff_en.Q__AT3 #b1)) (or (= sb.data_out_vld__AT4 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT2|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT4|))))))
-
-(declare-const en4_prop4 Bool)
-(assert (= en4_prop4 (=> (and (= sb.ff_en.Q__AT3 #b0) (= sb.ff_en.Q__AT4 #b1)) (or (= sb.data_out_vld__AT4 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT3|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT4|))))))
-
-(declare-const split_AT4 Bool)
-(assert (= split_AT4 (and en1_prop4 en2_prop4 en3_prop4 en4_prop4)))
-(check-sat-assuming ((not split_AT4)))
-
-
-(echo "Checking property at bound 4")
 
 (check-sat)
 
@@ -1719,34 +1628,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT5 #b1)))
+(assert (not (= data_out_vld__AT5 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop5 Bool)
-(assert (= en1_prop5 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT5 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT5|))))))
-
-(declare-const en2_prop5 Bool)
-(assert (= en2_prop5 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT5 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT5|))))))
-
-(declare-const en3_prop5 Bool)
-(assert (= en3_prop5 (=> (and (= sb.ff_en.Q__AT2 #b0) (= sb.ff_en.Q__AT3 #b1)) (or (= sb.data_out_vld__AT5 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT2|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT5|))))))
-
-(declare-const en4_prop5 Bool)
-(assert (= en4_prop5 (=> (and (= sb.ff_en.Q__AT3 #b0) (= sb.ff_en.Q__AT4 #b1)) (or (= sb.data_out_vld__AT5 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT3|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT5|))))))
-
-(declare-const en5_prop5 Bool)
-(assert (= en5_prop5 (=> (and (= sb.ff_en.Q__AT4 #b0) (= sb.ff_en.Q__AT5 #b1)) (or (= sb.data_out_vld__AT5 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT4|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT5|))))))
-
-(declare-const split_AT5 Bool)
-(assert (= split_AT5 (and en1_prop5 en2_prop5 en3_prop5 en4_prop5 en5_prop5)))
-(check-sat-assuming ((not split_AT5)))
-
-
-(echo "Checking property at bound 5")
 
 (check-sat)
 
@@ -2019,37 +1904,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT6 #b1)))
+(assert (not (= data_out_vld__AT6 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop6 Bool)
-(assert (= en1_prop6 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT6 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT6|))))))
-
-(declare-const en2_prop6 Bool)
-(assert (= en2_prop6 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT6 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT6|))))))
-
-(declare-const en3_prop6 Bool)
-(assert (= en3_prop6 (=> (and (= sb.ff_en.Q__AT2 #b0) (= sb.ff_en.Q__AT3 #b1)) (or (= sb.data_out_vld__AT6 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT2|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT6|))))))
-
-(declare-const en4_prop6 Bool)
-(assert (= en4_prop6 (=> (and (= sb.ff_en.Q__AT3 #b0) (= sb.ff_en.Q__AT4 #b1)) (or (= sb.data_out_vld__AT6 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT3|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT6|))))))
-
-(declare-const en5_prop6 Bool)
-(assert (= en5_prop6 (=> (and (= sb.ff_en.Q__AT4 #b0) (= sb.ff_en.Q__AT5 #b1)) (or (= sb.data_out_vld__AT6 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT4|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT6|))))))
-
-(declare-const en6_prop6 Bool)
-(assert (= en6_prop6 (=> (and (= sb.ff_en.Q__AT5 #b0) (= sb.ff_en.Q__AT6 #b1)) (or (= sb.data_out_vld__AT6 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT5|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT6|))))))
-
-(declare-const split_AT6 Bool)
-(assert (= split_AT6 (and en1_prop6 en2_prop6 en3_prop6 en4_prop6 en5_prop6 en6_prop6)))
-(check-sat-assuming ((not split_AT6)))
-
-
-(echo "Checking property at bound 6")
 
 (check-sat)
 
@@ -2322,40 +2180,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT7 #b1)))
+(assert (not (= data_out_vld__AT7 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop7 Bool)
-(assert (= en1_prop7 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT7 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT7|))))))
-
-(declare-const en2_prop7 Bool)
-(assert (= en2_prop7 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT7 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT7|))))))
-
-(declare-const en3_prop7 Bool)
-(assert (= en3_prop7 (=> (and (= sb.ff_en.Q__AT2 #b0) (= sb.ff_en.Q__AT3 #b1)) (or (= sb.data_out_vld__AT7 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT2|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT7|))))))
-
-(declare-const en4_prop7 Bool)
-(assert (= en4_prop7 (=> (and (= sb.ff_en.Q__AT3 #b0) (= sb.ff_en.Q__AT4 #b1)) (or (= sb.data_out_vld__AT7 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT3|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT7|))))))
-
-(declare-const en5_prop7 Bool)
-(assert (= en5_prop7 (=> (and (= sb.ff_en.Q__AT4 #b0) (= sb.ff_en.Q__AT5 #b1)) (or (= sb.data_out_vld__AT7 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT4|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT7|))))))
-
-(declare-const en6_prop7 Bool)
-(assert (= en6_prop7 (=> (and (= sb.ff_en.Q__AT5 #b0) (= sb.ff_en.Q__AT6 #b1)) (or (= sb.data_out_vld__AT7 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT5|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT7|))))))
-
-(declare-const en7_prop7 Bool)
-(assert (= en7_prop7 (=> (and (= sb.ff_en.Q__AT6 #b0) (= sb.ff_en.Q__AT7 #b1)) (or (= sb.data_out_vld__AT7 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT6|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT7|))))))
-
-(declare-const split_AT7 Bool)
-(assert (= split_AT7 (and en1_prop7 en2_prop7 en3_prop7 en4_prop7 en5_prop7 en6_prop7 en7_prop7)))
-(check-sat-assuming ((not split_AT7)))
-
-
-(echo "Checking property at bound 7")
 
 (check-sat)
 
@@ -2628,43 +2456,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT8 #b1)))
+(assert (not (= data_out_vld__AT8 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop8 Bool)
-(assert (= en1_prop8 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT8 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT8|))))))
-
-(declare-const en2_prop8 Bool)
-(assert (= en2_prop8 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT8 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT8|))))))
-
-(declare-const en3_prop8 Bool)
-(assert (= en3_prop8 (=> (and (= sb.ff_en.Q__AT2 #b0) (= sb.ff_en.Q__AT3 #b1)) (or (= sb.data_out_vld__AT8 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT2|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT8|))))))
-
-(declare-const en4_prop8 Bool)
-(assert (= en4_prop8 (=> (and (= sb.ff_en.Q__AT3 #b0) (= sb.ff_en.Q__AT4 #b1)) (or (= sb.data_out_vld__AT8 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT3|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT8|))))))
-
-(declare-const en5_prop8 Bool)
-(assert (= en5_prop8 (=> (and (= sb.ff_en.Q__AT4 #b0) (= sb.ff_en.Q__AT5 #b1)) (or (= sb.data_out_vld__AT8 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT4|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT8|))))))
-
-(declare-const en6_prop8 Bool)
-(assert (= en6_prop8 (=> (and (= sb.ff_en.Q__AT5 #b0) (= sb.ff_en.Q__AT6 #b1)) (or (= sb.data_out_vld__AT8 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT5|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT8|))))))
-
-(declare-const en7_prop8 Bool)
-(assert (= en7_prop8 (=> (and (= sb.ff_en.Q__AT6 #b0) (= sb.ff_en.Q__AT7 #b1)) (or (= sb.data_out_vld__AT8 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT6|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT8|))))))
-
-(declare-const en8_prop8 Bool)
-(assert (= en8_prop8 (=> (and (= sb.ff_en.Q__AT7 #b0) (= sb.ff_en.Q__AT8 #b1)) (or (= sb.data_out_vld__AT8 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT7|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT8|))))))
-
-(declare-const split_AT8 Bool)
-(assert (= split_AT8 (and en1_prop8 en2_prop8 en3_prop8 en4_prop8 en5_prop8 en6_prop8 en7_prop8 en8_prop8)))
-(check-sat-assuming ((not split_AT8)))
-
-
-(echo "Checking property at bound 8")
 
 (check-sat)
 
@@ -2937,46 +2732,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT9 #b1)))
+(assert (not (= data_out_vld__AT9 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop9 Bool)
-(assert (= en1_prop9 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT9 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT9|))))))
-
-(declare-const en2_prop9 Bool)
-(assert (= en2_prop9 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT9 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT9|))))))
-
-(declare-const en3_prop9 Bool)
-(assert (= en3_prop9 (=> (and (= sb.ff_en.Q__AT2 #b0) (= sb.ff_en.Q__AT3 #b1)) (or (= sb.data_out_vld__AT9 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT2|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT9|))))))
-
-(declare-const en4_prop9 Bool)
-(assert (= en4_prop9 (=> (and (= sb.ff_en.Q__AT3 #b0) (= sb.ff_en.Q__AT4 #b1)) (or (= sb.data_out_vld__AT9 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT3|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT9|))))))
-
-(declare-const en5_prop9 Bool)
-(assert (= en5_prop9 (=> (and (= sb.ff_en.Q__AT4 #b0) (= sb.ff_en.Q__AT5 #b1)) (or (= sb.data_out_vld__AT9 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT4|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT9|))))))
-
-(declare-const en6_prop9 Bool)
-(assert (= en6_prop9 (=> (and (= sb.ff_en.Q__AT5 #b0) (= sb.ff_en.Q__AT6 #b1)) (or (= sb.data_out_vld__AT9 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT5|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT9|))))))
-
-(declare-const en7_prop9 Bool)
-(assert (= en7_prop9 (=> (and (= sb.ff_en.Q__AT6 #b0) (= sb.ff_en.Q__AT7 #b1)) (or (= sb.data_out_vld__AT9 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT6|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT9|))))))
-
-(declare-const en8_prop9 Bool)
-(assert (= en8_prop9 (=> (and (= sb.ff_en.Q__AT7 #b0) (= sb.ff_en.Q__AT8 #b1)) (or (= sb.data_out_vld__AT9 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT7|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT9|))))))
-
-(declare-const en9_prop9 Bool)
-(assert (= en9_prop9 (=> (and (= sb.ff_en.Q__AT8 #b0) (= sb.ff_en.Q__AT9 #b1)) (or (= sb.data_out_vld__AT9 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT8|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT9|))))))
-
-(declare-const split_AT9 Bool)
-(assert (= split_AT9 (and en1_prop9 en2_prop9 en3_prop9 en4_prop9 en5_prop9 en6_prop9 en7_prop9 en8_prop9 en9_prop9)))
-(check-sat-assuming ((not split_AT9)))
-
-
-(echo "Checking property at bound 9")
 
 (check-sat)
 
@@ -3249,49 +3008,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT10 #b1)))
+(assert (not (= data_out_vld__AT10 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop10 Bool)
-(assert (= en1_prop10 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT10 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT10|))))))
-
-(declare-const en2_prop10 Bool)
-(assert (= en2_prop10 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT10 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT10|))))))
-
-(declare-const en3_prop10 Bool)
-(assert (= en3_prop10 (=> (and (= sb.ff_en.Q__AT2 #b0) (= sb.ff_en.Q__AT3 #b1)) (or (= sb.data_out_vld__AT10 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT2|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT10|))))))
-
-(declare-const en4_prop10 Bool)
-(assert (= en4_prop10 (=> (and (= sb.ff_en.Q__AT3 #b0) (= sb.ff_en.Q__AT4 #b1)) (or (= sb.data_out_vld__AT10 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT3|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT10|))))))
-
-(declare-const en5_prop10 Bool)
-(assert (= en5_prop10 (=> (and (= sb.ff_en.Q__AT4 #b0) (= sb.ff_en.Q__AT5 #b1)) (or (= sb.data_out_vld__AT10 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT4|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT10|))))))
-
-(declare-const en6_prop10 Bool)
-(assert (= en6_prop10 (=> (and (= sb.ff_en.Q__AT5 #b0) (= sb.ff_en.Q__AT6 #b1)) (or (= sb.data_out_vld__AT10 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT5|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT10|))))))
-
-(declare-const en7_prop10 Bool)
-(assert (= en7_prop10 (=> (and (= sb.ff_en.Q__AT6 #b0) (= sb.ff_en.Q__AT7 #b1)) (or (= sb.data_out_vld__AT10 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT6|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT10|))))))
-
-(declare-const en8_prop10 Bool)
-(assert (= en8_prop10 (=> (and (= sb.ff_en.Q__AT7 #b0) (= sb.ff_en.Q__AT8 #b1)) (or (= sb.data_out_vld__AT10 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT7|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT10|))))))
-
-(declare-const en9_prop10 Bool)
-(assert (= en9_prop10 (=> (and (= sb.ff_en.Q__AT8 #b0) (= sb.ff_en.Q__AT9 #b1)) (or (= sb.data_out_vld__AT10 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT8|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT10|))))))
-
-(declare-const en10_prop10 Bool)
-(assert (= en10_prop10 (=> (and (= sb.ff_en.Q__AT9 #b0) (= sb.ff_en.Q__AT10 #b1)) (or (= sb.data_out_vld__AT10 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT9|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT10|))))))
-
-(declare-const split_AT10 Bool)
-(assert (= split_AT10 (and en1_prop10 en2_prop10 en3_prop10 en4_prop10 en5_prop10 en6_prop10 en7_prop10 en8_prop10 en9_prop10 en10_prop10)))
-(check-sat-assuming ((not split_AT10)))
-
-
-(echo "Checking property at bound 10")
 
 (check-sat)
 
@@ -3564,52 +3284,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT11 #b1)))
+(assert (not (= data_out_vld__AT11 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop11 Bool)
-(assert (= en1_prop11 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT11 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT11|))))))
-
-(declare-const en2_prop11 Bool)
-(assert (= en2_prop11 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT11 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT11|))))))
-
-(declare-const en3_prop11 Bool)
-(assert (= en3_prop11 (=> (and (= sb.ff_en.Q__AT2 #b0) (= sb.ff_en.Q__AT3 #b1)) (or (= sb.data_out_vld__AT11 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT2|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT11|))))))
-
-(declare-const en4_prop11 Bool)
-(assert (= en4_prop11 (=> (and (= sb.ff_en.Q__AT3 #b0) (= sb.ff_en.Q__AT4 #b1)) (or (= sb.data_out_vld__AT11 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT3|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT11|))))))
-
-(declare-const en5_prop11 Bool)
-(assert (= en5_prop11 (=> (and (= sb.ff_en.Q__AT4 #b0) (= sb.ff_en.Q__AT5 #b1)) (or (= sb.data_out_vld__AT11 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT4|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT11|))))))
-
-(declare-const en6_prop11 Bool)
-(assert (= en6_prop11 (=> (and (= sb.ff_en.Q__AT5 #b0) (= sb.ff_en.Q__AT6 #b1)) (or (= sb.data_out_vld__AT11 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT5|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT11|))))))
-
-(declare-const en7_prop11 Bool)
-(assert (= en7_prop11 (=> (and (= sb.ff_en.Q__AT6 #b0) (= sb.ff_en.Q__AT7 #b1)) (or (= sb.data_out_vld__AT11 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT6|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT11|))))))
-
-(declare-const en8_prop11 Bool)
-(assert (= en8_prop11 (=> (and (= sb.ff_en.Q__AT7 #b0) (= sb.ff_en.Q__AT8 #b1)) (or (= sb.data_out_vld__AT11 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT7|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT11|))))))
-
-(declare-const en9_prop11 Bool)
-(assert (= en9_prop11 (=> (and (= sb.ff_en.Q__AT8 #b0) (= sb.ff_en.Q__AT9 #b1)) (or (= sb.data_out_vld__AT11 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT8|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT11|))))))
-
-(declare-const en10_prop11 Bool)
-(assert (= en10_prop11 (=> (and (= sb.ff_en.Q__AT9 #b0) (= sb.ff_en.Q__AT10 #b1)) (or (= sb.data_out_vld__AT11 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT9|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT11|))))))
-
-(declare-const en11_prop11 Bool)
-(assert (= en11_prop11 (=> (and (= sb.ff_en.Q__AT10 #b0) (= sb.ff_en.Q__AT11 #b1)) (or (= sb.data_out_vld__AT11 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT10|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT11|))))))
-
-(declare-const split_AT11 Bool)
-(assert (= split_AT11 (and en1_prop11 en2_prop11 en3_prop11 en4_prop11 en5_prop11 en6_prop11 en7_prop11 en8_prop11 en9_prop11 en10_prop11 en11_prop11)))
-(check-sat-assuming ((not split_AT11)))
-
-
-(echo "Checking property at bound 11")
 
 (check-sat)
 
@@ -3882,55 +3560,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT12 #b1)))
+(assert (not (= data_out_vld__AT12 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop12 Bool)
-(assert (= en1_prop12 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT12 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT12|))))))
-
-(declare-const en2_prop12 Bool)
-(assert (= en2_prop12 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT12 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT12|))))))
-
-(declare-const en3_prop12 Bool)
-(assert (= en3_prop12 (=> (and (= sb.ff_en.Q__AT2 #b0) (= sb.ff_en.Q__AT3 #b1)) (or (= sb.data_out_vld__AT12 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT2|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT12|))))))
-
-(declare-const en4_prop12 Bool)
-(assert (= en4_prop12 (=> (and (= sb.ff_en.Q__AT3 #b0) (= sb.ff_en.Q__AT4 #b1)) (or (= sb.data_out_vld__AT12 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT3|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT12|))))))
-
-(declare-const en5_prop12 Bool)
-(assert (= en5_prop12 (=> (and (= sb.ff_en.Q__AT4 #b0) (= sb.ff_en.Q__AT5 #b1)) (or (= sb.data_out_vld__AT12 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT4|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT12|))))))
-
-(declare-const en6_prop12 Bool)
-(assert (= en6_prop12 (=> (and (= sb.ff_en.Q__AT5 #b0) (= sb.ff_en.Q__AT6 #b1)) (or (= sb.data_out_vld__AT12 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT5|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT12|))))))
-
-(declare-const en7_prop12 Bool)
-(assert (= en7_prop12 (=> (and (= sb.ff_en.Q__AT6 #b0) (= sb.ff_en.Q__AT7 #b1)) (or (= sb.data_out_vld__AT12 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT6|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT12|))))))
-
-(declare-const en8_prop12 Bool)
-(assert (= en8_prop12 (=> (and (= sb.ff_en.Q__AT7 #b0) (= sb.ff_en.Q__AT8 #b1)) (or (= sb.data_out_vld__AT12 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT7|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT12|))))))
-
-(declare-const en9_prop12 Bool)
-(assert (= en9_prop12 (=> (and (= sb.ff_en.Q__AT8 #b0) (= sb.ff_en.Q__AT9 #b1)) (or (= sb.data_out_vld__AT12 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT8|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT12|))))))
-
-(declare-const en10_prop12 Bool)
-(assert (= en10_prop12 (=> (and (= sb.ff_en.Q__AT9 #b0) (= sb.ff_en.Q__AT10 #b1)) (or (= sb.data_out_vld__AT12 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT9|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT12|))))))
-
-(declare-const en11_prop12 Bool)
-(assert (= en11_prop12 (=> (and (= sb.ff_en.Q__AT10 #b0) (= sb.ff_en.Q__AT11 #b1)) (or (= sb.data_out_vld__AT12 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT10|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT12|))))))
-
-(declare-const en12_prop12 Bool)
-(assert (= en12_prop12 (=> (and (= sb.ff_en.Q__AT11 #b0) (= sb.ff_en.Q__AT12 #b1)) (or (= sb.data_out_vld__AT12 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT11|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT12|))))))
-
-(declare-const split_AT12 Bool)
-(assert (= split_AT12 (and en1_prop12 en2_prop12 en3_prop12 en4_prop12 en5_prop12 en6_prop12 en7_prop12 en8_prop12 en9_prop12 en10_prop12 en11_prop12 en12_prop12)))
-(check-sat-assuming ((not split_AT12)))
-
-
-(echo "Checking property at bound 12")
 
 (check-sat)
 
@@ -4203,58 +3836,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT13 #b1)))
+(assert (not (= data_out_vld__AT13 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop13 Bool)
-(assert (= en1_prop13 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT13 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT13|))))))
-
-(declare-const en2_prop13 Bool)
-(assert (= en2_prop13 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT13 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT13|))))))
-
-(declare-const en3_prop13 Bool)
-(assert (= en3_prop13 (=> (and (= sb.ff_en.Q__AT2 #b0) (= sb.ff_en.Q__AT3 #b1)) (or (= sb.data_out_vld__AT13 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT2|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT13|))))))
-
-(declare-const en4_prop13 Bool)
-(assert (= en4_prop13 (=> (and (= sb.ff_en.Q__AT3 #b0) (= sb.ff_en.Q__AT4 #b1)) (or (= sb.data_out_vld__AT13 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT3|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT13|))))))
-
-(declare-const en5_prop13 Bool)
-(assert (= en5_prop13 (=> (and (= sb.ff_en.Q__AT4 #b0) (= sb.ff_en.Q__AT5 #b1)) (or (= sb.data_out_vld__AT13 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT4|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT13|))))))
-
-(declare-const en6_prop13 Bool)
-(assert (= en6_prop13 (=> (and (= sb.ff_en.Q__AT5 #b0) (= sb.ff_en.Q__AT6 #b1)) (or (= sb.data_out_vld__AT13 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT5|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT13|))))))
-
-(declare-const en7_prop13 Bool)
-(assert (= en7_prop13 (=> (and (= sb.ff_en.Q__AT6 #b0) (= sb.ff_en.Q__AT7 #b1)) (or (= sb.data_out_vld__AT13 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT6|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT13|))))))
-
-(declare-const en8_prop13 Bool)
-(assert (= en8_prop13 (=> (and (= sb.ff_en.Q__AT7 #b0) (= sb.ff_en.Q__AT8 #b1)) (or (= sb.data_out_vld__AT13 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT7|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT13|))))))
-
-(declare-const en9_prop13 Bool)
-(assert (= en9_prop13 (=> (and (= sb.ff_en.Q__AT8 #b0) (= sb.ff_en.Q__AT9 #b1)) (or (= sb.data_out_vld__AT13 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT8|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT13|))))))
-
-(declare-const en10_prop13 Bool)
-(assert (= en10_prop13 (=> (and (= sb.ff_en.Q__AT9 #b0) (= sb.ff_en.Q__AT10 #b1)) (or (= sb.data_out_vld__AT13 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT9|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT13|))))))
-
-(declare-const en11_prop13 Bool)
-(assert (= en11_prop13 (=> (and (= sb.ff_en.Q__AT10 #b0) (= sb.ff_en.Q__AT11 #b1)) (or (= sb.data_out_vld__AT13 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT10|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT13|))))))
-
-(declare-const en12_prop13 Bool)
-(assert (= en12_prop13 (=> (and (= sb.ff_en.Q__AT11 #b0) (= sb.ff_en.Q__AT12 #b1)) (or (= sb.data_out_vld__AT13 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT11|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT13|))))))
-
-(declare-const en13_prop13 Bool)
-(assert (= en13_prop13 (=> (and (= sb.ff_en.Q__AT12 #b0) (= sb.ff_en.Q__AT13 #b1)) (or (= sb.data_out_vld__AT13 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT12|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT13|))))))
-
-(declare-const split_AT13 Bool)
-(assert (= split_AT13 (and en1_prop13 en2_prop13 en3_prop13 en4_prop13 en5_prop13 en6_prop13 en7_prop13 en8_prop13 en9_prop13 en10_prop13 en11_prop13 en12_prop13 en13_prop13)))
-(check-sat-assuming ((not split_AT13)))
-
-
-(echo "Checking property at bound 13")
 
 (check-sat)
 
@@ -4527,61 +4112,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT14 #b1)))
+(assert (not (= data_out_vld__AT14 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop14 Bool)
-(assert (= en1_prop14 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT14 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT14|))))))
-
-(declare-const en2_prop14 Bool)
-(assert (= en2_prop14 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT14 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT14|))))))
-
-(declare-const en3_prop14 Bool)
-(assert (= en3_prop14 (=> (and (= sb.ff_en.Q__AT2 #b0) (= sb.ff_en.Q__AT3 #b1)) (or (= sb.data_out_vld__AT14 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT2|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT14|))))))
-
-(declare-const en4_prop14 Bool)
-(assert (= en4_prop14 (=> (and (= sb.ff_en.Q__AT3 #b0) (= sb.ff_en.Q__AT4 #b1)) (or (= sb.data_out_vld__AT14 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT3|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT14|))))))
-
-(declare-const en5_prop14 Bool)
-(assert (= en5_prop14 (=> (and (= sb.ff_en.Q__AT4 #b0) (= sb.ff_en.Q__AT5 #b1)) (or (= sb.data_out_vld__AT14 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT4|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT14|))))))
-
-(declare-const en6_prop14 Bool)
-(assert (= en6_prop14 (=> (and (= sb.ff_en.Q__AT5 #b0) (= sb.ff_en.Q__AT6 #b1)) (or (= sb.data_out_vld__AT14 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT5|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT14|))))))
-
-(declare-const en7_prop14 Bool)
-(assert (= en7_prop14 (=> (and (= sb.ff_en.Q__AT6 #b0) (= sb.ff_en.Q__AT7 #b1)) (or (= sb.data_out_vld__AT14 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT6|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT14|))))))
-
-(declare-const en8_prop14 Bool)
-(assert (= en8_prop14 (=> (and (= sb.ff_en.Q__AT7 #b0) (= sb.ff_en.Q__AT8 #b1)) (or (= sb.data_out_vld__AT14 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT7|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT14|))))))
-
-(declare-const en9_prop14 Bool)
-(assert (= en9_prop14 (=> (and (= sb.ff_en.Q__AT8 #b0) (= sb.ff_en.Q__AT9 #b1)) (or (= sb.data_out_vld__AT14 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT8|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT14|))))))
-
-(declare-const en10_prop14 Bool)
-(assert (= en10_prop14 (=> (and (= sb.ff_en.Q__AT9 #b0) (= sb.ff_en.Q__AT10 #b1)) (or (= sb.data_out_vld__AT14 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT9|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT14|))))))
-
-(declare-const en11_prop14 Bool)
-(assert (= en11_prop14 (=> (and (= sb.ff_en.Q__AT10 #b0) (= sb.ff_en.Q__AT11 #b1)) (or (= sb.data_out_vld__AT14 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT10|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT14|))))))
-
-(declare-const en12_prop14 Bool)
-(assert (= en12_prop14 (=> (and (= sb.ff_en.Q__AT11 #b0) (= sb.ff_en.Q__AT12 #b1)) (or (= sb.data_out_vld__AT14 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT11|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT14|))))))
-
-(declare-const en13_prop14 Bool)
-(assert (= en13_prop14 (=> (and (= sb.ff_en.Q__AT12 #b0) (= sb.ff_en.Q__AT13 #b1)) (or (= sb.data_out_vld__AT14 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT12|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT14|))))))
-
-(declare-const en14_prop14 Bool)
-(assert (= en14_prop14 (=> (and (= sb.ff_en.Q__AT13 #b0) (= sb.ff_en.Q__AT14 #b1)) (or (= sb.data_out_vld__AT14 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT13|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT14|))))))
-
-(declare-const split_AT14 Bool)
-(assert (= split_AT14 (and en1_prop14 en2_prop14 en3_prop14 en4_prop14 en5_prop14 en6_prop14 en7_prop14 en8_prop14 en9_prop14 en10_prop14 en11_prop14 en12_prop14 en13_prop14 en14_prop14)))
-(check-sat-assuming ((not split_AT14)))
-
-
-(echo "Checking property at bound 14")
 
 (check-sat)
 
@@ -4854,64 +4388,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT15 #b1)))
+(assert (not (= data_out_vld__AT15 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop15 Bool)
-(assert (= en1_prop15 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT15 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT15|))))))
-
-(declare-const en2_prop15 Bool)
-(assert (= en2_prop15 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT15 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT15|))))))
-
-(declare-const en3_prop15 Bool)
-(assert (= en3_prop15 (=> (and (= sb.ff_en.Q__AT2 #b0) (= sb.ff_en.Q__AT3 #b1)) (or (= sb.data_out_vld__AT15 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT2|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT15|))))))
-
-(declare-const en4_prop15 Bool)
-(assert (= en4_prop15 (=> (and (= sb.ff_en.Q__AT3 #b0) (= sb.ff_en.Q__AT4 #b1)) (or (= sb.data_out_vld__AT15 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT3|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT15|))))))
-
-(declare-const en5_prop15 Bool)
-(assert (= en5_prop15 (=> (and (= sb.ff_en.Q__AT4 #b0) (= sb.ff_en.Q__AT5 #b1)) (or (= sb.data_out_vld__AT15 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT4|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT15|))))))
-
-(declare-const en6_prop15 Bool)
-(assert (= en6_prop15 (=> (and (= sb.ff_en.Q__AT5 #b0) (= sb.ff_en.Q__AT6 #b1)) (or (= sb.data_out_vld__AT15 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT5|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT15|))))))
-
-(declare-const en7_prop15 Bool)
-(assert (= en7_prop15 (=> (and (= sb.ff_en.Q__AT6 #b0) (= sb.ff_en.Q__AT7 #b1)) (or (= sb.data_out_vld__AT15 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT6|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT15|))))))
-
-(declare-const en8_prop15 Bool)
-(assert (= en8_prop15 (=> (and (= sb.ff_en.Q__AT7 #b0) (= sb.ff_en.Q__AT8 #b1)) (or (= sb.data_out_vld__AT15 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT7|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT15|))))))
-
-(declare-const en9_prop15 Bool)
-(assert (= en9_prop15 (=> (and (= sb.ff_en.Q__AT8 #b0) (= sb.ff_en.Q__AT9 #b1)) (or (= sb.data_out_vld__AT15 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT8|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT15|))))))
-
-(declare-const en10_prop15 Bool)
-(assert (= en10_prop15 (=> (and (= sb.ff_en.Q__AT9 #b0) (= sb.ff_en.Q__AT10 #b1)) (or (= sb.data_out_vld__AT15 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT9|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT15|))))))
-
-(declare-const en11_prop15 Bool)
-(assert (= en11_prop15 (=> (and (= sb.ff_en.Q__AT10 #b0) (= sb.ff_en.Q__AT11 #b1)) (or (= sb.data_out_vld__AT15 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT10|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT15|))))))
-
-(declare-const en12_prop15 Bool)
-(assert (= en12_prop15 (=> (and (= sb.ff_en.Q__AT11 #b0) (= sb.ff_en.Q__AT12 #b1)) (or (= sb.data_out_vld__AT15 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT11|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT15|))))))
-
-(declare-const en13_prop15 Bool)
-(assert (= en13_prop15 (=> (and (= sb.ff_en.Q__AT12 #b0) (= sb.ff_en.Q__AT13 #b1)) (or (= sb.data_out_vld__AT15 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT12|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT15|))))))
-
-(declare-const en14_prop15 Bool)
-(assert (= en14_prop15 (=> (and (= sb.ff_en.Q__AT13 #b0) (= sb.ff_en.Q__AT14 #b1)) (or (= sb.data_out_vld__AT15 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT13|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT15|))))))
-
-(declare-const en15_prop15 Bool)
-(assert (= en15_prop15 (=> (and (= sb.ff_en.Q__AT14 #b0) (= sb.ff_en.Q__AT15 #b1)) (or (= sb.data_out_vld__AT15 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT14|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT15|))))))
-
-(declare-const split_AT15 Bool)
-(assert (= split_AT15 (and en1_prop15 en2_prop15 en3_prop15 en4_prop15 en5_prop15 en6_prop15 en7_prop15 en8_prop15 en9_prop15 en10_prop15 en11_prop15 en12_prop15 en13_prop15 en14_prop15 en15_prop15)))
-(check-sat-assuming ((not split_AT15)))
-
-
-(echo "Checking property at bound 15")
 
 (check-sat)
 
@@ -5184,67 +4664,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT16 #b1)))
+(assert (not (= data_out_vld__AT16 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop16 Bool)
-(assert (= en1_prop16 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT16 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT16|))))))
-
-(declare-const en2_prop16 Bool)
-(assert (= en2_prop16 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT16 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT16|))))))
-
-(declare-const en3_prop16 Bool)
-(assert (= en3_prop16 (=> (and (= sb.ff_en.Q__AT2 #b0) (= sb.ff_en.Q__AT3 #b1)) (or (= sb.data_out_vld__AT16 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT2|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT16|))))))
-
-(declare-const en4_prop16 Bool)
-(assert (= en4_prop16 (=> (and (= sb.ff_en.Q__AT3 #b0) (= sb.ff_en.Q__AT4 #b1)) (or (= sb.data_out_vld__AT16 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT3|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT16|))))))
-
-(declare-const en5_prop16 Bool)
-(assert (= en5_prop16 (=> (and (= sb.ff_en.Q__AT4 #b0) (= sb.ff_en.Q__AT5 #b1)) (or (= sb.data_out_vld__AT16 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT4|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT16|))))))
-
-(declare-const en6_prop16 Bool)
-(assert (= en6_prop16 (=> (and (= sb.ff_en.Q__AT5 #b0) (= sb.ff_en.Q__AT6 #b1)) (or (= sb.data_out_vld__AT16 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT5|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT16|))))))
-
-(declare-const en7_prop16 Bool)
-(assert (= en7_prop16 (=> (and (= sb.ff_en.Q__AT6 #b0) (= sb.ff_en.Q__AT7 #b1)) (or (= sb.data_out_vld__AT16 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT6|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT16|))))))
-
-(declare-const en8_prop16 Bool)
-(assert (= en8_prop16 (=> (and (= sb.ff_en.Q__AT7 #b0) (= sb.ff_en.Q__AT8 #b1)) (or (= sb.data_out_vld__AT16 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT7|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT16|))))))
-
-(declare-const en9_prop16 Bool)
-(assert (= en9_prop16 (=> (and (= sb.ff_en.Q__AT8 #b0) (= sb.ff_en.Q__AT9 #b1)) (or (= sb.data_out_vld__AT16 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT8|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT16|))))))
-
-(declare-const en10_prop16 Bool)
-(assert (= en10_prop16 (=> (and (= sb.ff_en.Q__AT9 #b0) (= sb.ff_en.Q__AT10 #b1)) (or (= sb.data_out_vld__AT16 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT9|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT16|))))))
-
-(declare-const en11_prop16 Bool)
-(assert (= en11_prop16 (=> (and (= sb.ff_en.Q__AT10 #b0) (= sb.ff_en.Q__AT11 #b1)) (or (= sb.data_out_vld__AT16 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT10|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT16|))))))
-
-(declare-const en12_prop16 Bool)
-(assert (= en12_prop16 (=> (and (= sb.ff_en.Q__AT11 #b0) (= sb.ff_en.Q__AT12 #b1)) (or (= sb.data_out_vld__AT16 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT11|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT16|))))))
-
-(declare-const en13_prop16 Bool)
-(assert (= en13_prop16 (=> (and (= sb.ff_en.Q__AT12 #b0) (= sb.ff_en.Q__AT13 #b1)) (or (= sb.data_out_vld__AT16 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT12|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT16|))))))
-
-(declare-const en14_prop16 Bool)
-(assert (= en14_prop16 (=> (and (= sb.ff_en.Q__AT13 #b0) (= sb.ff_en.Q__AT14 #b1)) (or (= sb.data_out_vld__AT16 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT13|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT16|))))))
-
-(declare-const en15_prop16 Bool)
-(assert (= en15_prop16 (=> (and (= sb.ff_en.Q__AT14 #b0) (= sb.ff_en.Q__AT15 #b1)) (or (= sb.data_out_vld__AT16 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT14|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT16|))))))
-
-(declare-const en16_prop16 Bool)
-(assert (= en16_prop16 (=> (and (= sb.ff_en.Q__AT15 #b0) (= sb.ff_en.Q__AT16 #b1)) (or (= sb.data_out_vld__AT16 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT15|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT16|))))))
-
-(declare-const split_AT16 Bool)
-(assert (= split_AT16 (and en1_prop16 en2_prop16 en3_prop16 en4_prop16 en5_prop16 en6_prop16 en7_prop16 en8_prop16 en9_prop16 en10_prop16 en11_prop16 en12_prop16 en13_prop16 en14_prop16 en15_prop16 en16_prop16)))
-(check-sat-assuming ((not split_AT16)))
-
-
-(echo "Checking property at bound 16")
 
 (check-sat)
 
@@ -5517,70 +4940,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT17 #b1)))
+(assert (not (= data_out_vld__AT17 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop17 Bool)
-(assert (= en1_prop17 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT17 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT17|))))))
-
-(declare-const en2_prop17 Bool)
-(assert (= en2_prop17 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT17 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT17|))))))
-
-(declare-const en3_prop17 Bool)
-(assert (= en3_prop17 (=> (and (= sb.ff_en.Q__AT2 #b0) (= sb.ff_en.Q__AT3 #b1)) (or (= sb.data_out_vld__AT17 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT2|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT17|))))))
-
-(declare-const en4_prop17 Bool)
-(assert (= en4_prop17 (=> (and (= sb.ff_en.Q__AT3 #b0) (= sb.ff_en.Q__AT4 #b1)) (or (= sb.data_out_vld__AT17 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT3|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT17|))))))
-
-(declare-const en5_prop17 Bool)
-(assert (= en5_prop17 (=> (and (= sb.ff_en.Q__AT4 #b0) (= sb.ff_en.Q__AT5 #b1)) (or (= sb.data_out_vld__AT17 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT4|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT17|))))))
-
-(declare-const en6_prop17 Bool)
-(assert (= en6_prop17 (=> (and (= sb.ff_en.Q__AT5 #b0) (= sb.ff_en.Q__AT6 #b1)) (or (= sb.data_out_vld__AT17 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT5|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT17|))))))
-
-(declare-const en7_prop17 Bool)
-(assert (= en7_prop17 (=> (and (= sb.ff_en.Q__AT6 #b0) (= sb.ff_en.Q__AT7 #b1)) (or (= sb.data_out_vld__AT17 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT6|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT17|))))))
-
-(declare-const en8_prop17 Bool)
-(assert (= en8_prop17 (=> (and (= sb.ff_en.Q__AT7 #b0) (= sb.ff_en.Q__AT8 #b1)) (or (= sb.data_out_vld__AT17 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT7|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT17|))))))
-
-(declare-const en9_prop17 Bool)
-(assert (= en9_prop17 (=> (and (= sb.ff_en.Q__AT8 #b0) (= sb.ff_en.Q__AT9 #b1)) (or (= sb.data_out_vld__AT17 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT8|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT17|))))))
-
-(declare-const en10_prop17 Bool)
-(assert (= en10_prop17 (=> (and (= sb.ff_en.Q__AT9 #b0) (= sb.ff_en.Q__AT10 #b1)) (or (= sb.data_out_vld__AT17 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT9|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT17|))))))
-
-(declare-const en11_prop17 Bool)
-(assert (= en11_prop17 (=> (and (= sb.ff_en.Q__AT10 #b0) (= sb.ff_en.Q__AT11 #b1)) (or (= sb.data_out_vld__AT17 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT10|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT17|))))))
-
-(declare-const en12_prop17 Bool)
-(assert (= en12_prop17 (=> (and (= sb.ff_en.Q__AT11 #b0) (= sb.ff_en.Q__AT12 #b1)) (or (= sb.data_out_vld__AT17 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT11|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT17|))))))
-
-(declare-const en13_prop17 Bool)
-(assert (= en13_prop17 (=> (and (= sb.ff_en.Q__AT12 #b0) (= sb.ff_en.Q__AT13 #b1)) (or (= sb.data_out_vld__AT17 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT12|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT17|))))))
-
-(declare-const en14_prop17 Bool)
-(assert (= en14_prop17 (=> (and (= sb.ff_en.Q__AT13 #b0) (= sb.ff_en.Q__AT14 #b1)) (or (= sb.data_out_vld__AT17 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT13|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT17|))))))
-
-(declare-const en15_prop17 Bool)
-(assert (= en15_prop17 (=> (and (= sb.ff_en.Q__AT14 #b0) (= sb.ff_en.Q__AT15 #b1)) (or (= sb.data_out_vld__AT17 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT14|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT17|))))))
-
-(declare-const en16_prop17 Bool)
-(assert (= en16_prop17 (=> (and (= sb.ff_en.Q__AT15 #b0) (= sb.ff_en.Q__AT16 #b1)) (or (= sb.data_out_vld__AT17 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT15|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT17|))))))
-
-(declare-const en17_prop17 Bool)
-(assert (= en17_prop17 (=> (and (= sb.ff_en.Q__AT16 #b0) (= sb.ff_en.Q__AT17 #b1)) (or (= sb.data_out_vld__AT17 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT16|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT17|))))))
-
-(declare-const split_AT17 Bool)
-(assert (= split_AT17 (and en1_prop17 en2_prop17 en3_prop17 en4_prop17 en5_prop17 en6_prop17 en7_prop17 en8_prop17 en9_prop17 en10_prop17 en11_prop17 en12_prop17 en13_prop17 en14_prop17 en15_prop17 en16_prop17 en17_prop17)))
-(check-sat-assuming ((not split_AT17)))
-
-
-(echo "Checking property at bound 17")
 
 (check-sat)
 
@@ -5853,73 +5216,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT18 #b1)))
+(assert (not (= data_out_vld__AT18 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop18 Bool)
-(assert (= en1_prop18 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT18 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT18|))))))
-
-(declare-const en2_prop18 Bool)
-(assert (= en2_prop18 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT18 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT18|))))))
-
-(declare-const en3_prop18 Bool)
-(assert (= en3_prop18 (=> (and (= sb.ff_en.Q__AT2 #b0) (= sb.ff_en.Q__AT3 #b1)) (or (= sb.data_out_vld__AT18 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT2|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT18|))))))
-
-(declare-const en4_prop18 Bool)
-(assert (= en4_prop18 (=> (and (= sb.ff_en.Q__AT3 #b0) (= sb.ff_en.Q__AT4 #b1)) (or (= sb.data_out_vld__AT18 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT3|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT18|))))))
-
-(declare-const en5_prop18 Bool)
-(assert (= en5_prop18 (=> (and (= sb.ff_en.Q__AT4 #b0) (= sb.ff_en.Q__AT5 #b1)) (or (= sb.data_out_vld__AT18 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT4|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT18|))))))
-
-(declare-const en6_prop18 Bool)
-(assert (= en6_prop18 (=> (and (= sb.ff_en.Q__AT5 #b0) (= sb.ff_en.Q__AT6 #b1)) (or (= sb.data_out_vld__AT18 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT5|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT18|))))))
-
-(declare-const en7_prop18 Bool)
-(assert (= en7_prop18 (=> (and (= sb.ff_en.Q__AT6 #b0) (= sb.ff_en.Q__AT7 #b1)) (or (= sb.data_out_vld__AT18 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT6|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT18|))))))
-
-(declare-const en8_prop18 Bool)
-(assert (= en8_prop18 (=> (and (= sb.ff_en.Q__AT7 #b0) (= sb.ff_en.Q__AT8 #b1)) (or (= sb.data_out_vld__AT18 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT7|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT18|))))))
-
-(declare-const en9_prop18 Bool)
-(assert (= en9_prop18 (=> (and (= sb.ff_en.Q__AT8 #b0) (= sb.ff_en.Q__AT9 #b1)) (or (= sb.data_out_vld__AT18 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT8|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT18|))))))
-
-(declare-const en10_prop18 Bool)
-(assert (= en10_prop18 (=> (and (= sb.ff_en.Q__AT9 #b0) (= sb.ff_en.Q__AT10 #b1)) (or (= sb.data_out_vld__AT18 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT9|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT18|))))))
-
-(declare-const en11_prop18 Bool)
-(assert (= en11_prop18 (=> (and (= sb.ff_en.Q__AT10 #b0) (= sb.ff_en.Q__AT11 #b1)) (or (= sb.data_out_vld__AT18 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT10|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT18|))))))
-
-(declare-const en12_prop18 Bool)
-(assert (= en12_prop18 (=> (and (= sb.ff_en.Q__AT11 #b0) (= sb.ff_en.Q__AT12 #b1)) (or (= sb.data_out_vld__AT18 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT11|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT18|))))))
-
-(declare-const en13_prop18 Bool)
-(assert (= en13_prop18 (=> (and (= sb.ff_en.Q__AT12 #b0) (= sb.ff_en.Q__AT13 #b1)) (or (= sb.data_out_vld__AT18 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT12|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT18|))))))
-
-(declare-const en14_prop18 Bool)
-(assert (= en14_prop18 (=> (and (= sb.ff_en.Q__AT13 #b0) (= sb.ff_en.Q__AT14 #b1)) (or (= sb.data_out_vld__AT18 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT13|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT18|))))))
-
-(declare-const en15_prop18 Bool)
-(assert (= en15_prop18 (=> (and (= sb.ff_en.Q__AT14 #b0) (= sb.ff_en.Q__AT15 #b1)) (or (= sb.data_out_vld__AT18 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT14|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT18|))))))
-
-(declare-const en16_prop18 Bool)
-(assert (= en16_prop18 (=> (and (= sb.ff_en.Q__AT15 #b0) (= sb.ff_en.Q__AT16 #b1)) (or (= sb.data_out_vld__AT18 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT15|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT18|))))))
-
-(declare-const en17_prop18 Bool)
-(assert (= en17_prop18 (=> (and (= sb.ff_en.Q__AT16 #b0) (= sb.ff_en.Q__AT17 #b1)) (or (= sb.data_out_vld__AT18 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT16|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT18|))))))
-
-(declare-const en18_prop18 Bool)
-(assert (= en18_prop18 (=> (and (= sb.ff_en.Q__AT17 #b0) (= sb.ff_en.Q__AT18 #b1)) (or (= sb.data_out_vld__AT18 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT17|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT18|))))))
-
-(declare-const split_AT18 Bool)
-(assert (= split_AT18 (and en1_prop18 en2_prop18 en3_prop18 en4_prop18 en5_prop18 en6_prop18 en7_prop18 en8_prop18 en9_prop18 en10_prop18 en11_prop18 en12_prop18 en13_prop18 en14_prop18 en15_prop18 en16_prop18 en17_prop18 en18_prop18)))
-(check-sat-assuming ((not split_AT18)))
-
-
-(echo "Checking property at bound 18")
 
 (check-sat)
 
@@ -6192,76 +5492,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT19 #b1)))
+(assert (not (= data_out_vld__AT19 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop19 Bool)
-(assert (= en1_prop19 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const en2_prop19 Bool)
-(assert (= en2_prop19 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const en3_prop19 Bool)
-(assert (= en3_prop19 (=> (and (= sb.ff_en.Q__AT2 #b0) (= sb.ff_en.Q__AT3 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT2|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const en4_prop19 Bool)
-(assert (= en4_prop19 (=> (and (= sb.ff_en.Q__AT3 #b0) (= sb.ff_en.Q__AT4 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT3|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const en5_prop19 Bool)
-(assert (= en5_prop19 (=> (and (= sb.ff_en.Q__AT4 #b0) (= sb.ff_en.Q__AT5 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT4|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const en6_prop19 Bool)
-(assert (= en6_prop19 (=> (and (= sb.ff_en.Q__AT5 #b0) (= sb.ff_en.Q__AT6 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT5|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const en7_prop19 Bool)
-(assert (= en7_prop19 (=> (and (= sb.ff_en.Q__AT6 #b0) (= sb.ff_en.Q__AT7 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT6|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const en8_prop19 Bool)
-(assert (= en8_prop19 (=> (and (= sb.ff_en.Q__AT7 #b0) (= sb.ff_en.Q__AT8 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT7|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const en9_prop19 Bool)
-(assert (= en9_prop19 (=> (and (= sb.ff_en.Q__AT8 #b0) (= sb.ff_en.Q__AT9 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT8|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const en10_prop19 Bool)
-(assert (= en10_prop19 (=> (and (= sb.ff_en.Q__AT9 #b0) (= sb.ff_en.Q__AT10 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT9|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const en11_prop19 Bool)
-(assert (= en11_prop19 (=> (and (= sb.ff_en.Q__AT10 #b0) (= sb.ff_en.Q__AT11 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT10|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const en12_prop19 Bool)
-(assert (= en12_prop19 (=> (and (= sb.ff_en.Q__AT11 #b0) (= sb.ff_en.Q__AT12 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT11|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const en13_prop19 Bool)
-(assert (= en13_prop19 (=> (and (= sb.ff_en.Q__AT12 #b0) (= sb.ff_en.Q__AT13 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT12|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const en14_prop19 Bool)
-(assert (= en14_prop19 (=> (and (= sb.ff_en.Q__AT13 #b0) (= sb.ff_en.Q__AT14 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT13|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const en15_prop19 Bool)
-(assert (= en15_prop19 (=> (and (= sb.ff_en.Q__AT14 #b0) (= sb.ff_en.Q__AT15 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT14|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const en16_prop19 Bool)
-(assert (= en16_prop19 (=> (and (= sb.ff_en.Q__AT15 #b0) (= sb.ff_en.Q__AT16 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT15|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const en17_prop19 Bool)
-(assert (= en17_prop19 (=> (and (= sb.ff_en.Q__AT16 #b0) (= sb.ff_en.Q__AT17 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT16|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const en18_prop19 Bool)
-(assert (= en18_prop19 (=> (and (= sb.ff_en.Q__AT17 #b0) (= sb.ff_en.Q__AT18 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT17|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const en19_prop19 Bool)
-(assert (= en19_prop19 (=> (and (= sb.ff_en.Q__AT18 #b0) (= sb.ff_en.Q__AT19 #b1)) (or (= sb.data_out_vld__AT19 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT18|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT19|))))))
-
-(declare-const split_AT19 Bool)
-(assert (= split_AT19 (and en1_prop19 en2_prop19 en3_prop19 en4_prop19 en5_prop19 en6_prop19 en7_prop19 en8_prop19 en9_prop19 en10_prop19 en11_prop19 en12_prop19 en13_prop19 en14_prop19 en15_prop19 en16_prop19 en17_prop19 en18_prop19 en19_prop19)))
-(check-sat-assuming ((not split_AT19)))
-
-
-(echo "Checking property at bound 19")
 
 (check-sat)
 
@@ -6534,79 +5768,10 @@
 (push 1)
 ;; Property: START
 
-(assert (not (= prop_signal__AT20 #b1)))
+(assert (not (= data_out_vld__AT20 #b0)))
 ;; Property: END
 ;; block initial state
 (assert (= (bvand (bvnot rst__AT1) (bvnot sb.ff_en.Q__AT1) (bvor (bvnot ((_ extract 3 3) sb.mpt.ff_cnt.Q__AT1)) (bvcomp ((_ extract 2 0) sb.mpt.ff_cnt.Q__AT1) #b000)) (bvcomp |af.gen_fifos[0].f.ff_wrPtr.Q__AT1| (bvadd |af.gen_fifos[0].f.ff_rdPtr.Q__AT1| sb.mpt.ff_cnt.Q__AT1))) #b0))
-
-;; Search guiding formulas
-
-(declare-const en1_prop20 Bool)
-(assert (= en1_prop20 (=> (and (= sb.ff_en.Q__AT0 #b0) (= sb.ff_en.Q__AT1 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT0|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en2_prop20 Bool)
-(assert (= en2_prop20 (=> (and (= sb.ff_en.Q__AT1 #b0) (= sb.ff_en.Q__AT2 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT1|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en3_prop20 Bool)
-(assert (= en3_prop20 (=> (and (= sb.ff_en.Q__AT2 #b0) (= sb.ff_en.Q__AT3 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT2|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en4_prop20 Bool)
-(assert (= en4_prop20 (=> (and (= sb.ff_en.Q__AT3 #b0) (= sb.ff_en.Q__AT4 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT3|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en5_prop20 Bool)
-(assert (= en5_prop20 (=> (and (= sb.ff_en.Q__AT4 #b0) (= sb.ff_en.Q__AT5 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT4|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en6_prop20 Bool)
-(assert (= en6_prop20 (=> (and (= sb.ff_en.Q__AT5 #b0) (= sb.ff_en.Q__AT6 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT5|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en7_prop20 Bool)
-(assert (= en7_prop20 (=> (and (= sb.ff_en.Q__AT6 #b0) (= sb.ff_en.Q__AT7 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT6|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en8_prop20 Bool)
-(assert (= en8_prop20 (=> (and (= sb.ff_en.Q__AT7 #b0) (= sb.ff_en.Q__AT8 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT7|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en9_prop20 Bool)
-(assert (= en9_prop20 (=> (and (= sb.ff_en.Q__AT8 #b0) (= sb.ff_en.Q__AT9 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT8|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en10_prop20 Bool)
-(assert (= en10_prop20 (=> (and (= sb.ff_en.Q__AT9 #b0) (= sb.ff_en.Q__AT10 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT9|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en11_prop20 Bool)
-(assert (= en11_prop20 (=> (and (= sb.ff_en.Q__AT10 #b0) (= sb.ff_en.Q__AT11 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT10|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en12_prop20 Bool)
-(assert (= en12_prop20 (=> (and (= sb.ff_en.Q__AT11 #b0) (= sb.ff_en.Q__AT12 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT11|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en13_prop20 Bool)
-(assert (= en13_prop20 (=> (and (= sb.ff_en.Q__AT12 #b0) (= sb.ff_en.Q__AT13 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT12|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en14_prop20 Bool)
-(assert (= en14_prop20 (=> (and (= sb.ff_en.Q__AT13 #b0) (= sb.ff_en.Q__AT14 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT13|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en15_prop20 Bool)
-(assert (= en15_prop20 (=> (and (= sb.ff_en.Q__AT14 #b0) (= sb.ff_en.Q__AT15 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT14|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en16_prop20 Bool)
-(assert (= en16_prop20 (=> (and (= sb.ff_en.Q__AT15 #b0) (= sb.ff_en.Q__AT16 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT15|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en17_prop20 Bool)
-(assert (= en17_prop20 (=> (and (= sb.ff_en.Q__AT16 #b0) (= sb.ff_en.Q__AT17 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT16|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en18_prop20 Bool)
-(assert (= en18_prop20 (=> (and (= sb.ff_en.Q__AT17 #b0) (= sb.ff_en.Q__AT18 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT17|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en19_prop20 Bool)
-(assert (= en19_prop20 (=> (and (= sb.ff_en.Q__AT18 #b0) (= sb.ff_en.Q__AT19 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT18|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const en20_prop20 Bool)
-(assert (= en20_prop20 (=> (and (= sb.ff_en.Q__AT19 #b0) (= sb.ff_en.Q__AT20 #b1)) (or (= sb.data_out_vld__AT20 #b0) (= ((_ extract 2 0) |af.gen_fifos[0].f.ff_wrPtr.Q__AT19|) ((_ extract 2 0) |af.gen_fifos[0].f.ff_rdPtr.Q__AT20|))))))
-
-(declare-const split_AT20 Bool)
-(assert (= split_AT20 (and en1_prop20 en2_prop20 en3_prop20 en4_prop20 en5_prop20 en6_prop20 en7_prop20 en8_prop20 en9_prop20 en10_prop20 en11_prop20 en12_prop20 en13_prop20 en14_prop20 en15_prop20 en16_prop20 en17_prop20 en18_prop20 en19_prop20 en20_prop20)))
-(check-sat-assuming ((not split_AT20)))
-
-
-(echo "Checking property at bound 20")
 
 (check-sat)
 
@@ -6876,6 +6041,4 @@
 (assert (= |af.gen_fifos[0].f.ff_wrPtr.Q__AT21| (ite (= rst__AT20 #b1) #b0000 (ite (= (bvor (bvor ((_ extract 0 0) push__AT20) N46__AT20) rst__AT20) #b1) (ite (= rst__AT20 #b1) #b0000 (bvadd |af.gen_fifos[0].f.ff_wrPtr.Q__AT20| ((_ zero_extend 3) ((_ extract 0 0) push__AT20)))) |af.gen_fifos[0].f.ff_wrPtr.Q__AT20|))))
 (assert (= |af.gen_fifos[1].f.entries__AT21| (store |af.gen_fifos[1].f.entries__AT20| ((_ extract 2 0) |af.gen_fifos[1].f.ff_wrPtr.Q__AT20|) (ite (= ((_ extract 1 1) push__AT20) #b1) ((_ extract 15 8) flat_data_in__AT20) (select |af.gen_fifos[1].f.entries__AT20| ((_ extract 2 0) |af.gen_fifos[1].f.ff_wrPtr.Q__AT20|))))))
 (assert (= rst__AT21 #b0))
-
-
 

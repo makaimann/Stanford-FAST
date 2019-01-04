@@ -22,8 +22,8 @@
 #              still need to prove that's safe though
 # there's a dependency relation between push0 and reqs0 which doesnt allow reordering in general
 # (!reqs[0:0] | !next(push[0:0])) = 1_1
-(!push[1:1] | !next(push[0:0])) = 1_1
-(!reqs[1:1] | !next(push[0:0])) = 1_1
+(full[0:0] | !push[1:1] | !next(push[0:0])) = 1_1
+(full[0:0] | !reqs[1:1] | !next(push[0:0])) = 1_1
 # I think these two are safe, but just for cleanliness, use the same format as for push0
 # (!push[1:1] | !next(reqs[0:0])) = 1_1
 # (!reqs[1:1] | !next(reqs[0:0])) = 1_1
