@@ -8,29 +8,15 @@
 # No stutter
 (('push'[0:0] | 'push'[1:1] | 'reqs'[0:0] | 'reqs'[1:1]) = 1_1)
 # POR
-((!'push'[1:1] | !next('push'[0:0])) = 1_1)
-# not sure if we need all three?
-((('reqs' bvcomp 0_2) | ((next('push') bvcomp 0_2) | !('full' bvcomp 0_2))) = 1_1)
-((!'reqs'[0:0] | (!next('push'[0:0]) | 'full'[0:0])) = 1_1)
-((!'reqs'[1:1] | (!next('push'[1:1]) | 'full'[1:1])) = 1_1)
-# end
-# start -- saturation experiment
-# Note: These have NOT been proven to be safe and probably are NOT
-# they definitely need some kind of condition on them
-# just trying to get saturation for now
-# Observation: can saturate even earlier if once we start requesting, we prefer only requests until empty
-#              still need to prove that's safe though
 # there's a dependency relation between push0 and reqs0 which doesnt allow reordering in general
-# (!reqs[0:0] | !next(push[0:0])) = 1_1
-(full[0:0] | !push[1:1] | !next(push[0:0])) = 1_1
-(full[0:0] | !reqs[1:1] | !next(push[0:0])) = 1_1
-# I think these two are safe, but just for cleanliness, use the same format as for push0
-# (!push[1:1] | !next(reqs[0:0])) = 1_1
-# (!reqs[1:1] | !next(reqs[0:0])) = 1_1
+(full[0:0] | full[1:1] | !push[1:1] | !next(push[0:0])) = 1_1
+(full[0:0] | empty[1:1] | !reqs[1:1] | !next(push[0:0])) = 1_1
+(empty[0:0] | full[1:1] | !push[1:1] | !next(reqs[0:0])) = 1_1
+(empty[0:0] | empty[1:1] | !reqs[1:1] | !next(reqs[0:0])) = 1_1
 # as long as it's still not empty, and the packet has been injected, once you start requesting, don't do anything else
 # e.g. !empty -> (op_i -> !next(reqs0))
 # using all bv because otherwise cvc4 gets all messed up with booleans
-(!sb.ff_en.Q | empty[0:0] | !push[0:0] | !next(reqs[0:0])) = 1_1
-(!sb.ff_en.Q | empty[0:0] | !push[1:1] | !next(reqs[0:0])) = 1_1
-(!sb.ff_en.Q | empty[0:0] | !reqs[1:1] | !next(reqs[0:0])) = 1_1
+(!sb.ff_en.Q | empty[0:0] | full[0:0] | !push[0:0] | !next(reqs[0:0])) = 1_1
+(!sb.ff_en.Q | empty[0:0] | full[1:1] | !push[1:1] | !next(reqs[0:0])) = 1_1
+(!sb.ff_en.Q | empty[0:0] | empty[1:1] | !reqs[1:1] | !next(reqs[0:0])) = 1_1
 # end -- saturation experiment
