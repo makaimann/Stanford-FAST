@@ -6,10 +6,7 @@ clock clk;
 reset -none;
 
 set EQ {
-((af0.arb.deficit_counters[0].ff_defcnt.Q == af1.arb.deficit_counters[0].ff_defcnt.Q) &&
-(af0.arb.deficit_counters[1].ff_defcnt.Q == af1.arb.deficit_counters[1].ff_defcnt.Q) &&
-(af0.arb.ff_rrcnt.Q == af1.arb.ff_rrcnt.Q) &&
-(af0.gen_fifos[0].f.entries[0] == af1.gen_fifos[0].f.entries[0]) &&
+((af0.gen_fifos[0].f.entries[0] == af1.gen_fifos[0].f.entries[0]) &&
 (af0.gen_fifos[0].f.entries[1] == af1.gen_fifos[0].f.entries[1]) &&
 (af0.gen_fifos[0].f.entries[2] == af1.gen_fifos[0].f.entries[2]) &&
 (af0.gen_fifos[0].f.entries[3] == af1.gen_fifos[0].f.entries[3]) &&
@@ -35,9 +32,7 @@ set EQ {
 }
 
 set pEQ {
-(($past(af0.arb.deficit_counters[0].ff_defcnt.Q) == af1.arb.deficit_counters[0].ff_defcnt.Q) &&
-($past(af0.arb.deficit_counters[1].ff_defcnt.Q) == af1.arb.deficit_counters[1].ff_defcnt.Q) &&
-($past(af0.arb.ff_rrcnt.Q) == af1.arb.ff_rrcnt.Q) &&
+(
 ($past(af0.gen_fifos[0].f.entries[0]) == af1.gen_fifos[0].f.entries[0]) &&
 ($past(af0.gen_fifos[0].f.entries[1]) == af1.gen_fifos[0].f.entries[1]) &&
 ($past(af0.gen_fifos[0].f.entries[2]) == af1.gen_fifos[0].f.entries[2]) &&
@@ -63,6 +58,15 @@ set pEQ {
 ($past(sb0.mpt.ff_cnt.Q) == sb1.mpt.ff_cnt.Q)
 }
 
+# Fifo i gets same inputs
+set F0EQ {(push0[0] == push1[0]) && (reqs0[0] == reqs1[0])}
+set F1EQ {(push0[1] == push1[1]) && (reqs0[1] == reqs1[1])}
+
+# Fifo i inactive (for both copies)
+set F0IA {!push0[0] &&  !push1[0] && !reqs0[0] && !reqs1[0]}
+set F1IA {!push0[1] &&  !push1[1] && !reqs0[1] && !reqs1[1]}
+
+
 assume -name no_push0_0_when_full {af0.gen_fifos[0].f.full |-> !push0[0]}
 assume -name no_push0_1_when_full {af0.gen_fifos[1].f.full |-> !push0[1]}
 assume -name no_push1_0_when_full {af1.gen_fifos[0].f.full |-> !push1[0]}
@@ -77,6 +81,7 @@ assume -name large_enough_quantums { (quantums[7:0] >= 8) && (quantums[15:8] >= 
 assume -name no_rst {!rst}
 # basic true assumption about scoreboard state
 # holds and can be proven after a reset sequence
+# is there a way to not use these? Seems like a lot of manual effort to figure out -- bad for our message
 assume -name sb0_cnt_lt_depth {sb0.mpt.ff_cnt.Q <= DEPTH}
 assume -name sb1_cnt_lt_depth {sb1.mpt.ff_cnt.Q <= DEPTH}
 assume -name match_sb0_fifo {!sb0.ff_en.Q |-> ((af0.gen_fifos[0].f.wrPtr - af0.gen_fifos[0].f.rdPtr) == sb0.mpt.ff_cnt.Q)}
@@ -86,6 +91,11 @@ cover -name eq_then_not "${EQ} ##1 !${EQ}"
 
 # This cover should hold in COMB_UPDATE mode but it doesn't
 cover -name pop_then_nothing_then_pop "pop0\[0\] ##1 !(|pop0) ##1 pop0\[0\]"
+
+# ISSUE: This isn't quite right
+assert -name delay_push_or_reqs_enabled "($EQ && !empty0\[0\] && !full0\[0\] && push0\[0\] && !reqs0\[0] && !push1\[0\] && reqs1\[0\]) |=> (!empty0\[0\] || !full1\[0\])"
+# assert -name delay_push "((($EQ && !empty0\[0\] && !full0\[0\] && push0\[0] && reqs\[0\] && !push1\[0\] && reqs1\[0\]) ##1 (push1\[0\] && !reqs1\[0\] && (start == \$past(start)) && (flat_data_in1 == $\past(flat_data_in0)))) |=> $pEQ"
+assert -name delay_push "(($EQ && $F1IA && !empty0\[0\] && !full0\[0\] && push0\[0] && reqs0\[0\] && !push1\[0\] && reqs1\[0\]) ##1 ($F1IA && push1\[0\] && !reqs1\[0\] && (start == \$past(start)) && (flat_data_in1 == $\past(flat_data_in0)))) |=> $pEQ"
 
 # Things to do:
 # 1. Prove that each operation can be moved to the next cycle
@@ -104,12 +114,12 @@ cover -name pop_then_nothing_then_pop "pop0\[0\] ##1 !(|pop0) ##1 pop0\[0\]"
 # af1 : copy with one delayed op
 # Control signals are constrained so that only difference is a delay in the signal of interest, and af0's second transition is a NOP
 # Note: constraining req is *less* restrictive than constraining pop, so there's a preference for that
-assert -name delay_push_0 "(($EQ && (push0\[1\] == push1\[1\]) && (reqs0 == reqs1) && (flat_data_in0 == flat_data_in1) && push0\[0\] && !push1\[0\]) ##1 (push1\[0\]) && !push1\[1\] && !(|push0) && !(|reqs0) && !(|reqs1) && (start == \$past(start)) && (flat_data_in0 == \$past(flat_data_in0)) && (flat_data_in1 == \$past(flat_data_in1))) |=> $pEQ"
-assert -name delay_push_1 "(($EQ && (push0\[0\] == push1\[0\]) && (reqs0 == reqs1) && (flat_data_in0 == flat_data_in1) && push0\[1\] && !push1\[1\]) ##1 (push1\[1\]) && !push1\[0\] && !(|push0) && !(|reqs0) && !(|reqs1) && (start == \$past(start)) && (flat_data_in0 == \$past(flat_data_in0)) && (flat_data_in1 == \$past(flat_data_in1))) |=> $pEQ"
-assert -name delay_bundled_req "(($EQ && (push0 == push1) && (flat_data_in0 == flat_data_in1) && (reqs0 != 0) && (reqs1 == 0)) ##1 (reqs0 == 0) && (start == \$past(start)) && (reqs1 == \$past(reqs0)) && !(|push0) && !(|push1) && (flat_data_in0 == \$past(flat_data_in0)) && (flat_data_in1 == \$past(flat_data_in1))) |=> $pEQ"
+# assert -name delay_push_0 "(($EQ && (push0\[1\] == push1\[1\]) && (reqs0 == reqs1) && (flat_data_in0 == flat_data_in1) && push0\[0\] && !push1\[0\]) ##1 (push1\[0\]) && !push1\[1\] && !(|push0) && !(|reqs0) && !(|reqs1) && (start == \$past(start)) && (flat_data_in0 == \$past(flat_data_in0)) && (flat_data_in1 == \$past(flat_data_in1))) |=> $pEQ"
+# assert -name delay_push_1 "(($EQ && (push0\[0\] == push1\[0\]) && (reqs0 == reqs1) && (flat_data_in0 == flat_data_in1) && push0\[1\] && !push1\[1\]) ##1 (push1\[1\]) && !push1\[0\] && !(|push0) && !(|reqs0) && !(|reqs1) && (start == \$past(start)) && (flat_data_in0 == \$past(flat_data_in0)) && (flat_data_in1 == \$past(flat_data_in1))) |=> $pEQ"
+# assert -name delay_bundled_req "(($EQ && (push0 == push1) && (flat_data_in0 == flat_data_in1) && (reqs0 != 0) && (reqs1 == 0)) ##1 (reqs0 == 0) && (start == \$past(start)) && (reqs1 == \$past(reqs0)) && !(|push0) && !(|push1) && (flat_data_in0 == \$past(flat_data_in0)) && (flat_data_in1 == \$past(flat_data_in1))) |=> $pEQ"
 
 
-# covers to show that antecedent can be true
-cover -name cover_delay_push_0 "(($EQ && (push0\[1\] == push1\[1\]) && (reqs0 == reqs1) && (flat_data_in0 == flat_data_in1) && push0\[0\] && !push1\[0\]) ##1 (push1\[0\]) && !push1\[1\] && !(|push0) && !(|reqs0) && !(|reqs1) && (start == \$past(start)) && (flat_data_in0 == \$past(flat_data_in0)) && (flat_data_in1 == \$past(flat_data_in1)))"
-cover -name cover_delay_push_1 "(($EQ && (push0\[0\] == push1\[0\]) && (reqs0 == reqs1) && (flat_data_in0 == flat_data_in1) && push0\[1\] && !push1\[1\]) ##1 (push1\[1\]) && !push1\[0\] && !(|push0) && !(|reqs0) && !(|reqs1) && (start == \$past(start)) && (flat_data_in0 == \$past(flat_data_in0)) && (flat_data_in1 == \$past(flat_data_in1)))"
-cover -name cover_delay_bundled_req "(($EQ && (push0 == push1) && (flat_data_in0 == flat_data_in1) && (reqs0 != 0) && (reqs1 == 0)) ##1 (reqs0 == 0) && (start == \$past(start)) && (reqs1 == \$past(reqs0)) && !(|push0) && !(|push1) && (flat_data_in0 == \$past(flat_data_in0)) && (flat_data_in1 == \$past(flat_data_in1)))"
+# # covers to show that antecedent can be true
+# cover -name cover_delay_push_0 "(($EQ && (push0\[1\] == push1\[1\]) && (reqs0 == reqs1) && (flat_data_in0 == flat_data_in1) && push0\[0\] && !push1\[0\]) ##1 (push1\[0\]) && !push1\[1\] && !(|push0) && !(|reqs0) && !(|reqs1) && (start == \$past(start)) && (flat_data_in0 == \$past(flat_data_in0)) && (flat_data_in1 == \$past(flat_data_in1)))"
+# cover -name cover_delay_push_1 "(($EQ && (push0\[0\] == push1\[0\]) && (reqs0 == reqs1) && (flat_data_in0 == flat_data_in1) && push0\[1\] && !push1\[1\]) ##1 (push1\[1\]) && !push1\[0\] && !(|push0) && !(|reqs0) && !(|reqs1) && (start == \$past(start)) && (flat_data_in0 == \$past(flat_data_in0)) && (flat_data_in1 == \$past(flat_data_in1)))"
+# cover -name cover_delay_bundled_req "(($EQ && (push0 == push1) && (flat_data_in0 == flat_data_in1) && (reqs0 != 0) && (reqs1 == 0)) ##1 (reqs0 == 0) && (start == \$past(start)) && (reqs1 == \$past(reqs0)) && !(|push0) && !(|push1) && (flat_data_in0 == \$past(flat_data_in0)) && (flat_data_in1 == \$past(flat_data_in1)))"
