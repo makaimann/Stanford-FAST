@@ -30,6 +30,9 @@
    wire                                      en;
    wire                                      next_en;
 
+   wire                                      magic_packet_exited;
+   wire                                      next_magic_packet_exited;
+
    wire [CNTWID-1:0]                         cnt;
    wire [CNTWID-1:0]                         next_cnt;
 
@@ -43,6 +46,13 @@
                          .en(~en), // only need to update once
                          .D(next_en),
                          .Q(en));
+
+  assign next_magic_packet_exited = data_out_vld | magic_packet_exited;
+  FF #(.WIDTH(1)) ff_magic_packet_exited (.rst(rst),
+                                          .clk(clk),
+                                          .en(1'b1),
+                                          .D(next_magic_packet_exited),
+                                          .Q(magic_packet_exited));
 
   MagicPacketTracker #(.DEPTH(DEPTH)) mpt (.clk(clk),
                                            .rst(rst),
@@ -60,7 +70,7 @@
                                        .Q(magic_packet));
 
   // There was at least one packet stored, and now it's exiting
-  assign data_out_vld = en & (cnt != 0) & (next_cnt == 0);
+  assign data_out_vld = en & !magic_packet_exited & (cnt != 0) & (next_cnt == 0);
 
   assign prop_signal = ~data_out_vld | (magic_packet == data_out);
 

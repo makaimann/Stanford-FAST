@@ -29,6 +29,7 @@ set EQ {
 (af0.gen_fifos[1].f.ff_wrPtr.Q == af1.gen_fifos[1].f.ff_wrPtr.Q)) &&
 (sb0.ff_en.Q == sb1.ff_en.Q) &&
 (sb0.ff_magic_packet.Q == sb1.ff_magic_packet.Q) &&
+(sb0.ff_magic_packet_exited.Q == sb1.ff_magic_packet_exited.Q) &&
 (sb0.mpt.ff_cnt.Q == sb1.mpt.ff_cnt.Q)
 }
 

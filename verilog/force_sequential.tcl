@@ -28,6 +28,7 @@ set EQ {
 (af0.gen_fifos[1].f.ff_wrPtr.Q == af1.gen_fifos[1].f.ff_wrPtr.Q)) &&
 (sb0.ff_en.Q == sb1.ff_en.Q) &&
 (sb0.ff_magic_packet.Q == sb1.ff_magic_packet.Q) &&
+(sb0.ff_magic_packet_exited.Q == sb1.ff_magic_packet_exited.Q) &&
 (sb0.mpt.ff_cnt.Q == sb1.mpt.ff_cnt.Q)
 }
 
@@ -55,6 +56,7 @@ set pEQ {
 ($past(af0.gen_fifos[1].f.ff_wrPtr.Q) == af1.gen_fifos[1].f.ff_wrPtr.Q)) &&
 ($past(sb0.ff_en.Q) == sb1.ff_en.Q) &&
 ($past(sb0.ff_magic_packet.Q) == sb1.ff_magic_packet.Q) &&
+($past(sb0.ff_magic_packet_exited.Q) == sb1.ff_magic_packet_exited.Q) &&
 ($past(sb0.mpt.ff_cnt.Q) == sb1.mpt.ff_cnt.Q)
 }
 
@@ -82,10 +84,10 @@ assume -name no_rst {!rst}
 # basic true assumption about scoreboard state
 # holds and can be proven after a reset sequence
 # is there a way to not use these? Seems like a lot of manual effort to figure out -- bad for our message
-assume -name sb0_cnt_lt_depth {sb0.mpt.ff_cnt.Q <= DEPTH}
-assume -name sb1_cnt_lt_depth {sb1.mpt.ff_cnt.Q <= DEPTH}
-assume -name match_sb0_fifo {!sb0.ff_en.Q |-> ((af0.gen_fifos[0].f.wrPtr - af0.gen_fifos[0].f.rdPtr) == sb0.mpt.ff_cnt.Q)}
-assume -name match_sb1_fifo {!sb1.ff_en.Q |-> ((af1.gen_fifos[0].f.wrPtr - af1.gen_fifos[0].f.rdPtr) == sb1.mpt.ff_cnt.Q)}
+# assume -name sb0_cnt_lt_depth {sb0.mpt.ff_cnt.Q <= DEPTH}
+# assume -name sb1_cnt_lt_depth {sb1.mpt.ff_cnt.Q <= DEPTH}
+# assume -name match_sb0_fifo {!sb0.ff_en.Q |-> ((af0.gen_fifos[0].f.wrPtr - af0.gen_fifos[0].f.rdPtr) == sb0.mpt.ff_cnt.Q)}
+# assume -name match_sb1_fifo {!sb1.ff_en.Q |-> ((af1.gen_fifos[0].f.wrPtr - af1.gen_fifos[0].f.rdPtr) == sb1.mpt.ff_cnt.Q)}
 
 cover -name eq_then_not "${EQ} ##1 !${EQ}"
 
