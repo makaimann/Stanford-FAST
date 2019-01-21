@@ -1,0 +1,52 @@
+[tasks]
+pdr
+bmc3
+yices
+boolector
+cvc4
+cvc4x
+
+[options]
+pdr:
+mode prove
+
+~pdr:
+mode bmc
+depth 20
+--
+
+[engines]
+pdr:
+abc pdr
+
+bmc3:
+abc bmc3
+
+yices:
+smtbmc --nomem --nopresat yices
+
+boolector:
+smtbmc --nomem --nopresat boolector
+
+cvc4:
+smtbmc --nomem --nopresat cvc4
+
+cvc4x:
+smtbmc --nomem --nopresat cvc4 --bitblast=eager --bv-sat-solver=cadical -- --noincr --logic QF_BV
+--
+
+[script]
+read -formal top.sv
+prep -top top
+
+[files]
+top.sv
+SimpleScoreboard.sv
+arbitrated_fifos.sv
+FF.v
+DWRR.sv
+MagicPacketTracker.v
+fifo.sv
+pridec.sv
+onehot_mux.v
+options.v
