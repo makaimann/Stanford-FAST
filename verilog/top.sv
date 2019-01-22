@@ -9,11 +9,12 @@
 module top(clk, rst, start, push, flat_data_in, reqs, quantums,
            empty, full, data_out, prop_signal);
 
-   parameter NUM_REQS   =    `NUM_REQS,
-             WIDTH      =    `FIFO_DWIDTH,
-             DEPTH      =    `FIFO_DEPTH,
-             QWID       =    `ARB_QWID,
-             FIFO_SEL   =     0;
+   parameter NUM_REQS      =    `NUM_REQS,
+             WIDTH         =    `FIFO_DWIDTH,
+             DEPTH         =    `FIFO_DEPTH,
+             QWID          =    `ARB_QWID,
+             ABSTRACT_ARB  =    `ABSTRACT_ARB,
+             FIFO_SEL      =    0;
 
    input                       clk, rst, start;
    input  [NUM_REQS-1:0]       push, reqs;
@@ -45,7 +46,7 @@ module top(clk, rst, start, push, flat_data_in, reqs, quantums,
        .WIDTH(WIDTH),
        .DEPTH(DEPTH),
        .QWID(QWID),
-       .ABSTRACT(0))
+       .ABSTRACT(ABSTRACT_ARB))
 
    af (.clk(clk),
        .rst(rst),
