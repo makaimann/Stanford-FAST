@@ -123,6 +123,11 @@ assume -name no_stutter1 {!((push1 == 2'b00) && (reqs1 == 2'b00))}
 
 ############################################ End Force Sequential ##########################################
 
+# issue: still need to deal with enable conditions -- seems to slow it down a lot to explicitly put next("enable_cond") into the guard...
+assert -name push0_before_push1_en "($EQ && !af0.gen_fifos\[0\].f.full && !af0.gen_fifos\[1\].f.full && push0\[0\]) |=> !af0.gen_fifos\[1\].f.full"
+
+assert -name pop_before_push_en "($EQ && !af0.gen_fifos\[0\].f.full && !af0.gen_fifos\[0\].f.empty && reqs0\[0\]) |=> !af0.gen_fifos\[0\].f.full"
+
 ########################################### Partial Order Reduction ########################################
 # set up so that the trace in system 1 is the one we plan to keep, i.e. need to check property in other case
 
