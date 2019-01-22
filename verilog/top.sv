@@ -45,7 +45,7 @@ module top(clk, rst, start, push, flat_data_in, reqs, quantums,
        .WIDTH(WIDTH),
        .DEPTH(DEPTH),
        .QWID(QWID),
-       .ABSTRACT(1))
+       .ABSTRACT(0))
 
    af (.clk(clk),
        .rst(rst),
@@ -71,5 +71,26 @@ module top(clk, rst, start, push, flat_data_in, reqs, quantums,
        .data_out(data_out),
        .data_out_vld(data_out_vld),
        .prop_signal(prop_signal));
+
+`ifdef FORMAL
+   reg initstate = 1;
+
+ //  assume property (@(posedge clk) (!empty[0] && push[0]) |=> !push[1]);
+
+   always @(posedge clk) begin
+      initstate <= 0;
+   end
+
+   always @* begin
+      assume (initstate == rst);
+      if (!initstate) begin
+         assume (!empty[0] || !pop[0]);
+         assume (!empty[1] || !pop[1]);
+         assume (!full[0] || !push[0]);
+         assume (!full[1] || !push[1]);
+         assert (prop_signal);
+      end
+   end
+`endif
 
 endmodule // top

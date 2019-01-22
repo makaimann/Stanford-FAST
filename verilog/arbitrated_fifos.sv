@@ -49,6 +49,11 @@ module arbitrated_fifos(clk, rst, push, reqs, flat_data_in, quantums,
    endgenerate
 
    if (ABSTRACT) begin
+      // always @* begin
+      //    assume property ((reqs != 0) | (gnt == 0));
+      //    assume property ((reqs == 0) | (|(gnt & reqs)));
+      //    assume property ((reqs == 0) || ((gnt != 0) && ((gnt & (gnt - 1)) == 0)));
+      // end
       assume property ((reqs != 0) | (gnt == 0));
       assume property ((reqs == 0) | (|(gnt & reqs)));
       assume property ((reqs == 0) || ((gnt != 0) && ((gnt & (gnt - 1)) == 0)));
