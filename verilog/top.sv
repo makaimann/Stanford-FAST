@@ -85,10 +85,10 @@ module top(clk, rst, start, push, flat_data_in, reqs, quantums,
    always @* begin
       assume (initstate == rst);
       if (!initstate) begin
-         assume (!empty[0] || !pop[0]);
-         assume (!empty[1] || !pop[1]);
-         assume (!full[0] || !push[0]);
-         assume (!full[1] || !push[1]);
+         for(int i = 0; i < NUM_REQS; i++) begin
+            assume (!empty[i] || !reqs[i]);
+            assume (!full[i] || !push[i]);
+         end
          assert (prop_signal);
       end
    end
