@@ -40,6 +40,37 @@ run_pdr()
     yosys-abc -c "read_aiger top.aig; fold; strash; pdr; write_cex -a top.aiw"
 }
 
+run_int()
+{
+    echo -e "
+##########################################################################
+#                         RUNNING INTERPOLANT MC                         #
+##########################################################################
+"
+    yosys-abc -c "read_aiger top.aig; fold; strash; int; write_cex -a top.aiw"
+}
+
+run_bmc()
+{
+    echo -e "
+##########################################################################
+#                              RUNNING BMC3                              #
+##########################################################################
+"
+    yosys-abc -c "read_aiger top.aig; fold; strash; bmc3; write_cex -a top.aiw"
+}
+
+run_bdd()
+{
+    echo -e "
+##########################################################################
+#                              BDD REACHABALITY                          #
+##########################################################################
+"
+    yosys-abc -c "read_aiger top.aig; fold; strash; reach; write_cex -a top.aiw"
+}
+
+
 # Initialize our own variables
 ver="pdr"
 
@@ -55,6 +86,9 @@ if [ "$#" -eq 1 ]; then
             ;;
         int)
             ver="int"
+            ;;
+        bdd)
+            ver="bdd"
             ;;
         bmc)
             ver="bmc"
@@ -78,9 +112,19 @@ case $ver in
         gen_aiger
         run_pdr
         ;;
-    int|bmc)
+    int)
         gen_aiger
-        echo "unimplemented"
+        run_int
+        ;;
+    bmc)
+        echo "Incomplete"
+        exit 1
+        # gen_aiger
+        # run_bmc
+        ;;
+    bdd)
+        gen_aiger
+        run_bdd
         ;;
     smtbmc)
         gen_smt2
