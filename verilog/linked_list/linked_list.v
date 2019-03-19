@@ -1,3 +1,26 @@
+/**
+  Author: Makai Mann
+  Description: N linked lists with shared memory implementation in Standard Verilog
+               -- provides a head and tail and interface for pushing/popping from N lists
+
+  Interface:
+    INPUTS
+      clk    -- standard synchronous clock
+      rst    -- standard active high reset
+      push   -- zero or one-hot, selects a list to push onto tail
+      pop    -- zero or one-hot, selects a list to pop from head
+    OUTPUTS
+      full   -- 1 if memory is used up
+      empty  -- bit i is 1 if list 1 is empty
+      head   -- packed version of the list heads
+      tail   -- packed version of the list tails
+
+   Invariants and Notes
+      * If the list is empty, the head and tail are meaningless
+      * Behavior is undefined for push/pop having more than one bit set
+      * next_ptr should start in a line, e.g. next_ptr[j] = j+1
+      * maintains a free list of available nodes
+ */
 module linked_list(clk, rst, push, pop,
                    full, empty, head, tail);
    parameter NUM_ELEMS=4,
