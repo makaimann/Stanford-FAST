@@ -79,25 +79,27 @@ module linked_list(clk, rst, push, pop,
 
    integer j;
    always @(posedge clk) begin : next_ptr_logic
-      for(j=0; j < NUM_LISTS; j=j+1) begin
-         // if (rst) begin
-         //    if (j < NUM_LISTS - 1) begin
-         //       next_ptr[j] <= j + 1;
-         //    end
-         //    else begin
-         //       next_ptr[j] <= 0;
-         //    end
-         // end
-         if (push[j] & !empty[j]) begin
-            // update the pointer at the tail to point to the next available
-            //  pointer from the free list (e.g. popping from free list)
-            next_ptr[tail_int[j]] <= free_list_head;
-         end
-         else if (pop[j]) begin
-            // update the pointer for the free list
-            next_ptr[head_int[j]] <= free_list_head;
-         end
-      end
+      for(j=0; j < NUM_ELEMS; j=j+1) begin
+	 if (rst) begin
+	    if (j < NUM_ELEMS - 1) begin
+	       next_ptr[j] <= j + 1;
+	    end
+	    else begin
+	       next_ptr[j] <= 0;
+	    end
+	 end
+	 else if (j < NUM_LISTS) begin
+            if (push[j] & !empty[j]) begin
+               // update the pointer at the tail to point to the next available
+               //  pointer from the free list (e.g. popping from free list)
+               next_ptr[tail_int[j]] <= free_list_head;
+            end
+            else if (pop[j]) begin
+               // update the pointer for the free list
+               next_ptr[head_int[j]] <= free_list_head;
+            end
+	 end // if (j < NUM_LISTS)
+      end // for (j=0; j < NUM_ELEMS; j=j+1)
    end // block: next_ptr_logic
 
    always @(posedge clk) begin : head_logic
