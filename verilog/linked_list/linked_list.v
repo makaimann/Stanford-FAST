@@ -10,19 +10,25 @@
       push   -- zero or one-hot, selects a list to push onto tail
       pop    -- zero or one-hot, selects a list to pop from head
     OUTPUTS
-      full   -- 1 if memory is used up
-      empty  -- bit i is 1 if list 1 is empty
-      head   -- packed version of the list heads
-      tail   -- packed version of the list tails
+      full     -- 1 if memory is used up
+      empty    -- bit i is 1 if list 1 is empty
+      head     -- packed version of the list heads
+      tail     -- packed version of the list tails
+      free_ptr -- next free pointer (equivalent to free_list_head)
+
+   Parameters
+      NUM_ELEMS  -- total number of elements
+      NUM_LISTS  -- total number of lists
 
    Invariants and Notes
+      * The number of elements should be greater than or equal to the number of lists
       * If the list is empty, the head and tail are meaningless
       * Behavior is undefined for push/pop having more than one bit set
-      * next_ptr should start in a line, e.g. next_ptr[j] = j+1
+      * next_ptr should start in a line, e.g. next_ptr[j] = j+1 (this is handled by rst)
       * maintains a free list of available nodes
  */
 module linked_list(clk, rst, push, pop,
-                   full, empty, head, tail);
+                   full, empty, head, tail, free_ptr);
    parameter NUM_ELEMS=4,
              NUM_LISTS=2,
              PTR_WIDTH=$clog2(NUM_ELEMS),
@@ -34,6 +40,7 @@ module linked_list(clk, rst, push, pop,
    output                                  full;
    output [NUM_LISTS-1:0]                  empty;
    output [ADDR_WIDTH*PTR_WIDTH-1:0]       head, tail;
+   output [PTR_WIDTH-1:0]                  free_ptr;
 
    reg [PTR_WIDTH-1:0]                     head_int [NUM_LISTS-1:0];
    reg [PTR_WIDTH-1:0]                     tail_int [NUM_LISTS-1:0];
@@ -44,6 +51,9 @@ module linked_list(clk, rst, push, pop,
    // counters
    reg [CNT_WIDTH-1:0]                     count [NUM_LISTS-1:0];
    reg [CNT_WIDTH-1:0]                     total_count;
+
+   // aliases
+   assign free_ptr = free_list_head;
 
    // unpack head and tail
    generate
