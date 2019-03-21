@@ -119,7 +119,8 @@ module linked_list(clk, rst, push, pop,
             end
             if (pop[j]) begin
                // update the pointer for the free list
-               next_ptr[head_int[j]] <= free_list_head;
+               // next_ptr[head_int[j]] <= free_list_head; // BUG? Not sure what I was trying to do here
+               next_ptr[free_list_tail] <= head_int[j];
             end
 	       end // if (j < NUM_LISTS)
       end // for (j=0; j < NUM_ELEMS; j=j+1)
@@ -161,18 +162,16 @@ module linked_list(clk, rst, push, pop,
             free_list_tail <= 0;
          end
          else begin
-            if (push[j]) begin // should never be pushing when full (undefined)
+            if (push[j] & (!(|pop) | (total_count < NUM_ELEMS-1))) begin // should never be pushing when full (undefined)
                // pop the head pointer of the free list
-               if (pop[j] & (count[j] >= NUM_ELEMS-1))
-                 // this is the "almost full" case
-                 // the free list only has one element so next_ptr[free_list_head] is garbage
-                 free_list_head <= head_int[j];
-               else
-                 free_list_head <= next_ptr[free_list_head];
+               free_list_head <= next_ptr[free_list_head];
             end
             if (pop[j]) begin
                // push the freed element to the tail of the free list
                free_list_tail <= head_int[j];
+               if (total_count >= NUM_ELEMS-1) begin
+                  free_list_head <= head_int[j];
+               end
             end
          end // else: !if(rst)
       end
