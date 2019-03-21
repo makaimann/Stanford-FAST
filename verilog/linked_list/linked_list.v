@@ -136,7 +136,7 @@ module linked_list(clk, rst, push, pop,
          end
          else if (pop[j]) begin
             // update head pointer to the next element (forget about this location)
-            head_int[j] <= next_ptr[head_int[j]];
+            head_int[j] <= (push[j] & (count[j] == 1)) ? free_list_head : next_ptr[head_int[j]];
          end
       end
    end // block: head_logic
