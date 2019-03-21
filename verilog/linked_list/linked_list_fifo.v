@@ -90,7 +90,7 @@ module linked_list_fifo(clk, rst, push, pop, data_in,
      #(.CHANNELS(NUM_FIFOS),
        .WIDTH(PTR_WIDTH))
    om (.onehot(pop),
-       .i_data(packed_tail),
+       .i_data(packed_head),
        .o_data(pop_addr));
 
    // read from that address in memory
