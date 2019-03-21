@@ -117,7 +117,7 @@ module linked_list(clk, rst, push, pop,
                //  pointer from the free list (e.g. popping from free list)
                next_ptr[tail_int[j]] <= free_list_head;
             end
-            else if (pop[j]) begin
+            if (pop[j]) begin
                // update the pointer for the free list
                next_ptr[head_int[j]] <= free_list_head;
             end
@@ -136,7 +136,8 @@ module linked_list(clk, rst, push, pop,
          end
          else if (pop[j]) begin
             // update head pointer to the next element (forget about this location)
-            head_int[j] <= next_ptr[head_int[j]];
+            // if pushing as well and there's only one element then next_ptr is stale
+            head_int[j] <= (push[j] & (count[j] == 1)) ? free_list_head : next_ptr[head_int[j]];
          end
       end
    end // block: head_logic
@@ -159,19 +160,21 @@ module linked_list(clk, rst, push, pop,
             free_list_head <= 0;
             free_list_tail <= 0;
          end
-         else if (push[j]) begin
-            // pop the head pointer of the free list
-            free_list_head <= next_ptr[free_list_head];
-         end
-         else if (pop[j]) begin
-            // push the freed element to the tail of the free list
-            free_list_tail <= head_int[j];
-            if (full) begin
-               // if the linked list is full, then the free list is empty
-               // need to update the head too
-               free_list_head <= head_int[j];
+         else begin
+            if (push[j]) begin // should never be pushing when full (undefined)
+               // pop the head pointer of the free list
+               if (pop[j] & (count[j] >= NUM_ELEMS-1))
+                 // this is the "almost full" case
+                 // the free list only has one element so next_ptr[free_list_head] is garbage
+                 free_list_head <= head_int[j];
+               else
+                 free_list_head <= next_ptr[free_list_head];
             end
-         end
+            if (pop[j]) begin
+               // push the freed element to the tail of the free list
+               free_list_tail <= head_int[j];
+            end
+         end // else: !if(rst)
       end
    end // block: free_list_logic
 
