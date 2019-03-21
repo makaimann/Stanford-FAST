@@ -26,8 +26,9 @@
       * cannot push when full or pop from an empty fifo
  */
 
-`include "linked_list.v"
-`include "onehot_mux.v"
+`ifndef LINKED_LIST
+ `include "linked_list.v"
+`endif
 
 module linked_list_fifo(clk, rst, push, pop, data_in,
                         full, empty, data_out);
@@ -51,19 +52,8 @@ module linked_list_fifo(clk, rst, push, pop, data_in,
    wire [PTR_WIDTH-1:0]            pop_addr;
 
    // wires to linked_list state
-   wire [ADDR_WIDTH*PTR_WIDTH-1:0] packed_head, packed_tail;
-   wire [PTR_WIDTH-1:0]            head [NUM_FIFOS-1:0];
-   wire [PTR_WIDTH-1:0]            tail [NUM_FIFOS-1:0];
-   wire [PTR_WIDTH-1:0]            free_ptr;
-
-   // unpack head and tail
-   generate
-      genvar              i;
-      for(i=0; i < NUM_FIFOS; i=i+1) begin : unpack_arrays
-         assign head[i] = packed_head[PTR_WIDTH*i +: PTR_WIDTH];
-         assign tail[i] = packed_tail[PTR_WIDTH*i +: PTR_WIDTH];
-      end
-   endgenerate
+  wire [PTR_WIDTH-1:0]            free_ptr;
+  wire [PTR_WIDTH-1:0]            popped_head;
 
    // instantiate the linked list
    linked_list
@@ -75,9 +65,8 @@ module linked_list_fifo(clk, rst, push, pop, data_in,
        .pop(pop),
        .full(full),
        .empty(empty),
-       .head(packed_head),
-       .tail(packed_tail),
-       .free_ptr(free_ptr));
+       .free_ptr(free_ptr),
+       .popped_head(popped_head));
 
    // manage the memory
    always @(posedge clk) begin
@@ -86,14 +75,7 @@ module linked_list_fifo(clk, rst, push, pop, data_in,
       end
    end
 
-   onehot_mux
-     #(.CHANNELS(NUM_FIFOS),
-       .WIDTH(PTR_WIDTH))
-   om (.onehot(pop),
-       .i_data(packed_head),
-       .o_data(pop_addr));
-
    // read from that address in memory
-   assign data_out = mem[pop_addr];
+   assign data_out = mem[popped_head];
 
 endmodule // linked_list_fifo

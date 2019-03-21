@@ -1,3 +1,4 @@
+`define LINKED_LIST
 /**
   Author: Makai Mann
   Description: N linked lists with shared memory implementation in Standard Verilog
@@ -27,8 +28,12 @@
       * next_ptr should start in a line, e.g. next_ptr[j] = j+1 (this is handled by rst)
       * maintains a free list of available nodes
  */
+`ifndef ONEHOT_MUX
+ `include "onehot_mux.v"
+`endif
+
 module linked_list(clk, rst, push, pop,
-                   full, empty, head, tail, free_ptr);
+                   full, empty, free_ptr, popped_head);
    parameter NUM_ELEMS=4,
              NUM_LISTS=2,
              PTR_WIDTH=$clog2(NUM_ELEMS),
@@ -39,8 +44,8 @@ module linked_list(clk, rst, push, pop,
    input [NUM_LISTS-1:0]                   push, pop;
    output                                  full;
    output [NUM_LISTS-1:0]                  empty;
-   output [ADDR_WIDTH*PTR_WIDTH-1:0]       head, tail;
    output [PTR_WIDTH-1:0]                  free_ptr;
+   output [PTR_WIDTH-1:0]                  popped_head;
 
    reg [PTR_WIDTH-1:0]                     head_int [NUM_LISTS-1:0];
    reg [PTR_WIDTH-1:0]                     tail_int [NUM_LISTS-1:0];
@@ -55,12 +60,20 @@ module linked_list(clk, rst, push, pop,
    // aliases
    assign free_ptr = free_list_head;
 
+   // select the popped head
+   wire [ADDR_WIDTH*PTR_WIDTH-1:0]         packed_head;
+   onehot_mux
+     #(.CHANNELS(NUM_LISTS),
+       .WIDTH(PTR_WIDTH))
+   om (.onehot(pop),
+       .i_data(packed_head),
+       .o_data(popped_head));
+
    // unpack head and tail
    generate
       genvar                               i;
       for(i=0; i < NUM_LISTS; i=i+1) begin : unpack_arrays
-         assign head[PTR_WIDTH*i +: PTR_WIDTH] = head_int[i];
-         assign tail[PTR_WIDTH*i +: PTR_WIDTH] = tail_int[i];
+         assign packed_head[PTR_WIDTH*i +: PTR_WIDTH] = head_int[i];
       end
    endgenerate
 

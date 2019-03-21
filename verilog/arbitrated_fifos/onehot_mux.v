@@ -1,3 +1,4 @@
+`define ONEHOT_MUX
 module onehot_mux(onehot,
                   i_data, o_data);
 
