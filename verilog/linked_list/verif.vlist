@@ -1,0 +1,5 @@
+./linked_list_fifo.v
+../arbitrated_fifos/FF.v
+../arbitrated_fifos/MagicPacketTracker.v
+../arbitrated_fifos/SimpleScoreboard.sv
+./top.v
