@@ -20,6 +20,37 @@ module top(clk, rst, start, push, pop, data_in,
 
    wire                            data_out_vld;
 
+   // assumptions on inputs
+   wire [ADDR_WIDTH-1:0]           push_ones_count;
+   wire [ADDR_WIDTH-1:0]           pop_ones_count;
+
+   count_ones
+     #(.WIDTH(NUM_FIFOS))
+   count_push (.vec(push),
+               .count(push_ones_count));
+
+   count_ones
+     #(.WIDTH(NUM_FIFOS))
+   count_pop (.vec(pop),
+              .count(pop_ones_count));
+
+   always @* begin
+      assume(push_ones_count <= 1);
+      assume(pop_ones_count <= 1);
+   end
+
+   generate
+      genvar i;
+      for(i=0; i < NUM_FIFOS; i=i+1) begin
+         always @* begin
+            assume(~empty[i] | ~pop[i]);
+            assume(~full | ~push[i]);
+         end
+      end
+   endgenerate
+
+   // end assumptions
+
    linked_list_fifo
      #(.WIDTH(WIDTH),
        .DEPTH(DEPTH),
