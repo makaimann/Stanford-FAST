@@ -28,6 +28,8 @@
       * next_ptr should start in a line, e.g. next_ptr[j] = j+1 (this is handled by rst)
       * maintains a free list of available nodes
  */
+// idea: use shadow state telling whether each entry of next_ptr is garbage or not
+//       or just use shadow state to track all the lists explicitly with a list data type
 `ifndef ONEHOT_MUX
  `include "onehot_mux.v"
 `endif
@@ -117,8 +119,9 @@ module linked_list(clk, rst, push, pop,
                //  pointer from the free list (e.g. popping from free list)
                next_ptr[tail_int[j]] <= free_list_head;
             end
-            if (pop[j]) begin
+            if (pop[j] & !full) begin
                // update the pointer for the free list
+               // when full the free_list_tail is garbage
                // next_ptr[head_int[j]] <= free_list_head; // BUG? Not sure what I was trying to do here
                next_ptr[free_list_tail] <= head_int[j];
             end
@@ -159,7 +162,8 @@ module linked_list(clk, rst, push, pop,
       for (j=0; j < NUM_LISTS; j=j+1) begin
          if (rst) begin
             free_list_head <= 0;
-            free_list_tail <= 0;
+            // start free list tail at end of path (e.g. free list starts with everything)
+            free_list_tail <= (NUM_ELEMS-1);
          end
          else begin
             if (push[j] & (!(|pop) | (total_count < NUM_ELEMS-1))) begin // should never be pushing when full (undefined)
@@ -169,9 +173,13 @@ module linked_list(clk, rst, push, pop,
             if (pop[j]) begin
                // push the freed element to the tail of the free list
                free_list_tail <= head_int[j];
-               if (total_count >= NUM_ELEMS-1) begin
+               if ((|push & (total_count >= NUM_ELEMS-1)) | full) begin
+                  // need to update free_list_head when full (free list is empty)
                   free_list_head <= head_int[j];
                end
+               // if (push[j] & (total_count >= NUM_ELEMS-1)) begin
+               //    free_list_head <= head_int[j];
+               // end
             end
          end // else: !if(rst)
       end
