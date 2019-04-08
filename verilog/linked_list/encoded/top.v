@@ -24,8 +24,8 @@ module top(clk, rst, start, push, pop, push_sel, pop_sel, data_in,
       genvar i;
       for(i=0; i < NUM_FIFOS; i=i+1) begin
          always @* begin
-            assume(~empty[i] | ~pop[i]);
-            assume(~full | ~push[i]);
+            assume(~empty[i] | ~(pop & (pop_sel == i)));
+            assume(~full | ~(push & (push_sel == i)));
          end
       end
    endgenerate
