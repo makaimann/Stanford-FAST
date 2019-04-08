@@ -35,11 +35,11 @@
 module linked_list(clk, rst, push, pop, push_sel, pop_sel,
                    full, empty, free_ptr, popped_head);
    parameter NUM_ELEMS=4,
-     NUM_LISTS=2,
-     PTR_WIDTH=$clog2(NUM_ELEMS),
-     CNT_WIDTH=PTR_WIDTH+1,
-     SEL_WIDTH=$clog2(NUM_LISTS),
-     ADDR_WIDTH=$clog2(NUM_LISTS+1);
+	       NUM_LISTS=2,
+	       PTR_WIDTH=$clog2(NUM_ELEMS),
+	       CNT_WIDTH=PTR_WIDTH+1,
+	       SEL_WIDTH=$clog2(NUM_LISTS),
+	       ADDR_WIDTH=$clog2(NUM_LISTS+1);
 
    input                                   clk, rst, push, pop;
    input [SEL_WIDTH-1:0]                   push_sel, pop_sel;
@@ -48,7 +48,7 @@ module linked_list(clk, rst, push, pop, push_sel, pop_sel,
    output [PTR_WIDTH-1:0]                  free_ptr;
    output [PTR_WIDTH-1:0]                  popped_head;
 
-   reg [PTR_WIDTH-1:0]                    head [NUM_LISTS-1:0];
+   reg [PTR_WIDTH-1:0]                     head [NUM_LISTS-1:0];
    reg [PTR_WIDTH-1:0]                     tail [NUM_LISTS-1:0];
    reg [PTR_WIDTH-1:0]                     next_ptr [NUM_ELEMS-1:0];
    reg [PTR_WIDTH-1:0]                     free_list_head;
@@ -105,12 +105,12 @@ module linked_list(clk, rst, push, pop, push_sel, pop_sel,
          if (push & !empty[push_sel]) begin
             // update the pointer at the tail to point to the next available
             //  pointer from the free list (e.g. popping from free list)
-            next_ptr[tail[j]] <= free_list_head;
+            next_ptr[tail[push_sel]] <= free_list_head;
          end
          if (pop & !full) begin
             // update the pointer for the free list
             // when full the free_list_tail is garbage
-            next_ptr[free_list_tail] <= head[j];
+            next_ptr[free_list_tail] <= popped_head;
          end
       end // else: !if(rst)
    end
@@ -122,21 +122,23 @@ module linked_list(clk, rst, push, pop, push_sel, pop_sel,
             head[i] <= 0;
          end
       end
-      else if (pop) begin
-         // update head pointer to the next element (forget about this location)
-         if (push & (push_sel == pop_sel) & (count[pop_sel] == 1)) begin
-            // if pushing to the same list and there's only one element, then next_ptr is stale
-            // use free_list_head directly
-            head[pop_sel] <= free_list_head;
-         end
-         else begin
-            head[pop_sel] <= next_ptr[head[pop_sel]];
-         end
-      end
-      else if (push & empty[push_sel]) begin // this case should not occur when popping because empty (env constraint)
-         // update head pointer because it was pointing to garbage when empty
-         head[push_sel] <= free_list_head;
-      end
+      else begin
+	 if (pop) begin
+            // update head pointer to the next element (forget about this location)
+            if (push & (push_sel == pop_sel) & (count[pop_sel] == 1)) begin
+               // if pushing to the same list and there's only one element, then next_ptr is stale
+               // use free_list_head directly
+               head[pop_sel] <= free_list_head;
+            end
+            else begin
+               head[pop_sel] <= next_ptr[head[pop_sel]];
+            end
+	 end
+	 if (push & empty[push_sel]) begin // this case should not occur when popping because empty (env constraint)
+            // update head pointer because it was pointing to garbage when empty
+            head[push_sel] <= free_list_head;
+	 end
+      end // else: !if(rst)
    end // block: head_logic
 
    always @(posedge clk) begin : tail_logic
