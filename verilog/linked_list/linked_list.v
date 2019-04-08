@@ -49,8 +49,8 @@ module linked_list(clk, rst, push, pop,
    output [PTR_WIDTH-1:0]                  free_ptr;
    output [PTR_WIDTH-1:0]                  popped_head;
 
-   reg [PTR_WIDTH-1:0]                     head_int [NUM_LISTS-1:0];
-   reg [PTR_WIDTH-1:0]                     tail_int [NUM_LISTS-1:0];
+   reg [PTR_WIDTH-1:0]                     head [NUM_LISTS-1:0];
+   reg [PTR_WIDTH-1:0]                     tail [NUM_LISTS-1:0];
    reg [PTR_WIDTH-1:0]                     next_ptr [NUM_ELEMS-1:0];
    reg [PTR_WIDTH-1:0]                     free_list_head;
    reg [PTR_WIDTH-1:0]                     free_list_tail;
@@ -62,22 +62,22 @@ module linked_list(clk, rst, push, pop,
    // aliases
    assign free_ptr = free_list_head;
 
-   // select the popped head
+   // pack head
    wire [ADDR_WIDTH*PTR_WIDTH-1:0]         packed_head;
+   generate
+      genvar                               i;
+      for(i=0; i < NUM_LISTS; i=i+1) begin : unpack_arrays
+         assign packed_head[PTR_WIDTH*i +: PTR_WIDTH] = head[i];
+      end
+   endgenerate
+
+   // select the popped head
    onehot_mux
      #(.CHANNELS(NUM_LISTS),
        .WIDTH(PTR_WIDTH))
    om (.onehot(pop),
        .i_data(packed_head),
        .o_data(popped_head));
-
-   // unpack head and tail
-   generate
-      genvar                               i;
-      for(i=0; i < NUM_LISTS; i=i+1) begin : unpack_arrays
-         assign packed_head[PTR_WIDTH*i +: PTR_WIDTH] = head_int[i];
-      end
-   endgenerate
 
    // update count and assign empty
    generate
@@ -117,13 +117,13 @@ module linked_list(clk, rst, push, pop,
             if (push[j] & !empty[j]) begin
                // update the pointer at the tail to point to the next available
                //  pointer from the free list (e.g. popping from free list)
-               next_ptr[tail_int[j]] <= free_list_head;
+               next_ptr[tail[j]] <= free_list_head;
             end
             if (pop[j] & !full) begin
                // update the pointer for the free list
                // when full the free_list_tail is garbage
-               // next_ptr[head_int[j]] <= free_list_head; // BUG? Not sure what I was trying to do here
-               next_ptr[free_list_tail] <= head_int[j];
+               // next_ptr[head[j]] <= free_list_head; // BUG? Not sure what I was trying to do here
+               next_ptr[free_list_tail] <= head[j];
             end
 	       end // if (j < NUM_LISTS)
       end // for (j=0; j < NUM_ELEMS; j=j+1)
@@ -132,16 +132,16 @@ module linked_list(clk, rst, push, pop,
    always @(posedge clk) begin : head_logic
       for(j=0; j < NUM_LISTS; j=j+1) begin
          if (rst) begin
-            head_int[j] <= 0;
-         end
-         else if (push[j] & empty[j]) begin
-            // update head pointer because it was pointing to garbage when empty
-            head_int[j] <= free_list_head;
+            head[j] <= 0;
          end
          else if (pop[j]) begin
             // update head pointer to the next element (forget about this location)
             // if pushing as well and there's only one element then next_ptr is stale
-            head_int[j] <= (push[j] & (count[j] == 1)) ? free_list_head : next_ptr[head_int[j]];
+            head[j] <= (push[j] & (count[j] == 1)) ? free_list_head : next_ptr[head[j]];
+         end
+         else if (push[j] & empty[j]) begin // this case should not occur when popping because empty (environmental constraint)
+            // update head pointer because it was pointing to garbage when empty
+            head[j] <= free_list_head;
          end
       end
    end // block: head_logic
@@ -149,11 +149,11 @@ module linked_list(clk, rst, push, pop,
    always @(posedge clk) begin : tail_logic
       for(j=0; j < NUM_LISTS; j=j+1) begin
          if (rst) begin
-            tail_int[j] <= 0;
+            tail[j] <= 0;
          end
          else if (push[j]) begin
             // take a pointer from the free list
-            tail_int[j] <= free_list_head;
+            tail[j] <= free_list_head;
          end
       end
    end // block: tail_logic
@@ -172,14 +172,11 @@ module linked_list(clk, rst, push, pop,
             end
             if (pop[j]) begin
                // push the freed element to the tail of the free list
-               free_list_tail <= head_int[j];
+               free_list_tail <= head[j];
                if ((|push & (total_count >= NUM_ELEMS-1)) | full) begin
                   // need to update free_list_head when full (free list is empty)
-                  free_list_head <= head_int[j];
+                  free_list_head <= head[j];
                end
-               // if (push[j] & (total_count >= NUM_ELEMS-1)) begin
-               //    free_list_head <= head_int[j];
-               // end
             end
          end // else: !if(rst)
       end
