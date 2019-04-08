@@ -1,0 +1,21 @@
+[GENERAL]
+model_file: verif.vlist[top],reset.ets
+abstract_clock: True
+vcd: True
+
+[DEFAULT]
+bmc_length: 13
+solver_name: btor
+
+[NEVER RESET DONE]
+description: "Basic cover for reset sequence"
+formula: !reset_done
+verification: safety
+expected: False
+
+[DATA INTEGRITY]
+description: "Check data integrity of the linked list fifo"
+formula: 'prop_signal' = 1_1
+verification: safety
+expected: Unknown
+precondition: reset_done
