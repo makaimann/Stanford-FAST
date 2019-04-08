@@ -9,7 +9,7 @@ module FF(rst, clk, en, D, Q);
    input wire                en;
    input wire [WIDTH-1:0]    D;
 
-   output reg [WIDTH-1:0]    Q = INIT;
+   output reg [WIDTH-1:0]    Q;
 
    always @ (posedge clk) begin
       if (rst) begin
