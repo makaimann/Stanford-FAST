@@ -57,6 +57,9 @@ module shift_register_fifo(clk, rst, data_in, push, pop,
          assign next_val[j] = ((push & pop & (count - 1 == j)) | (push & (count == j))) ? data_in :
                               pop ? entries[j+1] : 0;
       end
+      // let the enable signal handle it
+      // don't ever need to shift any values in because this is the end
+      assign next_val[DEPTH-1] = data_in;
    endgenerate
 
    // always pop elements off the front of the queue
