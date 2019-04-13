@@ -1,0 +1,4 @@
+-I../arbitrated_fifos/
+../arbitrated_fifos/FF.v
+shift_register_fifo.v
+top.v

@@ -1,0 +1,14 @@
+[GENERAL]
+model_file: source.vlist[top],reset.ets
+vcd: True
+abstract_clock: True
+
+[DEFAULT]
+bmc_length: 20
+
+[DATA_INTEGRITY]
+description: "Check data integrity of the shift register fifo"
+formula: prop_signal = 1_1
+verification: safety
+expected: True
+precondition: reset_done
