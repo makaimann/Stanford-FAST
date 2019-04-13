@@ -15,8 +15,8 @@ module top(clk, rst, start, push, pop, data_in,
    wire                            data_out_vld;
 
    always @* begin : environmental_constraints
-      assert (~empty | ~pop);
-      assert (~full | ~push);
+      assume (~empty | ~pop);
+      assume (~full | ~push);
    end
 
    shift_register_fifo
