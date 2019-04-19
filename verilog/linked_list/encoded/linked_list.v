@@ -115,6 +115,15 @@ module linked_list(clk, rst, push, pop, push_sel, pop_sel,
       end // else: !if(rst)
    end
 
+   // this is currently unused but is useful for equivalence proof
+   // (only not used because it's not convenient with if statements
+   //  when you don't know which head needs to be assigned to -- would
+   //  have to check twice)
+   (* keep *)
+   wire [PTR_WIDTH-1:0] next_head;
+   assign next_head = (pop & ~(push & (push_sel == pop_sel) & (count[pop_sel] == 1))) ? next_ptr[head[pop_sel]]
+                                                                                      : free_list_head;
+
    always @(posedge clk) begin : head_logic
       integer i;
       if (rst) begin
@@ -123,7 +132,7 @@ module linked_list(clk, rst, push, pop, push_sel, pop_sel,
          end
       end
       else begin
-	 if (pop) begin
+	       if (pop) begin
             // update head pointer to the next element (forget about this location)
             if (push & (push_sel == pop_sel) & (count[pop_sel] == 1)) begin
                // if pushing to the same list and there's only one element, then next_ptr is stale
@@ -133,11 +142,11 @@ module linked_list(clk, rst, push, pop, push_sel, pop_sel,
             else begin
                head[pop_sel] <= next_ptr[head[pop_sel]];
             end
-	 end
-	 if (push & empty[push_sel]) begin // this case should not occur when popping because empty (env constraint)
+	       end
+	       if (push & empty[push_sel]) begin // this case should not occur when popping because empty (env constraint)
             // update head pointer because it was pointing to garbage when empty
             head[push_sel] <= free_list_head;
-	 end
+	       end
       end // else: !if(rst)
    end // block: head_logic
 

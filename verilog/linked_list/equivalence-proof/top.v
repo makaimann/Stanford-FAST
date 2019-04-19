@@ -4,7 +4,7 @@
 
 module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
            // dummy inputs
-           free_head_ptr, idx,
+           free_tail_ptr, next_head, idx,
            // outputs
            empty, full, data_out,
            srempty, srfull, srdata_out);
@@ -19,7 +19,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    input                           clk, rst, push, pop;
    input [SEL_WIDTH-1:0]           push_sel, pop_sel;
    input [WIDTH-1:0]               data_in;
-   input [PTR_WIDTH-1:0]           free_head_ptr, idx; // will be constrained by CoSA
+   input [PTR_WIDTH-1:0]           free_tail_ptr, next_head, idx; // will be constrained by CoSA
    output                          full;
    output [NUM_FIFOS-1:0]          empty;
    output [WIDTH-1:0]              data_out;
@@ -90,12 +90,18 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
 
    always @(posedge clk) begin
       if (srpush) begin
-         sr_to_ll[idx] <= free_head_ptr;
-         ll_to_sr[free_head_ptr] <= idx;
+         sr_to_ll[idx] <= free_tail_ptr;
+         ll_to_sr[free_tail_ptr] <= idx;
+      end
+      if (srpop) begin
+         // idx will never be zero when this happens because of environmental constraints
+         // not sure if yosys will synthesize this nicely though
+         sr_to_ll[0] <= next_head;
+         ll_to_sr[next_head] <= 0;
       end
    end
 
    assign sr_result = sr_to_ll[idx];
-   assign ll_result = ll_to_sr[free_head_ptr];
+   assign ll_result = ll_to_sr[free_tail_ptr];
 
 endmodule // top

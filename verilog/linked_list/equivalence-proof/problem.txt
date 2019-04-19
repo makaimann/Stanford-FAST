@@ -4,7 +4,7 @@ abstract_clock: True
 vcd: True
 
 [DEFAULT]
-bmc_length: 13
+bmc_length: 5
 solver_name: btor
 
 [NEVER RESET DONE]
@@ -13,9 +13,20 @@ formula: !reset_done
 verification: safety
 expected: False
 
-# [BOUNDED_EQUIVALENCE]
-# description: "Check that valid output data is equivalent"
-# formula: (srpop = 1_1) -> (data_out = srdata_out)
-# verification: safety
-# expected: Unknown
-# precondition: reset_done
+[BOUNDED_EQUIVALENCE]
+description: "Check that valid output data is equivalent"
+formula: (srpop = 1_1) -> (data_out = srdata_out)
+verification: safety
+expected: Unknown
+precondition: reset_done
+bmc_length: 8
+
+# This isn't expected to pass yet because it doesn't generalize inductively
+# need to strengthen the property
+[FIRST_ELEMENT_OF_REFINEMENT_MAPPING]
+description: "Check that the first elements matches the head (and loops back)"
+formula: (sr.count >= 1_3) -> (ll_to_sr[sr_to_ll[0_2]] = 0_2)
+verification: safety
+expected: Unknown
+precondition: reset_done
+prove: True
