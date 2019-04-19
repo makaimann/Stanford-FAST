@@ -1,0 +1,9 @@
+-I../../arbitrated_fifos/
+../encoded/linked_list.v
+../encoded/linked_list_fifo.v
+../../arbitrated_fifos/FF.v
+../../arbitrated_fifos/MagicPacketTracker.v
+../../arbitrated_fifos/SimpleScoreboard.sv
+../../arbitrated_fifos/count_ones.sv
+../../shift_register_fifo/shift_register_fifo.v
+./top.v
