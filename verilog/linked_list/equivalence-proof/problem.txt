@@ -1,5 +1,5 @@
 [GENERAL]
-model_file: verif.vlist[top],reset.ets
+model_file: verif.vlist[top],reset.ets,init.ssts
 abstract_clock: True
 vcd: True
 
@@ -13,9 +13,9 @@ formula: !reset_done
 verification: safety
 expected: False
 
-[BOUNDED_EQUIVALENCE]
-description: "Check that valid output data is equivalent"
-formula: (srpop = 1_1) -> (data_out = srdata_out)
-verification: safety
-expected: Unknown
-precondition: reset_done
+# [BOUNDED_EQUIVALENCE]
+# description: "Check that valid output data is equivalent"
+# formula: (srpop = 1_1) -> (data_out = srdata_out)
+# verification: safety
+# expected: Unknown
+# precondition: reset_done

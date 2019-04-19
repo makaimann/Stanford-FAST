@@ -1,0 +1,20 @@
+INPUT
+
+OUTPUT
+
+STATE
+
+INIT
+sr_to_ll[0_2] = 0_2 ;
+sr_to_ll[1_2] = 0_2 ;
+sr_to_ll[2_2] = 0_2 ;
+sr_to_ll[3_2] = 0_2 ;
+
+ll_to_sr[0_2] = 0_2 ;
+ll_to_sr[1_2] = 0_2 ;
+ll_to_sr[2_2] = 0_2 ;
+ll_to_sr[3_2] = 0_2 ;
+
+INVAR
+
+TRANS
