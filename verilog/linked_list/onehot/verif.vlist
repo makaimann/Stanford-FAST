@@ -1,0 +1,7 @@
+../../arbitrated_fifos/onehot_mux.v
+../../arbitrated_fifos/FF.v
+../../arbitrated_fifos/MagicPacketTracker.v
+../../arbitrated_fifos/SimpleScoreboard.sv
+../../arbitrated_fifos/count_ones.sv
+./linked_list_fifo.v
+./top.v
