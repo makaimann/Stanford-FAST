@@ -16,5 +16,7 @@ ll_to_sr[2_2] = 0_2 ;
 ll_to_sr[3_2] = 0_2 ;
 
 INVAR
+free_head_ptr = shared_fifo.free_ptr ;
+idx = sr.idx ;
 
 TRANS

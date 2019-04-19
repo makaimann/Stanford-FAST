@@ -16,6 +16,11 @@ module shift_register_fifo(clk, rst, data_in, push, pop,
    wire [DEPTH-1:0]   reg_en;
    wire [IDXWID-1:0]  data_in_idx;
 
+   (* keep *)
+   wire [IDXWID-1:0]  idx;
+   // if popping, we right to the next register down the chain
+   assign idx = count - pop;
+
    // assign to the count-th register unless also popping, then one less
    // when full, data_in_idx will wraparound (which doesn't matter because env constraints)
    assign data_in_idx = count - pop;
