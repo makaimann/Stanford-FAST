@@ -88,17 +88,45 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    (* keep *)
    wire [PTR_WIDTH-1:0] ll_result;
 
-   always @(posedge clk) begin
-      if (srpush) begin
-         sr_to_ll[idx] <= free_tail_ptr;
-         ll_to_sr[free_tail_ptr] <= idx;
-      end
-      if (srpop) begin
-         // idx will never be zero when this happens because of environmental constraints
-         // not sure if yosys will synthesize this nicely though
+   // maybe it would help to track head and tail separately?
+   // right now it can be written to twice in same cycle (because tail and head are updated)
+   // always @(posedge clk) begin
+   //    if (srpush) begin
+   //       sr_to_ll[idx] <= free_tail_ptr;
+   //       ll_to_sr[free_tail_ptr] <= idx;
+   //    end
+   //    if (srpop | (srpush & srempty)) begin
+   //       sr_to_ll[0] <= next_head;
+   //       ll_to_sr[next_head] <= 0;
+   //    end
+   // end
+
+   // always @(posedge clk) begin
+   //    if (srpush) begin
+   //       if (srempty | srpop) begin
+   //          sr_to_ll[0] <= next_head;
+   //       end
+   //       else begin
+   //          sr_to_ll[idx] <= free_tail_ptr;
+   //       end
+   //    end
+   //    else if (srpop) begin
+   //       sr_to_ll[0] <= next_head;
+   //    end
+   // end // always @ (posedge clk)
+
+   // downward refinement is abstract to detailed (shift register fifo is our 'abstract' spec)
+   always @(posedge clk) begin : downward_refinement_mapping
+      // If we only have the first case, this works if we just care about the head
+      //   something about tracking the tail as well makes this more complicated
+      if (srpop | (srpush & srempty)) begin
          sr_to_ll[0] <= next_head;
-         ll_to_sr[next_head] <= 0;
       end
+      // adding this line makes the head parts not prove
+      // in some unreachable state, it can overwrite the value at zero I think
+      // if (srpush & !srempty) begin
+      //    sr_to_ll[idx] <= free_tail_ptr;
+      // end
    end
 
    assign sr_result = sr_to_ll[idx];

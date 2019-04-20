@@ -30,6 +30,14 @@ expected: True
 prove: True
 precondition: reset_done
 
+[EMPTY_EQ]
+description: "The counters for the fifos should match"
+formula: srempty = empty[0:0]
+verification: safety
+expected: True
+prove: True
+precondition: reset_done
+
 [HEAD_MATCHES_NEXT_HEAD]
 description: "The next_head input actually matches"
 # formula: ((push_sel = 0_1) & (pop_sel = 0_1)) -> (next(shared_fifo.ll.head[0_1]) = shared_fifo.ll.next_head0)
@@ -38,13 +46,88 @@ verification: safety
 prove: True
 precondition: reset_done
 
+[HEAD_MATCHES_SR_TO_LL]
+description: "Updating the head and sr_to_ll matches"
+formula: ((shared_fifo.ll.head[0_1] = sr_to_ll[0_2]) & (shared_fifo.ll.head[0_1] != next(shared_fifo.ll.head[0_1]))) -> (next(shared_fifo.ll.head[0_1]) = next(sr_to_ll[0_2]))
+verification: safety
+prove: True
+precondition: reset_done
+
+# it's interesting that this does not prove
+# it means that in the inductive step, sr_to_ll can update even when the head is not updating
+# probably has something to do with full/empty matching, etc.. or maybe just next_ptr
+# could try to add lemmas or we could just try the whole refinement mapping and see if that works
+# probably much better to do the latter -- the lemma about pointers will likely handle this
+[HEAD_MATCHES_SR_TO_LL2]
+description: "If the head stays constant, then sr_to_ll matches"
+formula: ((shared_fifo.ll.head[0_1] = sr_to_ll[0_2]) & (shared_fifo.ll.head[0_1] = next(shared_fifo.ll.head[0_1]))) -> (next(shared_fifo.ll.head[0_1]) = next(sr_to_ll[0_2]))
+verification: safety
+prove: True
+precondition: reset_done
+
+[HEAD_CHANGES_WHEN_SR_TO_LL_CHANGES]
+description: "Head and sr_to_ll change together"
+formula: (shared_fifo.ll.head[0_1] = sr_to_ll[0_2]) -> ( (shared_fifo.ll.head[0_1] = next(shared_fifo.ll.head[0_1])) <-> (sr_to_ll[0_2] = next(sr_to_ll[0_2])) )
+verification: safety
+prove: True
+precondition: reset_done
+
+[SR_TO_LL]
+description: "The next_head is always provided to sr_to_ll"
+# formula: ((push_sel = 0_1) & (pop_sel = 0_1)) -> (next(shared_fifo.ll.head[0_1]) = shared_fifo.ll.next_head0)
+formula: (shared_fifo.ll.head[0_1] != next(shared_fifo.ll.head[0_1])) -> (next(sr_to_ll[0_2]) = shared_fifo.ll.next_head0)
+verification: safety
+prove: True
+precondition: reset_done
+
+# For some reason the next three can't be proven or disproven -- seems like it follows from the above?
+[SR_TO_LL2]
+description: "The correct next head is always provided to sr_to_ll"
+# formula: ((push_sel = 0_1) & (pop_sel = 0_1)) -> (next(shared_fifo.ll.head[0_1]) = shared_fifo.ll.next_head0)
+formula: (shared_fifo.ll.head[0_1] = next(shared_fifo.ll.head[0_1])) -> (next(sr_to_ll[0_2]) = next(shared_fifo.ll.head[0_1]))
+verification: safety
+prove: True
+precondition: reset_done
+
+[SR_TO_LL_HEAD0]
+description: "The sr_to_ll actually maps to head"
+formula: (sr_to_ll[0_2] = shared_fifo.ll.head[0_1]) & (next(sr_to_ll[0_2]) = next(shared_fifo.ll.head[0_1]))
+verification: safety
+prove: True
+precondition: reset_done
+
+[LOCKSTEP]
+description: "sr_to_ll and head move in lockstep"
+formula: (sr_to_ll[0_2] = shared_fifo.ll.head[0_1]) -> (next(sr_to_ll[0_2]) = next(shared_fifo.ll.head[0_1]))
+verification: safety
+prove: True
+precondition: reset_done
+
+[TRACKS_HEAD_ALWAYS]
+description: "sr_to_ll and head move in lockstep"
+formula: (sr_to_ll[0_2] = shared_fifo.ll.head[0_1])
+verification: safety
+prove: True
+precondition: reset_done
+
+[TRACKS_HEAD_IF_NOT_EMPTY]
+description: "sr_to_ll and head move in lockstep"
+formula: (sr.count >= 1_3) -> (sr_to_ll[0_2] = shared_fifo.ll.head[0_1])
+verification: safety
+prove: True
+precondition: reset_done
+
+
 # This isn't expected to pass yet because it doesn't generalize inductively
 # need to strengthen the property
 [FIRST_ELEMENT_OF_REFINEMENT_MAPPING]
 description: "Check that the first elements matches the head (and loops back)"
-formula: (sr.count >= 1_3) -> ((sr_to_ll[0_2] = shared_fifo.ll.head[0_1]) & (ll_to_sr[shared_fifo.ll.head[0_1]] = 0_2))
+# formula: (sr.count >= 1_3) -> ((sr_to_ll[0_2] = shared_fifo.ll.head[0_1]) & (ll_to_sr[shared_fifo.ll.head[0_1]] = 0_2))
+# I thought maybe the condition on count made this harder to prove inductively, but it still doesn't hold...
+formula: (sr_to_ll[0_2] = shared_fifo.ll.head[0_1]) & (ll_to_sr[shared_fifo.ll.head[0_1]] = 0_2)
 verification: safety
 expected: Unknown
 precondition: reset_done
 prove: True
-smt2_tracing: ref.smt2
+# smt2_tracing: ref.smt2
+bmc_length: 7
