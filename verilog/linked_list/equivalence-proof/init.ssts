@@ -18,6 +18,6 @@ ll_to_sr[3_2] = 0_2 ;
 INVAR
 free_tail_ptr = shared_fifo.free_ptr ;
 idx = sr.idx ;
-next_head = shared_fifo.ll.next_head ;
+next_head = shared_fifo.ll.next_head0 ;
 
 TRANS

@@ -2,6 +2,7 @@
 model_file: verif.vlist[top],reset.ets,init.ssts
 abstract_clock: True
 vcd: True
+assume_if_true: True
 
 [DEFAULT]
 bmc_length: 5
@@ -21,12 +22,29 @@ expected: Unknown
 precondition: reset_done
 bmc_length: 8
 
+[COUNTERS_EQ]
+description: "The counters for the fifos should match"
+formula: sr.count = shared_fifo.ll.count[0_1]
+verification: safety
+expected: True
+prove: True
+precondition: reset_done
+
+[HEAD_MATCHES_NEXT_HEAD]
+description: "The next_head input actually matches"
+# formula: ((push_sel = 0_1) & (pop_sel = 0_1)) -> (next(shared_fifo.ll.head[0_1]) = shared_fifo.ll.next_head0)
+formula: (shared_fifo.ll.head[0_1] != next(shared_fifo.ll.head[0_1])) -> (next(shared_fifo.ll.head[0_1]) = shared_fifo.ll.next_head0)
+verification: safety
+prove: True
+precondition: reset_done
+
 # This isn't expected to pass yet because it doesn't generalize inductively
 # need to strengthen the property
 [FIRST_ELEMENT_OF_REFINEMENT_MAPPING]
 description: "Check that the first elements matches the head (and loops back)"
-formula: (sr.count >= 1_3) -> (ll_to_sr[sr_to_ll[0_2]] = 0_2)
+formula: (sr.count >= 1_3) -> ((sr_to_ll[0_2] = shared_fifo.ll.head[0_1]) & (ll_to_sr[shared_fifo.ll.head[0_1]] = 0_2))
 verification: safety
 expected: Unknown
 precondition: reset_done
 prove: True
+smt2_tracing: ref.smt2

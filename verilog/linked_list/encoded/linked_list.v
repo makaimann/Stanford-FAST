@@ -120,9 +120,9 @@ module linked_list(clk, rst, push, pop, push_sel, pop_sel,
    //  when you don't know which head needs to be assigned to -- would
    //  have to check twice)
    (* keep *)
-   wire [PTR_WIDTH-1:0] next_head;
-   assign next_head = (pop & ~(push & (push_sel == pop_sel) & (count[pop_sel] == 1))) ? next_ptr[head[pop_sel]]
-                                                                                      : free_list_head;
+   wire [PTR_WIDTH-1:0] next_head0;
+   assign next_head0 = pop & (pop_sel == 0) ? ((push & (push_sel == pop_sel) & (count[pop_sel] == 1)) ? free_list_head : next_ptr[head[pop_sel]]) :
+                       free_list_head;
 
    always @(posedge clk) begin : head_logic
       integer i;
