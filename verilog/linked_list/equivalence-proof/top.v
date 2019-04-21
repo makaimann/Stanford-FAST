@@ -122,11 +122,10 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
       if (srpop | (srpush & srempty)) begin
          sr_to_ll[0] <= next_head;
       end
-      // adding this line makes the head parts not prove
-      // in some unreachable state, it can overwrite the value at zero I think
-      // if (srpush & !srempty) begin
-      //    sr_to_ll[idx] <= free_tail_ptr;
-      // end
+      // condition on idx is redundant but helps the inductive proof
+      if (srpush & !srempty & (idx != 0)) begin
+         sr_to_ll[idx] <= free_tail_ptr;
+      end
    end
 
    assign sr_result = sr_to_ll[idx];
