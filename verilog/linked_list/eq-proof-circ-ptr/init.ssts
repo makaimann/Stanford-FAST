@@ -1,0 +1,25 @@
+INPUT
+
+OUTPUT
+
+STATE
+
+INIT
+cpf_to_ll[0_2] = 0_2 ;
+cpf_to_ll[1_2] = 0_2 ;
+cpf_to_ll[2_2] = 0_2 ;
+cpf_to_ll[3_2] = 0_2 ;
+
+ll_to_cpf[0_2] = 0_2 ;
+ll_to_cpf[1_2] = 0_2 ;
+ll_to_cpf[2_2] = 0_2 ;
+ll_to_cpf[3_2] = 0_2 ;
+
+INVAR
+free_tail_ptr = shared_fifo.free_ptr ;
+next_head0 = shared_fifo.ll.next_head0 ;
+head0 = shared_fifo.ll.head[0_1] ;
+wrPtr = cpf.wrPtr[0:1] ;
+rdPtr = cpf.rdPtr[0:1] ;
+
+TRANS

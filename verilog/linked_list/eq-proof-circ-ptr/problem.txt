@@ -1,0 +1,58 @@
+[GENERAL]
+model_file: verif.vlist[top],reset.ets,init.ssts
+abstract_clock: True
+vcd: True
+assume_if_true: True
+
+[DEFAULT]
+bmc_length: 5
+solver_name: btor
+
+[NEVER RESET DONE]
+description: "Basic cover for reset sequence"
+formula: !reset_done
+verification: safety
+expected: False
+
+[BOUNDED_EQUIVALENCE]
+description: "Check that valid output data is equivalent"
+formula: (cppop = 1_1) -> (data_out = cpdata_out)
+verification: safety
+expected: Unknown
+precondition: reset_done
+bmc_length: 8
+
+[COUNTERS_MATCH]
+description: "Counter matches pointers"
+formula: shared_fifo.ll.count[0_1] = (cpf.wrPtr - cpf.rdPtr)
+expected: True
+verification: safety
+prove: True
+precondition: reset_done
+
+# Note: This requires the lemma COUNTERS_MATCH
+[TRACKS_HEAD_CORRECTLY]
+description: "Check that the history variable always keeps track of the head correctly"
+formula: (cpf_to_ll[rdPtr] = shared_fifo.ll.head[0_1])
+expected: True
+verification: safety
+prove: True
+precondition: reset_done
+bmc_length: 5
+smt2_tracing: tracks_head.smt2
+
+# [FIRST_ELEMENT_OF_REFINEMENT_MAPPING]
+# description: "Check that the first elements matches the head (and loops back)"
+# formula: (sr_to_ll[0_2] = shared_fifo.ll.head[0_1]) & (ll_to_sr[shared_fifo.ll.head[0_1]] = 0_2)
+# verification: safety
+# expected: Unknown
+# precondition: reset_done
+# prove: True
+
+# [REFINEMENT]
+# description: "Check our refinement mapping"
+# formula: refinement.txt
+# verification: safety
+# precondition: reset_done
+# expected: Unknown
+# prove: True
