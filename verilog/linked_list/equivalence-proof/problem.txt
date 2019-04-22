@@ -126,10 +126,6 @@ verification: safety
 prove: True
 precondition: reset_done
 
-
-# This doesn't prove now because the ll_to_sr update logic is not implemented
-# isn't violated because ll_to_sr always maps to zero (except in inductive step?)
-# seems like it should pass, depends on how it's encoded I guess
 [FIRST_ELEMENT_OF_REFINEMENT_MAPPING]
 description: "Check that the first elements matches the head (and loops back)"
 formula: (sr_to_ll[0_2] = shared_fifo.ll.head[0_1]) & (ll_to_sr[shared_fifo.ll.head[0_1]] = 0_2)

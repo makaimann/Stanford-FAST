@@ -88,35 +88,9 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    (* keep *)
    wire [PTR_WIDTH-1:0] ll_result;
 
-   // maybe it would help to track head and tail separately?
-   // right now it can be written to twice in same cycle (because tail and head are updated)
-   // always @(posedge clk) begin
-   //    if (srpush) begin
-   //       sr_to_ll[idx] <= free_tail_ptr;
-   //       ll_to_sr[free_tail_ptr] <= idx;
-   //    end
-   //    if (srpop | (srpush & srempty)) begin
-   //       sr_to_ll[0] <= next_head0;
-   //       ll_to_sr[next_head0] <= 0;
-   //    end
-   // end
-
-   // always @(posedge clk) begin
-   //    if (srpush) begin
-   //       if (srempty | srpop) begin
-   //          sr_to_ll[0] <= next_head0;
-   //       end
-   //       else begin
-   //          sr_to_ll[idx] <= free_tail_ptr;
-   //       end
-   //    end
-   //    else if (srpop) begin
-   //       sr_to_ll[0] <= next_head0;
-   //    end
-   // end // always @ (posedge clk)
-
    // downward refinement is abstract to detailed (shift register fifo is our 'abstract' spec)
-   always @(posedge clk) begin : downward_refinement_mapping
+   // upward refinement is detailed to abstract (ll_to_sr in this case)
+   always @(posedge clk) begin : refinement_mapping
       // If we only have the first case, this works if we just care about the head
       //   something about tracking the tail as well makes this more complicated
       if (srpop | (srpush & srempty)) begin
