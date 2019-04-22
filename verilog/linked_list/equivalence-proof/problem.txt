@@ -133,3 +133,11 @@ verification: safety
 expected: Unknown
 precondition: reset_done
 prove: True
+
+[REFINEMENT]
+description: "Check our refinement mapping"
+formula: refinement.txt
+verification: safety
+precondition: reset_done
+expected: Unknown
+prove: True

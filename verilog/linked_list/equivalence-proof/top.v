@@ -100,7 +100,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
       // conditions on idx and free_tail_ptr are redundant but helps the inductive proof
       // they're basically lemmas built into the history var update
       // TODO : see if these extra conditions are necessary once we have the full mapping?
-      if (srpush & !srempty & (idx != 0) & (free_tail_ptr != head0) & (free_tail_ptr != next_head0)) begin
+      if (srpush & !srempty & (idx != 0) & (free_tail_ptr != head0) & ((free_tail_ptr != next_head0) | !srpop)) begin
          sr_to_ll[idx] <= free_tail_ptr;
          ll_to_sr[free_tail_ptr] <= idx;
       end
