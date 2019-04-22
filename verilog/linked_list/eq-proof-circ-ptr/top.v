@@ -95,13 +95,14 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
       //   something about tracking the tail as well makes this more complicated
       if (cppush & cpempty) begin
          cpf_to_ll[wrPtr] <= next_head0;
-         ll_to_cp[next_head0] <= wrPtr;
+         ll_to_cpf[next_head0] <= wrPtr;
       end
       else if (cppop) begin
          cpf_to_ll[rdPtr+1] <= next_head0;
          ll_to_cpf[next_head0] <= rdPtr+1;
       end
-
+      // including this makes the head tracking properties fail
+      // but we need to track the tail too
       // if (cppush & !cpempty) begin
       //    cpf_to_ll[wrPtr] <= free_tail_ptr;
       //    ll_to_cpf[free_tail_ptr] <= wrPtr;

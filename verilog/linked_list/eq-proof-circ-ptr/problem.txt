@@ -22,6 +22,22 @@ expected: Unknown
 precondition: reset_done
 bmc_length: 8
 
+# [PTR_INVAR]
+# description: "Simple invariant on relative pointer locations"
+# formula: ((cpf.wrPtr[2:2] = cpf.rdPtr[2:2]) -> (cpf.wrPtr[0:1] >= cpf.rdPtr[0:1])) & ((cpf.wrPtr[2:2] != cpf.rdPtr[2:2]) -> (cpf.wrPtr[0:1] <= cpf.rdPtr[0:1]))
+# expected: True
+# verification: safety
+# prove: True
+# precondition: reset_done
+
+# [EMPTY_AND_FULL_MATCH]
+# description: "empty is equivalent and if the circular pointer fifo is full then so is the shared fifo"
+# formula: (empty[0:0] = cpempty) & ((cpfull = 1_1) -> (full = 1_1))
+# expected: True
+# verification: safety
+# prove: True
+# precondition: reset_done
+
 [COUNTERS_MATCH]
 description: "Counter matches pointers"
 formula: shared_fifo.ll.count[0_1] = (cpf.wrPtr - cpf.rdPtr)
@@ -41,13 +57,13 @@ precondition: reset_done
 bmc_length: 5
 smt2_tracing: tracks_head.smt2
 
-# [FIRST_ELEMENT_OF_REFINEMENT_MAPPING]
-# description: "Check that the first elements matches the head (and loops back)"
-# formula: (sr_to_ll[0_2] = shared_fifo.ll.head[0_1]) & (ll_to_sr[shared_fifo.ll.head[0_1]] = 0_2)
-# verification: safety
-# expected: Unknown
-# precondition: reset_done
-# prove: True
+[FIRST_ELEMENT_OF_REFINEMENT_MAPPING]
+description: "Check that the first elements matches the head (and loops back)"
+formula: (cpf_to_ll[rdPtr] = shared_fifo.ll.head[0_1]) & (ll_to_cpf[shared_fifo.ll.head[0_1]] = rdPtr)
+verification: safety
+expected: Unknown
+precondition: reset_done
+prove: True
 
 # [REFINEMENT]
 # description: "Check our refinement mapping"

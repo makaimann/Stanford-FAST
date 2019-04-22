@@ -1,1 +1,1 @@
-(sr_to_ll[0_2] = shared_fifo.ll.head[0_1]) & (ll_to_sr[shared_fifo.ll.head[0_1]] = 0_2) & ((sr.count >= 1_3) -> ((sr_to_ll[(sr.count - 1_3)[0:1]] = 'shared_fifo.ll.tail[0]') & (ll_to_sr['shared_fifo.ll.tail[0]'] = (sr.count - 1_3)[0:1])))
+(cpf_to_ll[rdPtr] = shared_fifo.ll.head[0_1]) & (ll_to_cpf[shared_fifo.ll.head[0_1]] = rdPtr) & ()
