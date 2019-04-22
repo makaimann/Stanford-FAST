@@ -38,6 +38,15 @@ expected: True
 prove: True
 precondition: reset_done
 
+[NOT_EMPTY_AND_NOT_FULL_MEANS_HEAD_AND_FREE_TAIL_PTR_DIFFER]
+description: "The head and free pointer sould be different if not empty"
+formula: ((empty[0:0] = 0_1) & (full = 0_1)) -> (shared_fifo.ll.head[0_1] != shared_fifo.free_ptr)
+verification: safety
+expected: Unknown
+prove: True
+precondition: reset_done
+bmc_length: 5
+
 [HEAD_MATCHES_NEXT_HEAD]
 description: "The next_head input actually matches"
 formula: (shared_fifo.ll.head[0_1] != next(shared_fifo.ll.head[0_1])) -> (next(shared_fifo.ll.head[0_1]) = shared_fifo.ll.next_head0)
@@ -100,6 +109,15 @@ formula: (sr_to_ll[0_2] = shared_fifo.ll.head[0_1])
 verification: safety
 prove: True
 precondition: reset_done
+
+[LL_TO_SR_TRACKS_HEAD_ALWAYS]
+description: "sr_to_ll and head move in lockstep"
+formula: (ll_to_sr[shared_fifo.ll.head[0_1]] = 0_2)
+verification: safety
+prove: True
+precondition: reset_done
+smt2_tracing: ll_to_sr.smt2
+bmc_length: 2
 
 [TRACKS_HEAD_IF_NOT_EMPTY]
 description: "sr_to_ll and head move in lockstep"
