@@ -31,7 +31,17 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    // just for CoSA properties
    (* keep *)
    wire [PTR_WIDTH:0]              depth;
+   (* keep *)
+   wire [1:0]                      fifo;
+   (* keep *)
+   wire [1:0]                      free_list;
+   (* keep *)
+   wire [1:0]                      phantom;
+
    assign depth = DEPTH;
+   assign fifo = 2'b00;
+   assign free_list = 2'b01;
+   assign phantom = 2'b10;
 
    // push and pop to shift register fifo when shared fifo is
    // performing the same action on the tracked fifo
@@ -83,20 +93,20 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
        .data_out(cpdata_out));
 
    // history variables
+   // back pointer
+   (* keep *)
+   reg [PTR_WIDTH+1:0] from_ll [DEPTH-1:0];
+
+   // fifo tracker to linked list
    (* keep *)
    reg [PTR_WIDTH-1:0] cpf_to_ll [DEPTH-1:0];
-   (* keep *)
-   reg [PTR_WIDTH-1:0] ll_to_cpf [DEPTH-1:0];
 
    (* keep *)
    wire [PTR_WIDTH-1:0] cpf_result;
-   (* keep *)
-   wire [PTR_WIDTH-1:0] ll_result;
 
    always @(posedge clk) begin : history_vars
       if (!rst & cppush) begin
-         cpf_to_ll[wrPtr] <= free_tail_ptr;
-         ll_to_cpf[free_tail_ptr] <= wrPtr;
+         cpf_to_ll[wrPtr[PTR_WIDTH-1:0]] <= free_tail_ptr;
       end
    end // block: history_vars
 
@@ -104,10 +114,15 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    assign ll_result = ll_to_cpf[free_tail_ptr];
 
    // free list history variables
+   reg [PTR_WIDTH:0]   free_list_wrPtrWrap;
+   reg [PTR_WIDTH:0]   free_list_rdPtrWrap;
    (* keep *)
-   reg [PTR_WIDTH:0]   free_list_wrPtr;
+   wire [PTR_WIDTH-1:0] free_list_wrPtr;
    (* keep *)
-   reg [PTR_WIDTH:0]   free_list_rdPtr;
+   wire [PTR_WIDTH-1:0] free_list_rdPtr;
+   assign free_list_wrPtr = free_list_wrPtrWrap;
+   assign free_list_rdPtr = free_list_rdPtrWrap;
+
    (* keep *)
    wire [PTR_WIDTH:0]  free_list_count;
    assign free_list_count = free_list_wrPtr - free_list_rdPtr;
@@ -115,32 +130,28 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    always @(posedge clk) begin
       if (rst) begin
          // starts at maximum count
-         free_list_wrPtr <= DEPTH;
-         free_list_rdPtr <= 0;
+         free_list_wrPtrWrap <= DEPTH;
+         free_list_rdPtrWrap <= 0;
       end
       else begin
          // these are opposite because push to free list when popping from others
-         free_list_wrPtr <= free_list_wrPtr + pop;
-         free_list_rdPtr <= free_list_rdPtr + push;
+         free_list_wrPtrWrap <= free_list_wrPtrWrap + pop;
+         free_list_rdPtrWrap <= free_list_rdPtrWrap + push;
       end
    end
 
    (* keep *)
    reg [PTR_WIDTH-1:0] ptr_to_free_list [DEPTH-1:0];
-   (* keep *)
-   reg [PTR_WIDTH-1:0] free_list_to_ptr [DEPTH-1:0];
 
    always @(posedge clk) begin : free_list_tracker_logic
       integer i;
       if (rst) begin
          for(i=0; i < DEPTH; i=i+1) begin
             ptr_to_free_list[i] <= i;
-            free_list_to_ptr[i] <= i;
          end
       end
       else if (pop) begin
-         ptr_to_free_list[free_list_wrPtr[PTR_WIDTH-1:0]] <= popped_head;
-         free_list_to_ptr[popped_head] <= free_list_wrPtr[PTR_WIDTH-1:0];
+         ptr_to_free_list[free_list_wrPtr] <= popped_head;
       end
    end // block: free_list_tracker_logic
 
@@ -150,5 +161,32 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    wire [PTR_WIDTH-1:0] flp_result;
    assign pfl_result = ptr_to_free_list[free_list_wrPtr];
    assign flp_result = free_list_to_ptr[popped_head];
+
+   always @(posedge clk) begin : back_pointer
+      integer j;
+      if (rst) begin
+         for(j=0; j < DEPTH; j=j+1) begin
+            // mark all elements as belonging to the free list
+            from_ll[j] <= {2'b01, j};
+         end
+      end
+      else begin
+         if (cppush) begin
+            from_ll[free_tail_ptr] <= {fifo, wrPtr};
+         end
+         else if (push) begin
+            // pushing to a different fifo
+            from_ll[free_tail_ptr] <= {phantom, {(PTR_WIDTH-1){1'b0}}};
+           end
+         if (pop) begin
+            from_ll[popped_head] <= {free_list, free_list_wrPtr};
+         end
+      end
+   end // block: back_pointer
+
+   // so yosys doesn't delete it
+   (* keep *)
+   wire [PTR_WIDTH+1:0] from_ll_result;
+   assign from_ll_result = from_ll[wrPtr];
 
 endmodule // top

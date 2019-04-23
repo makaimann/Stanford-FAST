@@ -13,11 +13,6 @@ cpf_to_ll[1_2] = 0_2 ;
 cpf_to_ll[2_2] = 0_2 ;
 cpf_to_ll[3_2] = 0_2 ;
 
-ll_to_cpf[0_2] = 0_2 ;
-ll_to_cpf[1_2] = 0_2 ;
-ll_to_cpf[2_2] = 0_2 ;
-ll_to_cpf[3_2] = 0_2 ;
-
 INVAR
 free_tail_ptr = shared_fifo.free_ptr ;
 popped_head = shared_fifo.popped_head ;
