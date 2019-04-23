@@ -125,7 +125,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
 
    (* keep *)
    wire [PTR_WIDTH:0]  free_list_count;
-   assign free_list_count = free_list_wrPtr - free_list_rdPtr;
+   assign free_list_count = free_list_wrPtrWrap - free_list_rdPtrWrap;
 
    always @(posedge clk) begin
       if (rst) begin
