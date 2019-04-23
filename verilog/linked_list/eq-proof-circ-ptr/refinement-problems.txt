@@ -1,0 +1,33 @@
+[GENERAL]
+model_file: verif.vlist[top],reset.ets,init.ssts
+abstract_clock: True
+# vcd: True
+assume_if_true: True
+
+[DEFAULT]
+bmc_length: 5
+solver_name: btor
+
+[MAPS_TO_HEAD]
+description: "Check that it maps to the head"
+formula: (cpempty = 0_1) -> (cpf_to_ll[rdPtr] = shared_fifo.ll.head[0_1]) & (ll_to_cpf[shared_fifo.ll.head[0_1]] = rdPtr)
+verification: safety
+precondition: reset_done
+
+[MAPS_TO_TAIL]
+description: "Check that it maps to the tail"
+formula: (cpempty = 0_1) -> (cpf_to_ll[wrPtr - 1_2] = 'shared_fifo.ll.tail[0]') & (ll_to_cpf['shared_fifo.ll.tail[0]'] = (wrPtr - 1_2))
+verification: safety
+precondition: reset_done
+
+[FIFO_IDENTITY_MAPS]
+description: "Check identity maps for fifo"
+formula: ( ((shared_fifo.ll.count[0_1] >= 1_3) -> (ll_to_cpf[cpf_to_ll[rdPtr]] = rdPtr)) & ((shared_fifo.ll.count[0_1] >= 2_3) -> (ll_to_cpf[cpf_to_ll[rdPtr+1_2]] = rdPtr+1_2)) & ((shared_fifo.ll.count[0_1] >= 3_3) -> (ll_to_cpf[cpf_to_ll[rdPtr+2_2]] = rdPtr+2_2)) & ((shared_fifo.ll.count[0_1] >= 4_3) -> (ll_to_cpf[cpf_to_ll[rdPtr+3_2]] = rdPtr+3_2)))
+verification: safety
+precondition: reset_done
+
+[FREE_LIST_IDENTITY_MAPS]
+description: "Check free list identity maps"
+formula: (((free_list_count >= 1_3) -> (free_list_to_ptr[ptr_to_free_list[free_list_rdPtr[0:1]]] = free_list_rdPtr[0:1])) & ((free_list_count >= 2_3) -> (free_list_to_ptr[ptr_to_free_list[free_list_rdPtr[0:1]+1_2]] = free_list_rdPtr[0:1]+1_2)) & ((free_list_count >= 3_3) -> (free_list_to_ptr[ptr_to_free_list[free_list_rdPtr[0:1]+2_2]] = free_list_rdPtr[0:1]+2_2)) & ((free_list_count >= 4_3) -> (free_list_to_ptr[ptr_to_free_list[free_list_rdPtr[0:1]+3_2]] = free_list_rdPtr[0:1]+3_2)))
+verification: safety
+precondition: reset_done

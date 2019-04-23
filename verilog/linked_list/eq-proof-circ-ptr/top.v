@@ -138,7 +138,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
             free_list_to_ptr[i] <= i;
          end
       end
-      else if (cppop) begin
+      else if (pop) begin
          ptr_to_free_list[free_list_wrPtr[PTR_WIDTH-1:0]] <= popped_head;
          free_list_to_ptr[popped_head] <= free_list_wrPtr[PTR_WIDTH-1:0];
       end
