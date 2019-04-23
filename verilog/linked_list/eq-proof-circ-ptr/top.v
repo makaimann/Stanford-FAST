@@ -110,12 +110,12 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    reg [PTR_WIDTH:0]   free_list_rdPtr;
    (* keep *)
    wire [PTR_WIDTH:0]  free_list_count;
-   assign free_list_count = (free_list_wrPtr + 1) - free_list_rdPtr;
+   assign free_list_count = free_list_wrPtr - free_list_rdPtr;
 
    always @(posedge clk) begin
       if (rst) begin
          // starts at maximum count
-         free_list_wrPtr <= (DEPTH-1);
+         free_list_wrPtr <= DEPTH;
          free_list_rdPtr <= 0;
       end
       else begin
@@ -127,6 +127,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
 
    (* keep *)
    reg [PTR_WIDTH-1:0] ptr_to_free_list [DEPTH-1:0];
+   (* keep *)
    reg [PTR_WIDTH-1:0] free_list_to_ptr [DEPTH-1:0];
 
    always @(posedge clk) begin : free_list_tracker_logic
@@ -138,8 +139,16 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
          end
       end
       else if (cppop) begin
-         ptr_to_free_list[free_list_wrPtr] <= popped_head;
-         free_list_to_ptr[popped_head] <= free_list_wrPtr;
+         ptr_to_free_list[free_list_wrPtr[PTR_WIDTH-1:0]] <= popped_head;
+         free_list_to_ptr[popped_head] <= free_list_wrPtr[PTR_WIDTH-1:0];
       end
-   end
+   end // block: free_list_tracker_logic
+
+   (* keep *)
+   wire [PTR_WIDTH-1:0] pfl_result;
+   (* keep *)
+   wire [PTR_WIDTH-1:0] flp_result;
+   assign pfl_result = ptr_to_free_list[free_list_wrPtr];
+   assign flp_result = free_list_to_ptr[popped_head];
+
 endmodule // top
