@@ -2,6 +2,9 @@ INPUT
 
 OUTPUT
 
+VAR
+f : BV(2)->BV(3) ;
+
 STATE
 
 INIT
