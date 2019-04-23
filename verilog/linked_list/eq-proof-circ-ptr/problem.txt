@@ -38,6 +38,15 @@ verification: safety
 prove: True
 precondition: reset_done
 
+# This doesn't prove (even without the free_list_count one)
+# [COUNTERS_LEQ_DEPTH]
+# description: "Counters are consistent"
+# formula: (shared_fifo.ll.count[0_1] <= depth) & (shared_fifo.ll.count[1_1] <= depth) & (free_list_count <= depth)
+# expected: True
+# verification: safety
+# prove: True
+# precondition: reset_done
+
 # [TRACKS_HEAD_CORRECTLY]
 # description: "Check that the history variable always keeps track of the head correctly"
 # formula: (cpempty = 0_1) -> (cpf_to_ll[rdPtr] = shared_fifo.ll.head[0_1])
