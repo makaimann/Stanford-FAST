@@ -4,7 +4,7 @@
 
 module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
            // dummy inputs
-           free_tail_ptr, head0, next_head0, rdPtr, wrPtr,
+           free_tail_ptr, popped_head, rdPtr, wrPtr,
            // outputs
            empty, full, data_out,
            cpempty, cpfull, cpdata_out);
@@ -19,7 +19,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    input                           clk, rst, push, pop;
    input [SEL_WIDTH-1:0]           push_sel, pop_sel;
    input [WIDTH-1:0]               data_in;
-   input [PTR_WIDTH-1:0]           free_tail_ptr, head0, next_head0, rdPtr, wrPtr; // will be constrained by CoSA
+   input [PTR_WIDTH-1:0]           free_tail_ptr, popped_head, rdPtr, wrPtr; // will be constrained by CoSA
    output                          full;
    output [NUM_FIFOS-1:0]          empty;
    output [WIDTH-1:0]              data_out;
@@ -89,46 +89,41 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    wire [PTR_WIDTH-1:0] ll_result;
 
    always @(posedge clk) begin : history_vars
-      if (!rst) begin
-         if ((rdPtr == wrPtr) & !cpfull) begin
-            cpf_to_ll[rdPtr] <= next_head0;
-            ll_to_cpf[next_head0] <= rdPtr;
-         end
-         else begin
-            if (cppop) begin
-               cpf_to_ll[rdPtr+1] <= next_head0;
-               ll_to_cpf[next_head0] <= rdPtr + 1;
-            end
-            if (cppush & (wrPtr != (rdPtr+1))) begin
-               cpf_to_ll[wrPtr] <= free_tail_ptr;
-               ll_to_cpf[free_tail_ptr] <= wrPtr;
-            end
-         end
+      if (!rst & cppush) begin
+         cpf_to_ll[wrPtr] <= free_tail_ptr;
+         ll_to_cpf[free_tail_ptr] <= wrPtr;
       end
    end // block: history_vars
-
-   // // downward refinement is abstract to detailed (shift register fifo is our 'abstract' spec)
-   // // upward refinement is detailed to abstract (ll_to_cp in this case)
-   // always @(posedge clk) begin : refinement_mapping
-   //    // If we only have the first case, this works if we just care about the head
-   //    //   something about tracking the tail as well makes this more complicated
-   //    if (cppush & cpempty) begin
-   //       cpf_to_ll[wrPtr] <= next_head0;
-   //       ll_to_cpf[next_head0] <= wrPtr;
-   //    end
-   //    else if (cppop) begin
-   //       cpf_to_ll[rdPtr+1] <= next_head0;
-   //       ll_to_cpf[next_head0] <= rdPtr+1;
-   //    end
-   //    // including this makes the head tracking properties fail
-   //    // but we need to track the tail too
-   //    // if (cppush & !cpempty) begin
-   //    //    cpf_to_ll[wrPtr] <= free_tail_ptr;
-   //    //    ll_to_cpf[free_tail_ptr] <= wrPtr;
-   //    // end
-   // end
 
    assign cpf_result = cpf_to_ll[wrPtr-1];
    assign ll_result = ll_to_cpf[free_tail_ptr];
 
+   // free list history variables
+   (* keep *)
+   reg [PTR_WIDTH:0]   free_list_wrPtr;
+   (* keep *)
+   reg [PTR_WIDTH:0]   free_list_rdPtr;
+   (* keep *)
+   wire [PTR_WIDTH:0]  free_list_count;
+   assign free_list_count = free_list_wrPtr - free_list_rdPtr;
+
+   always @(posedge clk) begin
+      free_list_wrPtr <= free_list_wrPtr + cppush;
+      free_list_rdPtr <= free_list_rdPtr + cppop;
+   end
+
+   (* keep *)
+   reg [PTR_WIDTH-1:0] free_list_tracker [DEPTH-1:0];
+
+   always @(posedge clk) begin : free_list_tracker_logic
+      integer i;
+      if (rst) begin
+         for(i=0; i < DEPTH; i=i+1) begin
+            free_list_tracker[i] <= i;
+         end
+      end
+      else if (cppop) begin
+         free_list_tracker[free_list_wrPtr] <= popped_head;
+      end
+   end
 endmodule // top

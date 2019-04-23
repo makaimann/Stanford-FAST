@@ -55,7 +55,9 @@ module linked_list_fifo(clk, rst, push, pop, push_sel, pop_sel, data_in,
    wire [PTR_WIDTH-1:0]            pop_addr;
 
    // wires to linked_list state
+  (* keep *)
   wire [PTR_WIDTH-1:0]            free_ptr;
+  (* keep *)
   wire [PTR_WIDTH-1:0]            popped_head;
 
    // instantiate the linked list

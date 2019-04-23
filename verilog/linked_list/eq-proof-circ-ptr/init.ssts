@@ -17,12 +17,7 @@ ll_to_cpf[3_2] = 0_2 ;
 
 INVAR
 free_tail_ptr = shared_fifo.free_ptr ;
-next_head0 = next_shared_fifo.ll.head[0_1] ;
-# equivalently could use
-# next_head0 = next(shared_fifo.ll.head)[0_1] ;
-# which would avoid the hack in CoSA to produce next_shared_fifo.ll.head
-# but it seems risky somehow, we'd need a good way of constraining this syntactically
-head0 = shared_fifo.ll.head[0_1] ;
+popped_head = shared_fifo.popped_head ;
 wrPtr = cpf.wrPtr[0:1] ;
 rdPtr = cpf.rdPtr[0:1] ;
 
