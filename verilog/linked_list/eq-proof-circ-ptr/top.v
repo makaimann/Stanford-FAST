@@ -28,6 +28,11 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
 
    wire                            data_out_vld;
 
+   // just for CoSA properties
+   (* keep *)
+   wire [PTR_WIDTH:0]              depth;
+   assign depth = DEPTH;
+
    // push and pop to shift register fifo when shared fifo is
    // performing the same action on the tracked fifo
    (* keep *)
@@ -105,11 +110,19 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    reg [PTR_WIDTH:0]   free_list_rdPtr;
    (* keep *)
    wire [PTR_WIDTH:0]  free_list_count;
-   assign free_list_count = free_list_wrPtr - free_list_rdPtr;
+   assign free_list_count = (free_list_wrPtr + 1) - free_list_rdPtr;
 
    always @(posedge clk) begin
-      free_list_wrPtr <= free_list_wrPtr + cppush;
-      free_list_rdPtr <= free_list_rdPtr + cppop;
+      if (rst) begin
+         // starts at maximum count
+         free_list_wrPtr <= (DEPTH-1);
+         free_list_rdPtr <= 0;
+      end
+      else begin
+         // these are opposite because push to free list when popping from others
+         free_list_wrPtr <= free_list_wrPtr + pop;
+         free_list_rdPtr <= free_list_rdPtr + push;
+      end
    end
 
    (* keep *)
