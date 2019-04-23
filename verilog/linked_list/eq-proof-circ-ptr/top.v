@@ -126,17 +126,20 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    end
 
    (* keep *)
-   reg [PTR_WIDTH-1:0] free_list_tracker [DEPTH-1:0];
+   reg [PTR_WIDTH-1:0] ptr_to_free_list [DEPTH-1:0];
+   reg [PTR_WIDTH-1:0] free_list_to_ptr [DEPTH-1:0];
 
    always @(posedge clk) begin : free_list_tracker_logic
       integer i;
       if (rst) begin
          for(i=0; i < DEPTH; i=i+1) begin
-            free_list_tracker[i] <= i;
+            ptr_to_free_list[i] <= i;
+            free_list_to_ptr[i] <= i;
          end
       end
       else if (cppop) begin
-         free_list_tracker[free_list_wrPtr] <= popped_head;
+         ptr_to_free_list[free_list_wrPtr] <= popped_head;
+         free_list_to_ptr[popped_head] <= free_list_wrPtr;
       end
    end
 endmodule // top
