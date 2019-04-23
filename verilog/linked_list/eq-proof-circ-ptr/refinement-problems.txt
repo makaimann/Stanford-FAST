@@ -20,6 +20,18 @@ formula: (cpempty = 0_1) -> ((cpf_to_ll[wrPtr - 1_2] = 'shared_fifo.ll.tail[0]')
 verification: safety
 precondition: reset_done
 
+[FREE_LIST_MAPS_TO_HEAD]
+description: "Check that it maps to the head"
+formula: (full = 0_1) -> ((ptr_to_free_list[free_list_rdPtr] = shared_fifo.ll.free_list_head) & (from_ll[shared_fifo.ll.free_list_head][0:1] = free_list_rdPtr) & (from_ll[shared_fifo.ll.free_list_head][2:3] = free_list))
+verification: safety
+precondition: reset_done
+
+# [FREE_LIST_MAPS_TO_TAIL]
+# description: "Check that free list maps to the tail"
+# formula: ??
+# verification: safety
+# precondition: reset_done
+
 # [FIFO_IDENTITY_MAPS]
 # description: "Check identity maps for fifo"
 # formula: (((shared_fifo.ll.count[0_1] >= 1_3) -> (ll_to_cpf[cpf_to_ll[rdPtr]] = rdPtr)) & ((shared_fifo.ll.count[0_1] >= 2_3) -> (ll_to_cpf[cpf_to_ll[rdPtr+1_2]] = rdPtr+1_2)) & ((shared_fifo.ll.count[0_1] >= 3_3) -> (ll_to_cpf[cpf_to_ll[rdPtr+2_2]] = rdPtr+2_2)) & ((shared_fifo.ll.count[0_1] >= 4_3) -> (ll_to_cpf[cpf_to_ll[rdPtr+3_2]] = rdPtr+3_2)))

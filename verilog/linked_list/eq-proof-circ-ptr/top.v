@@ -167,7 +167,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
       if (rst) begin
          for(j=0; j < DEPTH; j=j+1) begin
             // mark all elements as belonging to the free list
-            from_ll[j] <= {2'b01, j};
+            from_ll[j] <= {free_list, 2'b00} + j;
          end
       end
       else begin
@@ -182,6 +182,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
             from_ll[popped_head] <= {free_list, free_list_wrPtr};
          end
       end
+      // end
    end // block: back_pointer
 
    // so yosys doesn't delete it
