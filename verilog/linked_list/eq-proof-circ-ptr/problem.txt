@@ -38,29 +38,29 @@ verification: safety
 prove: True
 precondition: reset_done
 
-[TRACKS_HEAD_CORRECTLY]
-description: "Check that the history variable always keeps track of the head correctly"
-formula: (cpempty = 0_1) -> (cpf_to_ll[rdPtr] = shared_fifo.ll.head[0_1])
-expected: True
-verification: safety
-prove: True
-precondition: reset_done
-bmc_length: 10
-smt2_tracing: tracks_head.smt2
-
-[FIRST_ELEMENT_OF_REFINEMENT_MAPPING]
-description: "Check that the first elements matches the head (and loops back)"
-formula: (cpempty = 0_1) -> (cpf_to_ll[rdPtr] = shared_fifo.ll.head[0_1]) & (ll_to_cpf[shared_fifo.ll.head[0_1]] = rdPtr)
-verification: safety
-expected: Unknown
-precondition: reset_done
-prove: True
-bmc_length: 10
-
-# [REFINEMENT]
-# description: "Check our refinement mapping"
-# formula: refinement.txt
+# [TRACKS_HEAD_CORRECTLY]
+# description: "Check that the history variable always keeps track of the head correctly"
+# formula: (cpempty = 0_1) -> (cpf_to_ll[rdPtr] = shared_fifo.ll.head[0_1])
+# expected: True
 # verification: safety
-# precondition: reset_done
-# expected: Unknown
 # prove: True
+# precondition: reset_done
+# bmc_length: 10
+# smt2_tracing: tracks_head.smt2
+
+# [FIRST_ELEMENT_OF_REFINEMENT_MAPPING]
+# description: "Check that the first elements matches the head (and loops back)"
+# formula: (cpempty = 0_1) -> (cpf_to_ll[rdPtr] = shared_fifo.ll.head[0_1]) & (ll_to_cpf[shared_fifo.ll.head[0_1]] = rdPtr)
+# verification: safety
+# expected: Unknown
+# precondition: reset_done
+# prove: True
+# bmc_length: 10
+
+[REFINEMENT]
+description: "Check our refinement mapping"
+formula: refinement.txt
+verification: safety
+precondition: reset_done
+expected: Unknown
+prove: True
