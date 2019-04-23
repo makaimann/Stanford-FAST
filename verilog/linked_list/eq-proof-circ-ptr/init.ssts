@@ -17,7 +17,7 @@ ll_to_cpf[3_2] = 0_2 ;
 
 INVAR
 free_tail_ptr = shared_fifo.free_ptr ;
-next_head0 = shared_fifo.ll.next_head0 ;
+next_head0 = next_shared_fifo.ll.head[0_1] ;
 head0 = shared_fifo.ll.head[0_1] ;
 wrPtr = cpf.wrPtr[0:1] ;
 rdPtr = cpf.rdPtr[0:1] ;

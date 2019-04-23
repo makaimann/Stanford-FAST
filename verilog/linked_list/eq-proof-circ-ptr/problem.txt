@@ -54,7 +54,7 @@ expected: True
 verification: safety
 prove: True
 precondition: reset_done
-bmc_length: 5
+bmc_length: 10
 smt2_tracing: tracks_head.smt2
 
 [FIRST_ELEMENT_OF_REFINEMENT_MAPPING]
@@ -64,6 +64,7 @@ verification: safety
 expected: Unknown
 precondition: reset_done
 prove: True
+bmc_length: 10
 
 # [REFINEMENT]
 # description: "Check our refinement mapping"
