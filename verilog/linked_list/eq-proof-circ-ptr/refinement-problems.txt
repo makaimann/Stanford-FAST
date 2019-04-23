@@ -5,7 +5,7 @@ abstract_clock: True
 assume_if_true: True
 
 [DEFAULT]
-bmc_length: 5
+bmc_length: 8
 solver_name: btor
 
 [MAPS_TO_HEAD]
