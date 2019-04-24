@@ -73,3 +73,5 @@ verification: safety
 precondition: reset_done
 expected: Unknown
 prove: True
+bmc_length: 5
+smt2_tracing: refinement.smt2
