@@ -173,7 +173,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
          end
          else if (push) begin
             // pushing to a different fifo
-            from_ll[free_tail_ptr] <= {phantom, {(PTR_WIDTH-1){1'b0}}};
+            from_ll[free_tail_ptr] <= {phantom, phantom_wrPtr};
            end
          if (pop) begin
             from_ll[popped_head] <= {free_list, free_list_wrPtr};
@@ -186,5 +186,43 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    (* keep *)
    wire [PTR_WIDTH+1:0] from_ll_result;
    assign from_ll_result = from_ll[wrPtr];
+
+   (* keep *)
+   wire [PTR_WIDTH-1:0] phantom_result;
+
+   reg [PTR_WIDTH:0]    phantom_wrPtrWrap;
+   reg [PTR_WIDTH:0]    phantom_rdPtrWrap;
+   (* keep *)
+   wire [PTR_WIDTH-1:0] phantom_wrPtr;
+   (* keep *)
+   wire [PTR_WIDTH-1:0] phantom_rdPtr;
+   assign phantom_wrPtr = phantom_wrPtrWrap;
+   assign phantom_rdPtr = phantom_rdPtrWrap;
+
+   (* keep *)
+   wire [PTR_WIDTH:0]   phantom_count;
+   assign phantom_count = phantom_wrPtrWrap - phantom_rdPtrWrap;
+
+   (* keep *)
+   reg [PTR_WIDTH-1:0]  ptr_to_phantom [DEPTH-1:0];
+   assign phantom_result = ptr_to_phantom[phantom_rdPtr];
+
+   always @(posedge clk) begin
+      if (rst) begin
+         // starts with nothing
+         phantom_wrPtrWrap <= 0;
+         phantom_rdPtrWrap <= 0;
+      end
+      else begin
+         phantom_wrPtrWrap <= phantom_wrPtrWrap + (push & ~(push_sel == 0));
+         phantom_rdPtrWrap <= phantom_rdPtrWrap + (pop & ~(pop_sel == 0));
+      end
+   end
+
+   always @(posedge clk) begin
+      if (!rst & push & (push_sel != FIFO_SEL)) begin
+         ptr_to_phantom[phantom_wrPtr] <= free_tail_ptr;
+      end
+   end
 
 endmodule // top

@@ -5,7 +5,7 @@ abstract_clock: True
 assume_if_true: True
 
 [DEFAULT]
-bmc_length: 8
+bmc_length: 5
 solver_name: btor
 
 [MAPS_TO_HEAD]
@@ -41,6 +41,12 @@ precondition: reset_done
 [FREE_LIST_IDENTITY_MAPS]
 description: "Check free list identity maps"
 formula: (((free_list_count >= 1_3) -> ((from_ll[ptr_to_free_list[free_list_rdPtr]][0:1] = free_list_rdPtr) & (from_ll[ptr_to_free_list[free_list_rdPtr]][2:3] = free_list))) & ((free_list_count >= 2_3) -> ((from_ll[ptr_to_free_list[free_list_rdPtr+1_2]][0:1] = free_list_rdPtr+1_2) & (from_ll[ptr_to_free_list[free_list_rdPtr+1_2]][2:3] = free_list))) & ((free_list_count >= 3_3) -> ((from_ll[ptr_to_free_list[free_list_rdPtr+2_2]][0:1] = free_list_rdPtr+2_2) & (from_ll[ptr_to_free_list[free_list_rdPtr+2_2]][2:3] = free_list))) & ((free_list_count >= 4_3) -> ((from_ll[ptr_to_free_list[free_list_rdPtr+3_2]][0:1] = free_list_rdPtr+3_2) & (from_ll[ptr_to_free_list[free_list_rdPtr+3_2]][2:3] = free_list))))
+verification: safety
+precondition: reset_done
+
+[PHANTOM_IDENTITY_MAPS]
+description: "Check phantom identity maps"
+formula: (((phantom_count >= 1_3) -> ((from_ll[ptr_to_phantom[phantom_rdPtr]][0:1] = phantom_rdPtr) & (from_ll[ptr_to_phantom[phantom_rdPtr]][2:3] = phantom))) & ((phantom_count >= 2_3) -> ((from_ll[ptr_to_phantom[phantom_rdPtr+1_2]][0:1] = phantom_rdPtr+1_2) & (from_ll[ptr_to_phantom[phantom_rdPtr+1_2]][2:3] = phantom))) & ((phantom_count >= 3_3) -> ((from_ll[ptr_to_phantom[phantom_rdPtr+2_2]][0:1] = phantom_rdPtr+2_2) & (from_ll[ptr_to_phantom[phantom_rdPtr+2_2]][2:3] = phantom))) & ((phantom_count >= 4_3) -> ((from_ll[ptr_to_phantom[phantom_rdPtr+3_2]][0:1] = phantom_rdPtr+3_2) & (from_ll[ptr_to_phantom[phantom_rdPtr+3_2]][2:3] = phantom))))
 verification: safety
 precondition: reset_done
 
