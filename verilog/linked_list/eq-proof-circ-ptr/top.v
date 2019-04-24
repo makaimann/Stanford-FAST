@@ -157,10 +157,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
 
    (* keep *)
    wire [PTR_WIDTH-1:0] pfl_result;
-   (* keep *)
-   wire [PTR_WIDTH-1:0] flp_result;
    assign pfl_result = ptr_to_free_list[free_list_wrPtr];
-   assign flp_result = free_list_to_ptr[popped_head];
 
    always @(posedge clk) begin : back_pointer
       integer j;
