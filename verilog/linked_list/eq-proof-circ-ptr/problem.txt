@@ -30,6 +30,14 @@ verification: safety
 prove: True
 precondition: reset_done
 
+[TOTAL_COUNT_CORRECT]
+description: "Counters are consistent"
+formula: shared_fifo.ll.count[0_1] + shared_fifo.ll.count[1_1] = shared_fifo.ll.total_count
+expected: True
+verification: safety
+prove: True
+precondition: reset_done
+
 [COUNTERS_CONSISTENT]
 description: "Counters are consistent"
 formula: shared_fifo.ll.count[0_1] + shared_fifo.ll.count[1_1] + free_list_count = depth
