@@ -109,16 +109,16 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
 
    reg [PTR_WIDTH-1:0] 		  tmp;
    // need update logic for the ghost state
+   integer                  k;
+   integer                  j;
    always @(posedge clk) begin : ghost_state_update_logic
-      integer i;
       if (rst) begin
-	 for(i=0; i < DEPTH; i=i+1) begin
-	    tmp = i;
-	    ghost[i] <= {free_list, tmp};
+	 for(k=0; k < DEPTH; k=k+1) begin
+	    tmp = k;
+	    ghost[k] <= {free_list, tmp};
 	 end
       end
       else begin
-	 integer j;
 	 for (j=0; j < DEPTH; j=j+1) begin
 	    if (push) begin
 	       if (j == free_tail_ptr) begin

@@ -1,0 +1,15 @@
+[GENERAL]
+model_file: verif.vlist[top],reset.ets,init.ssts
+abstract_clock: True
+vcd: True
+assume_if_true: True
+
+[DEFAULT]
+bmc_length: 5
+solver_name: btor
+
+[NEVER RESET DONE]
+description: "Basic cover for reset sequence"
+formula: !reset_done
+verification: safety
+expected: False
