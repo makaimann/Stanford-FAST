@@ -14,6 +14,14 @@ formula: !reset_done
 verification: safety
 expected: False
 
+[COUNTS_MATCH]
+description: "Check that the counter logic is identical"
+formula: count[0_1] = shared_fifo.ll.count[0_1]
+precondition: reset_done
+verification: safety
+expected: True
+prove: True
+
 [COUNTS_CONSISTENT_DEPTH]
 description: "Check that the counts add up to the depth"
 formula: (free_list_count + count[0_1]) = depth

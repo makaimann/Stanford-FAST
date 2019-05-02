@@ -1,8 +1,8 @@
 [GENERAL]
 model_file: verif.vlist[top],reset.ets,init.ssts
 abstract_clock: True
-# vcd: True
-# assume_if_true: True
+vcd: True
+assume_if_true: True
 
 [DEFAULT]
 bmc_length: 8
