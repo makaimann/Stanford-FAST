@@ -8,28 +8,10 @@ assume_if_true: True
 bmc_length: 5
 solver_name: btor
 
-[COUNTS_MATCH]
-description: "Check that the counter logic is identical"
-formula: count[0_1] = shared_fifo.ll.count[0_1]
-verification: safety
-expected: True
-prove: True
-
-[COUNTS_CONSISTENT_DEPTH]
-description: "Check that the counts add up to the depth"
-formula: (free_list_count + count[0_1]) = depth
-verification: safety
-prove: True
-
-[COUNTS_CONSISTENT_TOTAL]
-description: "Check that the fifo counts equal the total count"
-# TODO  NEED TO ADAPT FOR MORE FIFOS
-formula: count[0_1] = shared_fifo.ll.total_count
-verification: safety
-prove: True
-
-[REFINEMENT]
+[IND_REFINEMENT]
 description: "Check the refinement property"
 formula: refinement
 verification: safety
+# proven true from initial state
+assumptions: count[0_1] = shared_fifo.ll.count[0_1];(free_list_count + count[0_1]) = depth;count[0_1] = shared_fifo.ll.total_count
 prove: True
