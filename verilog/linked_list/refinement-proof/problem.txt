@@ -37,11 +37,16 @@ precondition: reset_done
 verification: safety
 prove: True
 
+[COUNTER_ASSUMPTIONS]
+description: "Check that counters are less than or equal to the depth"
+formula: (count[0_1] <= depth) & (free_list_count <= depth)
+precondition: reset_done
+verification: safety
+prove: True
+
 [REFINEMENT]
 description: "Check the refinement property"
 formula: refinement.txt
 precondition: reset_done
 verification: safety
-# haven't verified these yet
-assumptions: count[0_1] <= depth;free_list_count <= depth;shared_fifo.ll.total_count <= depth
 prove: True
