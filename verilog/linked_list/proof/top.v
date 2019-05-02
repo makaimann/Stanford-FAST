@@ -95,8 +95,22 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
       end
    end
 
+   // mirrors the logic in linked_list.v
    (* keep *)
    reg [PTR_WIDTH:0]                     count [NUM_FIFOS-1:0];
+
+   generate
+      genvar                             c;
+      for(c=0; c < NUM_FIFOS; c=c+1) begin : count_elements
+         always @(posedge clk) begin
+            if (rst)
+              count[c] <= 0;
+            else
+              count[c] <= count[c] + (push & (push_sel == c)) - (pop & (pop_sel == c));
+         end
+      end
+   endgenerate
+
 
    // TODO Check if this parameterization works for non-trivial sizes!
    (* keep *)

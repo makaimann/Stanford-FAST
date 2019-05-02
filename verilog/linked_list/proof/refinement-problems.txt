@@ -1,11 +1,11 @@
 [GENERAL]
 model_file: verif.vlist[top],reset.ets,init.ssts
 abstract_clock: True
-vcd: True
-assume_if_true: True
+# vcd: True
+# assume_if_true: True
 
 [DEFAULT]
-bmc_length: 5
+bmc_length: 8
 solver_name: btor
 
 [NEVER RESET DONE]
@@ -13,6 +13,35 @@ description: "Basic cover for reset sequence"
 formula: !reset_done
 verification: safety
 expected: False
+
+[CAN_PUSH]
+description: "Sanity check for pushing"
+formula: push = 0_1
+precondition: reset_done
+verification: safety
+expected: False
+
+[CAN_POP]
+description: "Sanity check for popping"
+formula: pop = 0_1
+precondition: reset_done
+verification: safety
+expected: False
+
+[GHOST_STATE]
+description: "Sanity check for ghost state"
+formula: ghost[shared_fifo.ll.free_list_head][1:1] = 1_1
+precondition: reset_done
+verification: safety
+expected: False
+
+[COUNTS_MATCH]
+description: "Check that the counter logic is identical"
+formula: count[0_1] = shared_fifo.ll.count[0_1]
+precondition: reset_done
+verification: safety
+expected: True
+prove: True
 
 [COUNTS_CONSISTENT_DEPTH]
 description: "Check that the counts add up to the depth"
@@ -43,14 +72,14 @@ precondition: reset_done
 verification: safety
 prove: True
 
-[TAIL0_MAPS_TO_00]
+[TAIL0_MAPS_TO_COUNT]
 description: "Check that ghost state is correct for tail 0"
-formula: (empty[0:0] = 0_1) -> ((ghost['shared_fifo.ll.tail[0]'][1:1] = 1_1) & ((ghost['shared_fifo.ll.tail[0]'][0:0] + 1_1) = shared_fifo.ll.count[0_1][0:0]))
+formula: (empty[0:0] = 0_1) -> ((ghost['shared_fifo.ll.tail[0]'][1:1] = 0_1) & ((ghost['shared_fifo.ll.tail[0]'][0:0] + 1_1) = shared_fifo.ll.count[0_1][0:0]))
 precondition: reset_done
 verification: safety
 prove: True
 
-[FREE_LIST_TAIL0_MAPS_TO_00]
+[FREE_LIST_TAIL0_MAPS_TO_COUNT]
 description: "Check that ghost state is correct for free_list_tail"
 formula: (full = 0_1) -> ((ghost[shared_fifo.ll.free_list_tail][1:1] = 1_1) & ((ghost[shared_fifo.ll.free_list_tail][0:0] + 1_1) = free_list_count[0:0]))
 precondition: reset_done
