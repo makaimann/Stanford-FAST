@@ -88,14 +88,14 @@ prove: True
 
 [NEXT_PTR0]
 description: "Check ghost state of element 0"
-formula: ( (0_1 != 'shared_fifo.ll.tail[0]') & (0_1 != shared_fifo.ll.free_list_tail) ) -> ( (ghost[shared_fifo.ll.next_ptr[0_1]][1:1] = ghost[0_1][1:1]) & (ghost[shared_fifo.ll.next_ptr[0_1]][0:0] = (ghost[0_1][0:0] + 1_1)) )
+formula: ( ((0_1 != 'shared_fifo.ll.tail[0]') | (empty[0:0] = 1_1)) & ((0_1 != shared_fifo.ll.free_list_tail) | (full = 1_1)) ) -> ( (ghost[shared_fifo.ll.next_ptr[0_1]][1:1] = ghost[0_1][1:1]) & (ghost[shared_fifo.ll.next_ptr[0_1]][0:0] = (ghost[0_1][0:0] + 1_1)) )
 precondition: reset_done
 verification: safety
 prove: True
 
 [NEXT_PTR1]
 description: "Check ghost state of element 1"
-formula: ( (1_1 != 'shared_fifo.ll.tail[0]') & (1_1 != shared_fifo.ll.free_list_tail) ) -> ( (ghost[shared_fifo.ll.next_ptr[1_1]][1:1] = ghost[1_1][1:1]) & (ghost[shared_fifo.ll.next_ptr[1_1]][0:0] = (ghost[1_1][0:0] + 1_1)) )
+formula: ( ((1_1 != 'shared_fifo.ll.tail[0]') | (empty[0:0] = 1_1)) & ((1_1 != shared_fifo.ll.free_list_tail) | (full = 1_1)) ) -> ( (ghost[shared_fifo.ll.next_ptr[1_1]][1:1] = ghost[1_1][1:1]) & (ghost[shared_fifo.ll.next_ptr[1_1]][0:0] = (ghost[1_1][0:0] + 1_1)) )
 precondition: reset_done
 verification: safety
 prove: True

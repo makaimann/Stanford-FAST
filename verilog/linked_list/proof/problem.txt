@@ -42,4 +42,6 @@ description: "Check the refinement property"
 formula: refinement.txt
 precondition: reset_done
 verification: safety
+# haven't verified these yet
+assumptions: count[0_1] <= depth;free_list_count <= depth;shared_fifo.ll.total_count <= depth
 prove: True
