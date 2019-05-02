@@ -80,6 +80,7 @@ formula: refinement.txt
 verification: safety
 precondition: reset_done
 expected: Unknown
+assumptions: (shared_fifo.ll.count[0_1] <= depth);(shared_fifo.ll.count[1_1] <= depth);(free_list_count <= depth)
 prove: True
 bmc_length: 5
 smt2_tracing: refinement.smt2
