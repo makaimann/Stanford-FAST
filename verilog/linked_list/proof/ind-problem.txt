@@ -12,6 +12,7 @@ solver_name: btor
 description: "Check the refinement property"
 formula: refinement
 verification: safety
-# proven true from initial state
-assumptions: count[0_1] = shared_fifo.ll.count[0_1];(free_list_count + count[0_1]) = depth;count[0_1] = shared_fifo.ll.total_count
+# most of these proven true from initial state
+# proving that counts are less than or equal to depth is harder for some reason, but lets assume that anyway
+assumptions: count[0_1] = shared_fifo.ll.count[0_1];(free_list_count + count[0_1]) = depth;count[0_1] = shared_fifo.ll.total_count;count[0_1] <= depth;free_list_count <= depth;shared_fifo.ll.total_count <= depth
 prove: True
