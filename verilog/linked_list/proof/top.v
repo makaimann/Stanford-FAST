@@ -3,11 +3,11 @@
 `endif
 
 `ifndef DEPTH
- `define DEPTH 4
+ `define DEPTH 2
 `endif
 
 `ifndef NUM_FIFOS
- `define NUM_FIFOS 2
+ `define NUM_FIFOS 1
 `endif
 
 
