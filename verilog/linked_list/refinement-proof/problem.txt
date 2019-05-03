@@ -37,7 +37,7 @@ precondition: reset_done
 verification: safety
 prove: True
 
-[COUNTER_ASSUMPTIONS]
+[COUNTERS_LTE_DEPTH]
 description: "Check that counters are less than or equal to the depth"
 formula: (count[0_1] <= depth) & (free_list_count <= depth)
 precondition: reset_done
