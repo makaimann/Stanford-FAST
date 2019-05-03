@@ -143,7 +143,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
 		              ghost[j] <= {push_sel, count[push_sel][PTR_WIDTH-1:0] - pop};
 	             end
 	             else if (ghost[j][SEL_WIDTH+PTR_WIDTH:PTR_WIDTH] == free_list) begin
-		              ghost[j] <= {free_list, ghost[j][SEL_WIDTH+PTR_WIDTH:PTR_WIDTH]-{{(PTR_WIDTH-1){1'b0}}, 1'b1}};
+		              ghost[j] <= {free_list, ghost[j][PTR_WIDTH-1:0]-{{(PTR_WIDTH-1){1'b0}}, 1'b1}};
 	               end
 	          end
 
@@ -151,7 +151,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
 	             if (ghost[j][PTR_WIDTH-1:0] != 0) begin
 		              // subtract one from number if not head
 		              ghost[j] <= {ghost[j][SEL_WIDTH+PTR_WIDTH:PTR_WIDTH], ghost[j][PTR_WIDTH-1:0]-{{(PTR_WIDTH-1){1'b0}}, 1'b1}};
-	          end
+	             end
 	             else begin
 		              // if head, then add to free list
 		              // need to subtract push in case pushing simultaneously
@@ -160,6 +160,6 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
 	          end
 	       end
       end
-   end
+   end // block: ghost_state_update_logic
 
 endmodule // top
