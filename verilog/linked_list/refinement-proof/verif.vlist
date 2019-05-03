@@ -1,3 +1,4 @@
+-DNUM_FIFOS=2
 -DDEPTH=4
 -I./
 ../encoded/linked_list.v
