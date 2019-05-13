@@ -60,5 +60,19 @@ module top(clk, rst, start, push, pop, push_sel, pop_sel, data_in,
        .data_out_vld(data_out_vld),
        .prop_signal(prop_signal));
 
+`ifdef FORMAL
+   reg initstate = 1'b1;
+
+   always @(posedge clk) begin
+      initstate <= 0;
+   end
+
+   always @* begin
+      assume(initstate == rst);
+      if (!initstate) begin
+         assert(prop_signal);
+      end
+   end
+`endif
 
 endmodule // top

@@ -82,16 +82,23 @@ module top(clk, rst, start, push, flat_data_in, reqs, quantums,
       initstate <= 0;
    end
 
-   always @* begin
-      assume (initstate == rst);
-      if (!initstate) begin
-         for(int i = 0; i < NUM_REQS; i++) begin
+   generate
+      genvar i;
+      for(i = 0; i < NUM_REQS; i++) begin
+         always @* begin
             assume (!empty[i] || !reqs[i]);
             assume (!full[i] || !push[i]);
          end
+      end
+   endgenerate
+
+   always @* begin
+      assume(initstate == rst);
+      if (!initstate) begin
          assert (prop_signal);
       end
    end
+
 `endif
 
 endmodule // top
