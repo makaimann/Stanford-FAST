@@ -4,7 +4,6 @@ OUTPUT
 
 STATE
 state_counter: BV(4) ;
-A : BV(2) ;
 
 VAR
 prop: Bool ;
@@ -16,7 +15,6 @@ INVAR
 free_tail_ptr = shared_fifo.free_ptr ;
 popped_head = shared_fifo.popped_head ;
 rst = 0_1 ;
-prop <-> ((((A != shared_fifo.ll.free_list_tail) | (full = 1_1)) & ((A != shared_fifo.ll.tail[0_1]) | (empty[0:0] = 1_1)) & ((A != shared_fifo.ll.tail[1_1]) | (empty[1:1] = 1_1))) -> ((ghost[shared_fifo.ll.next_ptr[A]][0:1] = (ghost[A][0:1] + 1_2)) & (ghost[shared_fifo.ll.next_ptr[A]][2:3] = ghost[A][2:3]))) ;
 (state_counter = 0_4) -> prop ;
 
 # proven elsewhere
@@ -29,4 +27,3 @@ prop <-> ((((A != shared_fifo.ll.free_list_tail) | (full = 1_1)) & ((A != shared
 
 TRANS
 next(state_counter) = state_counter + 1_4 ;
-next(A) = A ;
