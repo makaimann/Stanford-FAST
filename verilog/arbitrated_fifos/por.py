@@ -173,9 +173,16 @@ def reduced_instruction_set(hts, config, generic_interface):
     # blown-out existentail quantification, plus the equivalence property
     full_consequent = And(exists_enabled_delay_signal, timed_sys_equiv[2])
 
+    # simple delay assumption
+    print()
+    print("Assume that the delayed action is at time step 1 in the copied system")
+    for d, ca in zip(delay, copy_timed_actions[1]):
+        assume(bmc, Implies(d, ca))
+    print()
+
     for i in reversed(range(1, len(timed_actions[0]))):
         print("Proving enabled-ness condition for instruction cardinality = {}".format(i+1))
-        prop = Implies(sn[i], exists_enabled_delay_signal)
+        prop = Implies(sn[i], full_consequent)
         # print("Prop:", prop)
         assumptions = [Not(prop)]
         res = bmc.solver.solver.solve(assumptions)
@@ -183,7 +190,7 @@ def reduced_instruction_set(hts, config, generic_interface):
             model = bmc.solver.solver.get_model()
             print("+++++++++++++++++++++++ Model +++++++++++++++++++++++")
             print(model)
-            raise RuntimeError("Simple delay failed -- try a more advanced approach")
+            raise RuntimeError("Bummer. Simple delay failed -- try a more advanced approach")
         else:
             print('Property holds')
 
