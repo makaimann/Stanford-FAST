@@ -18,6 +18,11 @@ from pathlib import Path
 btor_config = namedtuple('btor_config', 'abstract_clock opt_circuit no_arrays symbolic_init strategy skip_solving smt2_tracing solver_name incremental solver_options')
 interface   = namedtuple('interface', 'actions ens')
 
+def assume(bmc, assumption):
+    print('Adding assumption: {}'.format(assumption))
+    bmc._add_assertion(bmc.solver, assumption)
+
+
 def copy_sys(hts, generic_interface):
     '''
     Creates a copy of an HTS
@@ -66,10 +71,6 @@ def ris_proof_setup(hts, config, generic_interface):
     unrolled = bmc.unroll(trans, invar, B)
     bmc._add_assertion(bmc.solver, unrolled)
 
-    def assume(assumption):
-        print('Adding assumption: {}'.format(assumption))
-        bmc._add_assertion(bmc.solver, assumption)
-
     timed_actions = defaultdict(list)
     timed_ens     = defaultdict(list)
     for t in range(B):
@@ -109,7 +110,7 @@ def ris_proof_setup(hts, config, generic_interface):
     print()
     # assume they start in the same state
     print("Assuming systems start in the same state:")
-    assume(timed_sys_equiv[0])
+    assume(bmc, timed_sys_equiv[0])
 
     print()
 
@@ -122,7 +123,7 @@ def ris_proof_setup(hts, config, generic_interface):
 
     if len(generic_interface.actions) != 2**delay_width:
         assumption = BVULE(delay_var, BV(len(actions)-1, delay_width))
-        assume(assumption)
+        assume(bmc, assumption)
 
     # add constraints based on reduced instruction set proof goal
     # 'monotonicity' assumptions
@@ -131,29 +132,29 @@ def ris_proof_setup(hts, config, generic_interface):
     for generic_actions in [timed_actions, copy_timed_actions]:
         for ta1, ta2 in zip(generic_actions[0], generic_actions[1]):
             assumption = Implies(simplify(Not(ta1)), simplify(Not(ta2)))
-            assume(assumption)
+            assume(bmc, assumption)
 
         # assume that no actions are enabled in the last state (just comparing state now)
         for ta in generic_actions[2]:
-            assume(Not(ta))
+            assume(bmc, Not(ta))
 
     for a, e in zip(timed_actions[0], timed_ens[0]):
-        assume(Implies(a, e))
+        assume(bmc, Implies(a, e))
 
     for a in timed_actions[1]:
-        assume(Not(a))
+        assume(bmc, Not(a))
 
     ################ add assumptions about delay signal ###################
     # if delaying a signal, it must have been enabled
     for d, a in zip(delay, timed_actions[0]):
         assumption = Implies(d, a)
-        assume(assumption)
+        assume(bmc, assumption)
 
     for d, a, ca in zip(delay, timed_actions[0], copy_timed_actions[0]):
-        assume(Implies(Not(d), EqualsOrIff(a, ca)))
+        assume(bmc, Implies(Not(d), EqualsOrIff(a, ca)))
 
     for d, ca in zip(delay, copy_timed_actions[0]):
-        assume(Implies(d, Not(ca)))
+        assume(bmc, Implies(d, Not(ca)))
 
     # Usage
     sn = SortingNetwork.sorting_network(timed_actions[0])
@@ -169,6 +170,8 @@ def reduced_instruction_set(hts, config, generic_interface):
     delayed_signal_enabled = And([Implies(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
     # blown-out existential quantification -- there is a delayed signal that's enabled
     exists_enabled_delay_signal = Or([Implies(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
+    # blown-out existentail quantification, plus the equivalence property
+    full_consequent = And(exists_enabled_delay_signal, timed_sys_equiv[2])
 
     for i in reversed(range(1, len(timed_actions[0]))):
         print("Proving enabled-ness condition for instruction cardinality = {}".format(i+1))
@@ -180,6 +183,7 @@ def reduced_instruction_set(hts, config, generic_interface):
             model = bmc.solver.solver.get_model()
             print("+++++++++++++++++++++++ Model +++++++++++++++++++++++")
             print(model)
+            raise RuntimeError("Simple delay failed -- try a more advanced approach")
         else:
             print('Property holds')
 
