@@ -65,7 +65,7 @@ def ris_proof_setup(hts, config, generic_interface):
     bmc._init_at_time(hts.vars, 2)
     init = hts.single_init()
     invar = hts.single_invar()
-    trans = hts.single_invar()
+    trans = hts.single_trans()
     init_0 = bmc.at_time(And(init, invar), 0)
     bmc._add_assertion(bmc.solver, init_0)
     unrolled = bmc.unroll(trans, invar, B)
@@ -129,11 +129,10 @@ def ris_proof_setup(hts, config, generic_interface):
     # 'monotonicity' assumptions
     # TODO: figure out if this is always the case -- might not be in general?
     #       if action not enabled in first state, then it shouldn't be in the second
-    for generic_actions in [timed_actions, copy_timed_actions]:
-        for ta1, ta2 in zip(generic_actions[0], generic_actions[1]):
-            assumption = Implies(simplify(Not(ta1)), simplify(Not(ta2)))
-            assume(bmc, assumption)
+    for ta1, ta2 in zip(timed_actions[0], timed_actions[1]):
+        assume(bmc, Implies(Not(ta1), Not(ta2)))
 
+    for generic_actions in [timed_actions, copy_timed_actions]:
         # assume that no actions are enabled in the last state (just comparing state now)
         for ta in generic_actions[2]:
             assume(bmc, Not(ta))
@@ -173,12 +172,30 @@ def reduced_instruction_set(hts, config, generic_interface):
     # blown-out existentail quantification, plus the equivalence property
     full_consequent = And(exists_enabled_delay_signal, timed_sys_equiv[2])
 
-    # simple delay assumption
+    # simple delay assumptions
+    print()
+    print("Assume that it's disabled in state 1 unless it's the delayed action:")
+    for i, (cta1, cta2) in enumerate(zip(copy_timed_actions[0], copy_timed_actions[1])):
+        assume(bmc, Implies(Not(cta1), Or(delay[i], Not(cta2))))
+
     print()
     print("Assume that the delayed action is at time step 1 in the copied system")
     for d, ca in zip(delay, copy_timed_actions[1]):
         assume(bmc, Implies(d, ca))
     print()
+
+    print("Assume that the delayed action is the only action at time 1")
+    for d, ca in zip(delay, copy_timed_actions[1]):
+        assume(bmc, Implies(Not(d), Not(ca)))
+    print()
+
+    # cover -- delaying push
+    res = bmc.solver.solver.solve([delay[0]])
+    assert res
+    # if res:
+    #     model = bmc.solver.solver.get_model()
+    #     print('+++++++++++++++++++++++++++ Model ++++++++++++++++++++++++++++')
+    #     print(model)
 
     for i in reversed(range(1, len(timed_actions[0]))):
         print("Proving enabled-ness condition for instruction cardinality = {}".format(i+1))
@@ -215,11 +232,6 @@ def main():
         symbols[v.symbol_name()] = v
 
     rst   = symbols['rst']
-    # assume reset is zero
-    ts = TS()
-    ts.set_behavior(TRUE(), TRUE(), EqualsOrIff(rst, BV(0, 1)))
-    hts.add_ts(ts)
-
     push  = symbols['push']
     pop   = symbols['pop']
     full  = symbols['full']
@@ -227,6 +239,29 @@ def main():
 
     actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(pop, BV(1, 1))]
     en      = [EqualsOrIff(full, BV(0, 1)), EqualsOrIff(empty, BV(0, 1))]
+
+    # assume reset is zero
+    # assume data stays constant
+    action_vars = set()
+    for a in actions:
+        for v in get_free_variables(a):
+            action_vars.add(v)
+    data_inputs = hts.input_vars - action_vars
+    data_inputs.remove(rst)
+    # hacky -- remove clock
+    to_remove = set()
+    for di in data_inputs:
+        if 'clk' in di.symbol_name() or 'clock' in di.symbol_name():
+            to_remove.add(di)
+    data_inputs = data_inputs - to_remove
+    print('data inputs:', data_inputs)
+
+    # build assumption that data stays constant and add to ts
+    data_stays_const = And([EqualsOrIff(TS.get_prime(di), di) for di in data_inputs])
+
+    ts = TS()
+    ts.set_behavior(TRUE(), data_stays_const, EqualsOrIff(rst, BV(0, 1)))
+    hts.add_ts(ts)
 
     generic_interface = interface(actions=actions, ens=en)
 
