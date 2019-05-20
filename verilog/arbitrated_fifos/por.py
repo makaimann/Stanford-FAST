@@ -14,18 +14,19 @@ from pathlib import Path
 # should have an api command to get a generic config object from CoSA
 
 btor_config = namedtuple('btor_config', 'abstract_clock opt_circuit no_arrays symbolic_init strategy skip_solving smt2_tracing solver_name incremental solver_options')
+interface   = namedtuple('interface', 'actions ens')
 
-def reduced_instruction_set(hts, config, actions):
+def reduced_instruction_set(hts, config, generic_interface):
     B = 3
 
-    for a in actions:
+    for a in generic_interface.actions:
         assert a.get_type() == BOOL
 
     print("++++++++++++ automating reduced instruction set search ++++++++++++++++")
     print("Got HTS:", hts)
 
     # Create copy of system
-    hts_copy, copy_actions = copy_sys(hts, actions)
+    hts_copy, copy_interface = copy_sys(hts, generic_interface)
 
     bmc = BMCSolver(hts, config)
     union_vars = hts.vars.union(hts_copy.vars)
@@ -44,31 +45,39 @@ def reduced_instruction_set(hts, config, actions):
         bmc._add_assertion(bmc.solver, assumption)
 
     timed_actions = defaultdict(list)
+    timed_ens     = defaultdict(list)
     for t in range(B):
-        for a in actions:
+        for a in generic_interface.actions:
             timed_actions[t].append(bmc.at_time(a, t))
+        for e in generic_interface.ens:
+            timed_ens[t].append(bmc.at_time(e, t))
+        assert len(timed_actions[t]) == len(timed_ens[t])
 
     copy_timed_actions = defaultdict(list)
+    copy_timed_ens    = defaultdict(list)
     for t in range(B):
-        for ca in copy_actions:
+        for ca in copy_interface.actions:
             copy_timed_actions[t].append(bmc.at_time(ca, t))
+        for e in copy_interface.ens:
+            copy_timed_ens[t].append(bmc.at_time(e, t))
+        assert len(copy_timed_actions[t]) == len(copy_timed_ens[t])
 
     print('TIMED ACTIONS:')
     for t in timed_actions:
-        print("\t{}: {}".format(t, timed_actions[t]))
+        print("\t{}: {} - en: {}".format(t, timed_actions[t], timed_ens[t]))
 
     print('COPY TIMED ACTIONS:')
     for t in copy_timed_actions:
-        print("\t{}: {}".format(t, copy_timed_actions[t]))
+        print("\t{}: {} - en: {}".format(t, copy_timed_actions[t], copy_timed_ens[t]))
 
     # Generate delay indicator for each action
     delay = []
-    delay_width = (len(actions)-1).bit_length()
+    delay_width = (len(generic_interface.actions)-1).bit_length()
     delay_var = Symbol('delay_sel', BVType(delay_width))
-    for i in range(len(actions)):
+    for i in range(len(generic_interface.actions)):
         delay.append(EqualsOrIff(delay_var, BV(i, delay_width)))
 
-    if len(actions) != 2**delay_width:
+    if len(generic_interface.actions) != 2**delay_width:
         assumption = BVULE(delay_var, BV(len(actions)-1, delay_width))
         assume(assumption)
 
@@ -100,7 +109,10 @@ def reduced_instruction_set(hts, config, actions):
     # Usage
     # sn = SortingNetowrk.sorting_network(parameters)
 
-def copy_sys(hts, actions):
+def copy_sys(hts, generic_interface):
+    '''
+    Creates a copy of an HTS
+    '''
     prefix = 'copy.'
     hts_copy = HTS("copy")
     ts = TS()
@@ -111,7 +123,11 @@ def copy_sys(hts, actions):
                     substitute(hts.single_invar(), copymap))
     ts.state_vars = set([TS.get_prefix(v, prefix) for v in hts.state_vars])
     hts_copy.add_ts(ts)
-    return hts_copy, [substitute(a, copymap) for a in actions]
+
+    copy_interface = interface(actions=[substitute(a, copymap) for a in generic_interface.actions],
+                               ens=[substitute(e, copymap) for e in generic_interface.ens])
+
+    return hts_copy, copy_interface
 
 def main():
     parser = VerilogYosysBtorParser()
@@ -133,12 +149,17 @@ def main():
     for v in hts.vars:
         symbols[v.symbol_name()] = v
 
-    push = symbols['push']
-    pop  = symbols['pop']
+    push  = symbols['push']
+    pop   = symbols['pop']
+    full  = symbols['full']
+    empty = symbols['empty']
 
     actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(pop, BV(1, 1))]
+    en      = [EqualsOrIff(full, BV(0, 1)), EqualsOrIff(empty, BV(0, 1))]
 
-    reduced_instruction_set(hts, config, actions)
+    generic_interface = interface(actions=actions, ens=en)
+
+    reduced_instruction_set(hts, config, generic_interface)
 
 if __name__ == "__main__":
     main()
