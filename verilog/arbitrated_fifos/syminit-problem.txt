@@ -1,5 +1,5 @@
 [GENERAL]
-model_file: top.sv[top],init.ssts
+model_files: top.sv[top],init.ssts
 abstract_clock: True
 vcd: True
 
@@ -10,7 +10,7 @@ symbolic_init: True
 
 [FULL SANITY]
 description: "Check that full is wired correctly"
-formula: 'full'[0:0] = 'af.gen_fifos[0].f.full'
+properties: 'full'[0:0] = 'af.gen_fifos[0].f.full'
 verification: safety
 assumptions: assumptions.txt
 expected: True
@@ -18,7 +18,7 @@ prove: True
 
 [DATA INTEGRITY]
 description: "Check data integrity of the N FIFOs + Arbiter"
-formula: 'prop_signal' = 1_1
+properties: 'prop_signal' = 1_1
 verification: safety
 assumptions: assumptions.txt
 expected: Unknown
@@ -29,7 +29,7 @@ bmc_length: 10
 [POR COVER]
 description: "Check that POR of the N FIFOs + Arbiter hasn't overconstrained the system"
 bmc_length: 20
-formula: 'full' != 1_2
+properties: 'full' != 1_2
 verification: safety
 assumptions: por-assumptions.txt
 expected: False
@@ -37,7 +37,7 @@ expected: False
 [CHECK POR]
 description: "Check that POR is actually working"
 bmc_length: 20
-formula: ('reqs'[0:0] = 1_1) -> ((next('push'[0:0]) = 0_1) | ('full'[0:0] = 1_1))
+properties: ('reqs'[0:0] = 1_1) -> ((next('push'[0:0]) = 0_1) | ('full'[0:0] = 1_1))
 verification: safety
 assumptions: por-assumptions.txt
 expected: True
@@ -46,7 +46,7 @@ prove: True
 
 [POR DATA INTEGRITY]
 description: "Check data integrity of the N FIFOs + Arbiter using Partial Order Reduction"
-formula: 'prop_signal' = 1_1
+properties: 'prop_signal' = 1_1
 verification: safety
 assumptions: por-assumptions.txt
 expected: Unknown
@@ -57,7 +57,7 @@ smt2_tracing: abstract_array_syminit_por.smt2
 [POR_LONGEST_TRACE]
 description: "Check that packet must have exited"
 # bmc_length_min = 17
-formula: 'data_out_vld' = 0_1
+properties: 'data_out_vld' = 0_1
 verification: safety
 assumptions: por-assumptions.txt
 expected: Unknown
@@ -68,7 +68,7 @@ bmc_length: 20
 [PROVE_DATA_OUT_VLD_LOW_AFTER_EXIT]
 # not sure this is quite right -- need to show that it stays zero
 description: "Check that once the packet has exited, data_out_vld goes low"
-formula: (data_out_vld = 1_1) -> (next(data_out_vld) = 0_1)
+properties: (data_out_vld = 1_1) -> (next(data_out_vld) = 0_1)
 verification: safety
 assumptions: por-assumptions.txt
 expected: True

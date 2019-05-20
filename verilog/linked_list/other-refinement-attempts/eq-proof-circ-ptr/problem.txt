@@ -1,5 +1,5 @@
 [GENERAL]
-model_file: verif.vlist[top],reset.ets,init.ssts
+model_files: verif.vlist[top],reset.ets,init.ssts
 abstract_clock: True
 # vcd: True
 assume_if_true: True
@@ -10,13 +10,13 @@ solver_name: btor
 
 [NEVER RESET DONE]
 description: "Basic cover for reset sequence"
-formula: !reset_done
+properties: !reset_done
 verification: safety
 expected: False
 
 [BOUNDED_EQUIVALENCE]
 description: "Check that valid output data is equivalent"
-formula: (cppop = 1_1) -> (data_out = cpdata_out)
+properties: (cppop = 1_1) -> (data_out = cpdata_out)
 verification: safety
 expected: Unknown
 precondition: reset_done
@@ -24,7 +24,7 @@ bmc_length: 8
 
 [COUNTERS_MATCH]
 description: "Counter matches pointers"
-formula: shared_fifo.ll.count[0_1] = (cpf.wrPtr - cpf.rdPtr)
+properties: shared_fifo.ll.count[0_1] = (cpf.wrPtr - cpf.rdPtr)
 expected: True
 verification: safety
 prove: True
@@ -32,7 +32,7 @@ precondition: reset_done
 
 [TOTAL_COUNT_CORRECT]
 description: "Counters are consistent"
-formula: shared_fifo.ll.count[0_1] + shared_fifo.ll.count[1_1] = shared_fifo.ll.total_count
+properties: shared_fifo.ll.count[0_1] + shared_fifo.ll.count[1_1] = shared_fifo.ll.total_count
 expected: True
 verification: safety
 prove: True
@@ -40,7 +40,7 @@ precondition: reset_done
 
 [COUNTERS_CONSISTENT]
 description: "Counters are consistent"
-formula: shared_fifo.ll.count[0_1] + shared_fifo.ll.count[1_1] + free_list_count = depth
+properties: shared_fifo.ll.count[0_1] + shared_fifo.ll.count[1_1] + free_list_count = depth
 expected: True
 verification: safety
 prove: True
@@ -49,7 +49,7 @@ precondition: reset_done
 # This doesn't prove (even without the free_list_count one)
 # [COUNTERS_LEQ_DEPTH]
 # description: "Counters are consistent"
-# formula: (shared_fifo.ll.count[0_1] <= depth) & (shared_fifo.ll.count[1_1] <= depth) & (free_list_count <= depth)
+# properties: (shared_fifo.ll.count[0_1] <= depth) & (shared_fifo.ll.count[1_1] <= depth) & (free_list_count <= depth)
 # expected: True
 # verification: safety
 # prove: True
@@ -57,7 +57,7 @@ precondition: reset_done
 
 # [TRACKS_HEAD_CORRECTLY]
 # description: "Check that the history variable always keeps track of the head correctly"
-# formula: (cpempty = 0_1) -> (cpf_to_ll[rdPtr] = shared_fifo.ll.head[0_1])
+# properties: (cpempty = 0_1) -> (cpf_to_ll[rdPtr] = shared_fifo.ll.head[0_1])
 # expected: True
 # verification: safety
 # prove: True
@@ -67,7 +67,7 @@ precondition: reset_done
 
 # [FIRST_ELEMENT_OF_REFINEMENT_MAPPING]
 # description: "Check that the first elements matches the head (and loops back)"
-# formula: (cpempty = 0_1) -> (cpf_to_ll[rdPtr] = shared_fifo.ll.head[0_1]) & (ll_to_cpf[shared_fifo.ll.head[0_1]] = rdPtr)
+# properties: (cpempty = 0_1) -> (cpf_to_ll[rdPtr] = shared_fifo.ll.head[0_1]) & (ll_to_cpf[shared_fifo.ll.head[0_1]] = rdPtr)
 # verification: safety
 # expected: Unknown
 # precondition: reset_done
@@ -76,7 +76,7 @@ precondition: reset_done
 
 [REFINEMENT]
 description: "Check our refinement mapping"
-formula: refinement.txt
+properties: refinement.txt
 verification: safety
 precondition: reset_done
 expected: Unknown

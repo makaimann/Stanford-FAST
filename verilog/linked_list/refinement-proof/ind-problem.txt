@@ -1,5 +1,5 @@
 [GENERAL]
-model_file: verif.vlist[top],ind.ssts
+model_files: verif.vlist[top],ind.ssts
 abstract_clock: True
 vcd: True
 assume_if_true: True
@@ -10,7 +10,7 @@ solver_name: btor
 
 [IND_REFINEMENT]
 description: "Check the refinement property"
-formula: refinement
+properties: refinement
 verification: safety
 # assumptions proven true from initial state in problem.txt
 assumptions: (count[0_1] = shared_fifo.ll.count[0_1]) & (count[1_1] = shared_fifo.ll.count[1_1]);(free_list_count + count[0_1] + count[1_1]) = depth;(count[0_1] + count[1_1]) = shared_fifo.ll.total_count

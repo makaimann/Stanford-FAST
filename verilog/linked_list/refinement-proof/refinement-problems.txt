@@ -1,5 +1,5 @@
 [GENERAL]
-model_file: verif.vlist[top],reset.ets,init.ssts
+model_files: verif.vlist[top],reset.ets,init.ssts
 abstract_clock: True
 vcd: True
 assume_if_true: True
@@ -10,34 +10,34 @@ solver_name: btor
 
 [NEVER RESET DONE]
 description: "Basic cover for reset sequence"
-formula: !reset_done
+properties: !reset_done
 verification: safety
 expected: False
 
 [CAN_PUSH]
 description: "Sanity check for pushing"
-formula: push = 0_1
+properties: push = 0_1
 precondition: reset_done
 verification: safety
 expected: False
 
 [CAN_POP]
 description: "Sanity check for popping"
-formula: pop = 0_1
+properties: pop = 0_1
 precondition: reset_done
 verification: safety
 expected: False
 
 [GHOST_STATE]
 description: "Sanity check for ghost state"
-formula: ghost[shared_fifo.ll.free_list_head][2:2] = 1_1
+properties: ghost[shared_fifo.ll.free_list_head][2:2] = 1_1
 precondition: reset_done
 verification: safety
 expected: False
 
 [COUNTS_MATCH]
 description: "Check that the counter logic is identical"
-formula: (count[0_1] = shared_fifo.ll.count[0_1]) & (count[1_1] = shared_fifo.ll.count[1_1])
+properties: (count[0_1] = shared_fifo.ll.count[0_1]) & (count[1_1] = shared_fifo.ll.count[1_1])
 precondition: reset_done
 verification: safety
 expected: True
@@ -45,7 +45,7 @@ prove: True
 
 [COUNTS_CONSISTENT_DEPTH]
 description: "Check that the counts add up to the depth"
-formula: (free_list_count + count[0_1] + count[1_1]) = depth
+properties: (free_list_count + count[0_1] + count[1_1]) = depth
 precondition: reset_done
 verification: safety
 prove: True
@@ -53,84 +53,84 @@ prove: True
 [COUNTS_CONSISTENT_TOTAL]
 description: "Check that the fifo counts equal the total count"
 # TODO  NEED TO ADAPT FOR MORE FIFOS
-formula: (count[0_1] + count[1_1]) = shared_fifo.ll.total_count
+properties: (count[0_1] + count[1_1]) = shared_fifo.ll.total_count
 precondition: reset_done
 verification: safety
 prove: True
 
 [COUNTERS_LTE_DEPTH]
 description: "Check that counters are less than or equal to the depth"
-formula: (count[0_1] <= depth) & (count[1_1] <= depth) & (free_list_count <= depth)
+properties: (count[0_1] <= depth) & (count[1_1] <= depth) & (free_list_count <= depth)
 precondition: reset_done
 verification: safety
 prove: True
 
 [HEAD0_MAPS_TO_00]
 description: "Check that ghost state is correct for head 0"
-formula: (empty[0:0] = 0_1) -> (ghost[shared_fifo.ll.head[0_1]] = 0_4)
+properties: (empty[0:0] = 0_1) -> (ghost[shared_fifo.ll.head[0_1]] = 0_4)
 precondition: reset_done
 verification: safety
 prove: True
 
 [HEAD1_MAPS_TO_00]
 description: "Check that ghost state is correct for head 0"
-formula: (empty[1:1] = 0_1) -> (ghost[shared_fifo.ll.head[1_1]] = 4_4)
+properties: (empty[1:1] = 0_1) -> (ghost[shared_fifo.ll.head[1_1]] = 4_4)
 precondition: reset_done
 verification: safety
 prove: True
 
 [FREE_LIST_HEAD0_MAPS_TO_00]
 description: "Check that ghost state is correct for free_list_head"
-formula: (full = 0_1) -> (ghost[shared_fifo.ll.free_list_head] = 8_4)
+properties: (full = 0_1) -> (ghost[shared_fifo.ll.free_list_head] = 8_4)
 precondition: reset_done
 verification: safety
 prove: True
 
 [TAIL0_MAPS_TO_COUNT]
 description: "Check that ghost state is correct for tail 0"
-formula: (empty[0:0] = 0_1) -> ((ghost['shared_fifo.ll.tail[0]'][2:3] = 0_2) & ((ghost['shared_fifo.ll.tail[0]'][0:1] + 1_2) = shared_fifo.ll.count[0_1][0:1]))
+properties: (empty[0:0] = 0_1) -> ((ghost['shared_fifo.ll.tail[0]'][2:3] = 0_2) & ((ghost['shared_fifo.ll.tail[0]'][0:1] + 1_2) = shared_fifo.ll.count[0_1][0:1]))
 precondition: reset_done
 verification: safety
 prove: True
 
 [TAIL1_MAPS_TO_COUNT]
 description: "Check that ghost state is correct for tail 0"
-formula: (empty[1:1] = 0_1) -> ((ghost['shared_fifo.ll.tail[1]'][2:3] = 1_2) & ((ghost['shared_fifo.ll.tail[1]'][0:1] + 1_2) = shared_fifo.ll.count[1_1][0:1]))
+properties: (empty[1:1] = 0_1) -> ((ghost['shared_fifo.ll.tail[1]'][2:3] = 1_2) & ((ghost['shared_fifo.ll.tail[1]'][0:1] + 1_2) = shared_fifo.ll.count[1_1][0:1]))
 precondition: reset_done
 verification: safety
 prove: True
 
 [FREE_LIST_TAIL0_MAPS_TO_COUNT]
 description: "Check that ghost state is correct for free_list_tail"
-formula: (full = 0_1) -> ((ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2) & ((ghost[shared_fifo.ll.free_list_tail][0:1] + 1_2) = free_list_count[0:1]))
+properties: (full = 0_1) -> ((ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2) & ((ghost[shared_fifo.ll.free_list_tail][0:1] + 1_2) = free_list_count[0:1]))
 precondition: reset_done
 verification: safety
 prove: True
 
 [NEXT_PTR0]
 description: "Check ghost state of element 0"
-formula: ( ((0_2 != 'shared_fifo.ll.tail[0]') | (empty[0:0] = 1_1)) & ((0_2 != 'shared_fifo.ll.tail[1]') | (empty[1:1] = 1_1)) & ((0_2 != shared_fifo.ll.free_list_tail) | (full = 1_1)) ) -> ( (ghost[shared_fifo.ll.next_ptr[0_2]][2:3] = ghost[0_2][2:3]) & (ghost[shared_fifo.ll.next_ptr[0_2]][0:1] = (ghost[0_2][0:1] + 1_2)) )
+properties: ( ((0_2 != 'shared_fifo.ll.tail[0]') | (empty[0:0] = 1_1)) & ((0_2 != 'shared_fifo.ll.tail[1]') | (empty[1:1] = 1_1)) & ((0_2 != shared_fifo.ll.free_list_tail) | (full = 1_1)) ) -> ( (ghost[shared_fifo.ll.next_ptr[0_2]][2:3] = ghost[0_2][2:3]) & (ghost[shared_fifo.ll.next_ptr[0_2]][0:1] = (ghost[0_2][0:1] + 1_2)) )
 precondition: reset_done
 verification: safety
 prove: True
 
 [NEXT_PTR1]
 description: "Check ghost state of element 1"
-formula: ( ((1_2 != 'shared_fifo.ll.tail[0]') | (empty[0:0] = 1_1)) & ((1_2 != 'shared_fifo.ll.tail[1]') | (empty[1:1] = 1_1)) & ((1_2 != shared_fifo.ll.free_list_tail) | (full = 1_1)) ) -> ( (ghost[shared_fifo.ll.next_ptr[1_2]][2:3] = ghost[1_2][2:3]) & (ghost[shared_fifo.ll.next_ptr[1_2]][0:1] = (ghost[1_2][0:1] + 1_2)) )
+properties: ( ((1_2 != 'shared_fifo.ll.tail[0]') | (empty[0:0] = 1_1)) & ((1_2 != 'shared_fifo.ll.tail[1]') | (empty[1:1] = 1_1)) & ((1_2 != shared_fifo.ll.free_list_tail) | (full = 1_1)) ) -> ( (ghost[shared_fifo.ll.next_ptr[1_2]][2:3] = ghost[1_2][2:3]) & (ghost[shared_fifo.ll.next_ptr[1_2]][0:1] = (ghost[1_2][0:1] + 1_2)) )
 precondition: reset_done
 verification: safety
 prove: True
 
 [NEXT_PTR2]
 description: "Check ghost state of element 1"
-formula: ( ((2_2 != 'shared_fifo.ll.tail[0]') | (empty[0:0] = 1_1)) & ((2_2 != 'shared_fifo.ll.tail[1]') | (empty[1:1] = 1_1)) & ((2_2 != shared_fifo.ll.free_list_tail) | (full = 1_1)) ) -> ( (ghost[shared_fifo.ll.next_ptr[2_2]][2:3] = ghost[2_2][2:3]) & (ghost[shared_fifo.ll.next_ptr[2_2]][0:1] = (ghost[2_2][0:1] + 1_2)) )
+properties: ( ((2_2 != 'shared_fifo.ll.tail[0]') | (empty[0:0] = 1_1)) & ((2_2 != 'shared_fifo.ll.tail[1]') | (empty[1:1] = 1_1)) & ((2_2 != shared_fifo.ll.free_list_tail) | (full = 1_1)) ) -> ( (ghost[shared_fifo.ll.next_ptr[2_2]][2:3] = ghost[2_2][2:3]) & (ghost[shared_fifo.ll.next_ptr[2_2]][0:1] = (ghost[2_2][0:1] + 1_2)) )
 precondition: reset_done
 verification: safety
 prove: True
 
 [NEXT_PTR3]
 description: "Check ghost state of element 1"
-formula: ( ((3_2 != 'shared_fifo.ll.tail[0]') | (empty[0:0] = 1_1)) & ((3_2 != 'shared_fifo.ll.tail[1]') | (empty[1:1] = 1_1)) & ((3_2 != shared_fifo.ll.free_list_tail) | (full = 1_1)) ) -> ( (ghost[shared_fifo.ll.next_ptr[3_2]][2:3] = ghost[3_2][2:3]) & (ghost[shared_fifo.ll.next_ptr[3_2]][0:1] = (ghost[3_2][0:1] + 1_2)) )
+properties: ( ((3_2 != 'shared_fifo.ll.tail[0]') | (empty[0:0] = 1_1)) & ((3_2 != 'shared_fifo.ll.tail[1]') | (empty[1:1] = 1_1)) & ((3_2 != shared_fifo.ll.free_list_tail) | (full = 1_1)) ) -> ( (ghost[shared_fifo.ll.next_ptr[3_2]][2:3] = ghost[3_2][2:3]) & (ghost[shared_fifo.ll.next_ptr[3_2]][0:1] = (ghost[3_2][0:1] + 1_2)) )
 precondition: reset_done
 verification: safety
 prove: True

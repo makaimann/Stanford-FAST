@@ -1,5 +1,5 @@
 [GENERAL]
-model_file: verif.vlist[top],reset.ets,init.ssts
+model_files: verif.vlist[top],reset.ets,init.ssts
 abstract_clock: True
 vcd: True
 assume_if_true: True
@@ -14,73 +14,73 @@ solver_name: btor
 
 [MAPS_TO_HEAD]
 description: "Check that it maps to the head"
-formula: ((cpempty = 0_1) -> ((cpf_to_ll[rdPtr] = shared_fifo.ll.head[0_1]) & (from_ll[shared_fifo.ll.head[0_1]][0:1] = rdPtr) & (from_ll[shared_fifo.ll.head[0_1]][2:3] = fifo)))
+properties: ((cpempty = 0_1) -> ((cpf_to_ll[rdPtr] = shared_fifo.ll.head[0_1]) & (from_ll[shared_fifo.ll.head[0_1]][0:1] = rdPtr) & (from_ll[shared_fifo.ll.head[0_1]][2:3] = fifo)))
 verification: safety
 precondition: reset_done
 
 [MAPS_TO_TAIL]
 description: "Check that it maps to the tail"
-formula: ((cpempty = 0_1) -> ((cpf_to_ll[wrPtr - 1_2] = 'shared_fifo.ll.tail[0]') & (from_ll['shared_fifo.ll.tail[0]'][0:1] = (wrPtr - 1_2)) & (from_ll['shared_fifo.ll.tail[0]'][2:3] = fifo)))
+properties: ((cpempty = 0_1) -> ((cpf_to_ll[wrPtr - 1_2] = 'shared_fifo.ll.tail[0]') & (from_ll['shared_fifo.ll.tail[0]'][0:1] = (wrPtr - 1_2)) & (from_ll['shared_fifo.ll.tail[0]'][2:3] = fifo)))
 verification: safety
 precondition: reset_done
 
 [FREE_LIST_MAPS_TO_HEAD]
 description: "Check that it maps to the head"
-formula: ((full = 0_1) -> ((ptr_to_free_list[free_list_rdPtr] = shared_fifo.ll.free_list_head) & (from_ll[shared_fifo.ll.free_list_head][0:1] = free_list_rdPtr) & (from_ll[shared_fifo.ll.free_list_head][2:3] = free_list)))
+properties: ((full = 0_1) -> ((ptr_to_free_list[free_list_rdPtr] = shared_fifo.ll.free_list_head) & (from_ll[shared_fifo.ll.free_list_head][0:1] = free_list_rdPtr) & (from_ll[shared_fifo.ll.free_list_head][2:3] = free_list)))
 verification: safety
 precondition: reset_done
 
 [FREE_LIST_MAPS_TO_TAIL]
 description: "Check that free list maps to the tail"
-formula: ((full = 0_1) -> ((ptr_to_free_list[free_list_wrPtr - 1_2] = shared_fifo.ll.free_list_tail) & (from_ll[shared_fifo.ll.free_list_tail][0:1] = (free_list_wrPtr - 1_2)) & (from_ll[shared_fifo.ll.free_list_tail][2:3] = free_list)))
+properties: ((full = 0_1) -> ((ptr_to_free_list[free_list_wrPtr - 1_2] = shared_fifo.ll.free_list_tail) & (from_ll[shared_fifo.ll.free_list_tail][0:1] = (free_list_wrPtr - 1_2)) & (from_ll[shared_fifo.ll.free_list_tail][2:3] = free_list)))
 verification: safety
 precondition: reset_done
 
 [PHANTOM_MAPS_TO_HEAD]
 description: "Check that it maps to the head"
-formula: ((empty[1:1] = 0_1) -> ((ptr_to_phantom[phantom_rdPtr] = shared_fifo.ll.head[1_1]) & (from_ll[shared_fifo.ll.head[1_1]][0:1] = phantom_rdPtr) & (from_ll[shared_fifo.ll.head[1_1]][2:3] = phantom)))
+properties: ((empty[1:1] = 0_1) -> ((ptr_to_phantom[phantom_rdPtr] = shared_fifo.ll.head[1_1]) & (from_ll[shared_fifo.ll.head[1_1]][0:1] = phantom_rdPtr) & (from_ll[shared_fifo.ll.head[1_1]][2:3] = phantom)))
 verification: safety
 precondition: reset_done
 
 [PHANTOM_MAPS_TO_TAIL]
 description: "Check that free list maps to the tail"
-formula: ((empty[1:1] = 0_1) -> ((ptr_to_phantom[phantom_wrPtr - 1_2] = 'shared_fifo.ll.tail[1]') & (from_ll['shared_fifo.ll.tail[1]'][0:1] = (phantom_wrPtr - 1_2)) & (from_ll['shared_fifo.ll.tail[1]'][2:3] = phantom)))
+properties: ((empty[1:1] = 0_1) -> ((ptr_to_phantom[phantom_wrPtr - 1_2] = 'shared_fifo.ll.tail[1]') & (from_ll['shared_fifo.ll.tail[1]'][0:1] = (phantom_wrPtr - 1_2)) & (from_ll['shared_fifo.ll.tail[1]'][2:3] = phantom)))
 verification: safety
 precondition: reset_done
 
 [FIFO_IDENTITY_MAPS]
 description: "Check identity maps for fifo"
-formula: (((shared_fifo.ll.count[0_1] >= 1_3) -> ((from_ll[cpf_to_ll[rdPtr]][0:1] = rdPtr) & (from_ll[cpf_to_ll[rdPtr]][2:3] = fifo))) & ((shared_fifo.ll.count[0_1] >= 2_3) -> ((from_ll[cpf_to_ll[rdPtr+1_2]][0:1] = rdPtr+1_2) & (from_ll[cpf_to_ll[rdPtr+1_2]][2:3] = fifo))) & ((shared_fifo.ll.count[0_1] >= 3_3) -> ((from_ll[cpf_to_ll[rdPtr+2_2]][0:1] = rdPtr+2_2) & (from_ll[cpf_to_ll[rdPtr+2_2]][2:3] = fifo))) & ((shared_fifo.ll.count[0_1] >= 4_3) -> ((from_ll[cpf_to_ll[rdPtr+3_2]][0:1] = rdPtr+3_2) & (from_ll[cpf_to_ll[rdPtr+3_2]][2:3] = fifo))))
+properties: (((shared_fifo.ll.count[0_1] >= 1_3) -> ((from_ll[cpf_to_ll[rdPtr]][0:1] = rdPtr) & (from_ll[cpf_to_ll[rdPtr]][2:3] = fifo))) & ((shared_fifo.ll.count[0_1] >= 2_3) -> ((from_ll[cpf_to_ll[rdPtr+1_2]][0:1] = rdPtr+1_2) & (from_ll[cpf_to_ll[rdPtr+1_2]][2:3] = fifo))) & ((shared_fifo.ll.count[0_1] >= 3_3) -> ((from_ll[cpf_to_ll[rdPtr+2_2]][0:1] = rdPtr+2_2) & (from_ll[cpf_to_ll[rdPtr+2_2]][2:3] = fifo))) & ((shared_fifo.ll.count[0_1] >= 4_3) -> ((from_ll[cpf_to_ll[rdPtr+3_2]][0:1] = rdPtr+3_2) & (from_ll[cpf_to_ll[rdPtr+3_2]][2:3] = fifo))))
 verification: safety
 precondition: reset_done
 
 [FREE_LIST_IDENTITY_MAPS]
 description: "Check free list identity maps"
-formula: (((free_list_count >= 1_3) -> ((from_ll[ptr_to_free_list[free_list_rdPtr]][0:1] = free_list_rdPtr) & (from_ll[ptr_to_free_list[free_list_rdPtr]][2:3] = free_list))) & ((free_list_count >= 2_3) -> ((from_ll[ptr_to_free_list[free_list_rdPtr+1_2]][0:1] = free_list_rdPtr+1_2) & (from_ll[ptr_to_free_list[free_list_rdPtr+1_2]][2:3] = free_list))) & ((free_list_count >= 3_3) -> ((from_ll[ptr_to_free_list[free_list_rdPtr+2_2]][0:1] = free_list_rdPtr+2_2) & (from_ll[ptr_to_free_list[free_list_rdPtr+2_2]][2:3] = free_list))) & ((free_list_count >= 4_3) -> ((from_ll[ptr_to_free_list[free_list_rdPtr+3_2]][0:1] = free_list_rdPtr+3_2) & (from_ll[ptr_to_free_list[free_list_rdPtr+3_2]][2:3] = free_list))))
+properties: (((free_list_count >= 1_3) -> ((from_ll[ptr_to_free_list[free_list_rdPtr]][0:1] = free_list_rdPtr) & (from_ll[ptr_to_free_list[free_list_rdPtr]][2:3] = free_list))) & ((free_list_count >= 2_3) -> ((from_ll[ptr_to_free_list[free_list_rdPtr+1_2]][0:1] = free_list_rdPtr+1_2) & (from_ll[ptr_to_free_list[free_list_rdPtr+1_2]][2:3] = free_list))) & ((free_list_count >= 3_3) -> ((from_ll[ptr_to_free_list[free_list_rdPtr+2_2]][0:1] = free_list_rdPtr+2_2) & (from_ll[ptr_to_free_list[free_list_rdPtr+2_2]][2:3] = free_list))) & ((free_list_count >= 4_3) -> ((from_ll[ptr_to_free_list[free_list_rdPtr+3_2]][0:1] = free_list_rdPtr+3_2) & (from_ll[ptr_to_free_list[free_list_rdPtr+3_2]][2:3] = free_list))))
 verification: safety
 precondition: reset_done
 
 [PHANTOM_IDENTITY_MAPS]
 description: "Check phantom identity maps"
-formula: (((shared_fifo.ll.count[1_1] >= 1_3) -> ((from_ll[ptr_to_phantom[phantom_rdPtr]][0:1] = phantom_rdPtr) & (from_ll[ptr_to_phantom[phantom_rdPtr]][2:3] = phantom))) & ((shared_fifo.ll.count[1_1] >= 2_3) -> ((from_ll[ptr_to_phantom[phantom_rdPtr+1_2]][0:1] = phantom_rdPtr+1_2) & (from_ll[ptr_to_phantom[phantom_rdPtr+1_2]][2:3] = phantom))) & ((shared_fifo.ll.count[1_1] >= 3_3) -> ((from_ll[ptr_to_phantom[phantom_rdPtr+2_2]][0:1] = phantom_rdPtr+2_2) & (from_ll[ptr_to_phantom[phantom_rdPtr+2_2]][2:3] = phantom))) & ((shared_fifo.ll.count[1_1] >= 4_3) -> ((from_ll[ptr_to_phantom[phantom_rdPtr+3_2]][0:1] = phantom_rdPtr+3_2) & (from_ll[ptr_to_phantom[phantom_rdPtr+3_2]][2:3] = phantom))))
+properties: (((shared_fifo.ll.count[1_1] >= 1_3) -> ((from_ll[ptr_to_phantom[phantom_rdPtr]][0:1] = phantom_rdPtr) & (from_ll[ptr_to_phantom[phantom_rdPtr]][2:3] = phantom))) & ((shared_fifo.ll.count[1_1] >= 2_3) -> ((from_ll[ptr_to_phantom[phantom_rdPtr+1_2]][0:1] = phantom_rdPtr+1_2) & (from_ll[ptr_to_phantom[phantom_rdPtr+1_2]][2:3] = phantom))) & ((shared_fifo.ll.count[1_1] >= 3_3) -> ((from_ll[ptr_to_phantom[phantom_rdPtr+2_2]][0:1] = phantom_rdPtr+2_2) & (from_ll[ptr_to_phantom[phantom_rdPtr+2_2]][2:3] = phantom))) & ((shared_fifo.ll.count[1_1] >= 4_3) -> ((from_ll[ptr_to_phantom[phantom_rdPtr+3_2]][0:1] = phantom_rdPtr+3_2) & (from_ll[ptr_to_phantom[phantom_rdPtr+3_2]][2:3] = phantom))))
 verification: safety
 precondition: reset_done
 
 [NEXT_PTR_FIFO_CHECK]
 description: "Check that the next ptr is consistent for the FIFO memory"
-formula: (((shared_fifo.ll.count[0_1] >= 2_3) -> (from_ll[shared_fifo.ll.next_ptr[cpf_to_ll[rdPtr]]][0:1] = rdPtr+1_2)) & ((shared_fifo.ll.count[0_1] >= 3_3) -> (from_ll[shared_fifo.ll.next_ptr[cpf_to_ll[rdPtr+1_2]]][0:1] = rdPtr+2_2)) & ((shared_fifo.ll.count[0_1] >= 4_3) -> (from_ll[shared_fifo.ll.next_ptr[cpf_to_ll[rdPtr+2_2]]][0:1] = rdPtr+3_2)))
+properties: (((shared_fifo.ll.count[0_1] >= 2_3) -> (from_ll[shared_fifo.ll.next_ptr[cpf_to_ll[rdPtr]]][0:1] = rdPtr+1_2)) & ((shared_fifo.ll.count[0_1] >= 3_3) -> (from_ll[shared_fifo.ll.next_ptr[cpf_to_ll[rdPtr+1_2]]][0:1] = rdPtr+2_2)) & ((shared_fifo.ll.count[0_1] >= 4_3) -> (from_ll[shared_fifo.ll.next_ptr[cpf_to_ll[rdPtr+2_2]]][0:1] = rdPtr+3_2)))
 verification: safety
 precondition: reset_done
 
 [NEXT_PTR_FREE_LIST_CHECK]
 description: "Check that the next ptr is consistent for free list memory"
-formula: (((free_list_count >= 2_3) -> (from_ll[shared_fifo.ll.next_ptr[ptr_to_free_list[free_list_rdPtr]]][0:1] = free_list_rdPtr+1_2)) & ((free_list_count >= 3_3) -> (from_ll[shared_fifo.ll.next_ptr[ptr_to_free_list[free_list_rdPtr+1_2]]][0:1] = free_list_rdPtr+2_2)) & ((free_list_count >= 4_3) -> (from_ll[shared_fifo.ll.next_ptr[ptr_to_free_list[free_list_rdPtr+2_2]]][0:1] = free_list_rdPtr+3_2)))
+properties: (((free_list_count >= 2_3) -> (from_ll[shared_fifo.ll.next_ptr[ptr_to_free_list[free_list_rdPtr]]][0:1] = free_list_rdPtr+1_2)) & ((free_list_count >= 3_3) -> (from_ll[shared_fifo.ll.next_ptr[ptr_to_free_list[free_list_rdPtr+1_2]]][0:1] = free_list_rdPtr+2_2)) & ((free_list_count >= 4_3) -> (from_ll[shared_fifo.ll.next_ptr[ptr_to_free_list[free_list_rdPtr+2_2]]][0:1] = free_list_rdPtr+3_2)))
 verification: safety
 precondition: reset_done
 
 [NEXT_PTR_PHANTOM_CHECK]
 description: "Check that the next ptr is consistent for free list memory"
-formula: (((shared_fifo.ll.count[1_1] >= 2_3) -> (from_ll[shared_fifo.ll.next_ptr[ptr_to_phantom[phantom_rdPtr]]][0:1] = phantom_rdPtr+1_2)) & ((shared_fifo.ll.count[1_1] >= 3_3) -> (from_ll[shared_fifo.ll.next_ptr[ptr_to_phantom[phantom_rdPtr+1_2]]][0:1] = phantom_rdPtr+2_2)) & ((shared_fifo.ll.count[1_1] >= 4_3) -> (from_ll[shared_fifo.ll.next_ptr[ptr_to_phantom[phantom_rdPtr+2_2]]][0:1] = phantom_rdPtr+3_2)))
+properties: (((shared_fifo.ll.count[1_1] >= 2_3) -> (from_ll[shared_fifo.ll.next_ptr[ptr_to_phantom[phantom_rdPtr]]][0:1] = phantom_rdPtr+1_2)) & ((shared_fifo.ll.count[1_1] >= 3_3) -> (from_ll[shared_fifo.ll.next_ptr[ptr_to_phantom[phantom_rdPtr+1_2]]][0:1] = phantom_rdPtr+2_2)) & ((shared_fifo.ll.count[1_1] >= 4_3) -> (from_ll[shared_fifo.ll.next_ptr[ptr_to_phantom[phantom_rdPtr+2_2]]][0:1] = phantom_rdPtr+3_2)))
 verification: safety
 precondition: reset_done
 
@@ -89,7 +89,7 @@ precondition: reset_done
 # because NUM_FIFOS was two when I wrote this, it only shows up once
 # [NEXT_PTR_PHANTOM_CHECK]
 # description: "Check that the next ptr is consistent for phantom memory (not tracked precisely)"
-# formula: (((shared_fifo.ll.count[1_1] >= 2_3) -> ((from_ll[shared_fifo.ll.next_ptr[ptr_to_phantom[phantom_rdPtr]]][2:3] = phantom) | (ptr_to_phantom[phantom_rdPtr] = 'shared_fifo.ll.tail[1]'))) & ((shared_fifo.ll.count[1_1] >= 3_3) -> ((from_ll[shared_fifo.ll.next_ptr[ptr_to_phantom[phantom_rdPtr+1_2]]][2:3] = phantom) | (ptr_to_phantom[phantom_rdPtr+1_2] = 'shared_fifo.ll.tail[1]'))) & ((shared_fifo.ll.count[1_1] >= 4_3) -> ((from_ll[shared_fifo.ll.next_ptr[ptr_to_phantom[phantom_rdPtr+2_2]]][2:3] = phantom) | (ptr_to_phantom[phantom_rdPtr+2_2] = 'shared_fifo.ll.tail[1]'))))
+# properties: (((shared_fifo.ll.count[1_1] >= 2_3) -> ((from_ll[shared_fifo.ll.next_ptr[ptr_to_phantom[phantom_rdPtr]]][2:3] = phantom) | (ptr_to_phantom[phantom_rdPtr] = 'shared_fifo.ll.tail[1]'))) & ((shared_fifo.ll.count[1_1] >= 3_3) -> ((from_ll[shared_fifo.ll.next_ptr[ptr_to_phantom[phantom_rdPtr+1_2]]][2:3] = phantom) | (ptr_to_phantom[phantom_rdPtr+1_2] = 'shared_fifo.ll.tail[1]'))) & ((shared_fifo.ll.count[1_1] >= 4_3) -> ((from_ll[shared_fifo.ll.next_ptr[ptr_to_phantom[phantom_rdPtr+2_2]]][2:3] = phantom) | (ptr_to_phantom[phantom_rdPtr+2_2] = 'shared_fifo.ll.tail[1]'))))
 # verification: safety
 # precondition: reset_done
 
