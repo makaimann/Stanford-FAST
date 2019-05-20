@@ -39,7 +39,8 @@ def copy_sys(hts, generic_interface):
     copy_interface = interface(actions=[substitute(a, copymap) for a in generic_interface.actions],
                                ens=[substitute(e, copymap) for e in generic_interface.ens])
 
-    return hts_copy, copy_interface
+    sys_equiv_output = And([EqualsOrIff(sv, substitute(sv, copymap)) for sv in hts.state_vars])
+    return hts_copy, copy_interface, sys_equiv_output
 
 def ris_proof_setup(hts, config, generic_interface):
     B = 3
@@ -50,7 +51,7 @@ def ris_proof_setup(hts, config, generic_interface):
     print("Got HTS:", hts)
 
     # Create copy of system
-    hts_copy, copy_interface = copy_sys(hts, generic_interface)
+    hts_copy, copy_interface, sys_equiv_output = copy_sys(hts, generic_interface)
     # update the main system
     hts.combine(hts_copy)
 
@@ -86,6 +87,11 @@ def ris_proof_setup(hts, config, generic_interface):
         for e in copy_interface.ens:
             copy_timed_ens[t].append(bmc.at_time(e, t))
         assert len(copy_timed_actions[t]) == len(copy_timed_ens[t])
+
+    timed_sys_equiv = list()
+    for t in range(B):
+        timed_sys_equiv.append(bmc.at_time(sys_equiv_output, t))
+
     print()
     print('TIMED ACTIONS:')
     for t in timed_actions:
@@ -94,6 +100,16 @@ def ris_proof_setup(hts, config, generic_interface):
     print('COPY TIMED ACTIONS:')
     for t in copy_timed_actions:
         print("\t{}: {} - en: {}".format(t, copy_timed_actions[t], copy_timed_ens[t]))
+
+    print()
+    print('TIMED EQUIV OUTPUT:')
+    for e in timed_sys_equiv:
+        print("\t", e)
+
+    print()
+    # assume they start in the same state
+    print("Assuming systems start in the same state:")
+    assume(timed_sys_equiv[0])
 
     print()
 
@@ -143,24 +159,28 @@ def ris_proof_setup(hts, config, generic_interface):
     sn = SortingNetwork.sorting_network(timed_actions[0])
     print("\nSorting Network:\n\t", sn)
 
-    return bmc, timed_actions, timed_ens, copy_timed_actions, copy_timed_ens, delay, sn
+    return bmc, timed_actions, timed_ens, copy_timed_actions, copy_timed_ens, timed_sys_equiv, delay, sn
 
 def reduced_instruction_set(hts, config, generic_interface):
     setup = ris_proof_setup(hts, config, generic_interface)
-    bmc, timed_actions, timed_ens, copy_timed_actions, copy_timed_ens, delay, sn = setup
+    bmc, timed_actions, timed_ens, copy_timed_actions, copy_timed_ens, timed_sys_equiv, delay, sn = setup
 
-    # # assertion that delayed signal is enabled
-    # delayed_signal_enabled = And([Implies(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
-    # # blown-out existential quantification -- there is a delayed signal that's enabled
-    # exists_enabled_delay_signal = Or([And(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
+    # assertion that delayed signal is enabled
+    delayed_signal_enabled = And([Implies(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
+    # blown-out existential quantification -- there is a delayed signal that's enabled
+    exists_enabled_delay_signal = Or([Implies(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
 
-    # prop = Implies(sn[1], exists_enabled_delay_signal)
-    # print("Trying to prove property:\n\t", prop)
-    # assumptions = [Not(prop)]
-    # print(bmc.solver.solver.solve(assumptions))
-    # model = bmc.solver.solver.get_model()
-    # print("+++++++++++++++++++++++ Model +++++++++++++++++++++++")
-    # print(model)
+    for i in reversed(range(len(timed_actions[0]))):
+        print("Proving enabled-ness condition for instruction cardinality = {}".format(i+1))
+        prop = Implies(sn[i], exists_enabled_delay_signal)
+        assumptions = [Not(prop)]
+        res = bmc.solver.solver.solve(assumptions)
+        if res:
+            model = bmc.solver.solver.get_model()
+            print("+++++++++++++++++++++++ Model +++++++++++++++++++++++")
+            print(model)
+        else:
+            print('Property holds')
 
 def main():
     parser = VerilogYosysBtorParser()
