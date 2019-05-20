@@ -1,5 +1,5 @@
 [GENERAL]
-model_file: verif.vlist[top],compositional-reasoning.ssts
+model_files: verif.vlist[top],compositional-reasoning.ssts
 abstract_clock: True
 vcd: True
 assume_if_true: True
@@ -14,45 +14,45 @@ solver_name: btor
 
 [A_IS_A_TAIL_SANITY_SIM]
 description: "Check the case where A is a tail"
-assumptions: (A = free_tail_ptr) | (A = 'shared_fifo.ll.tail[0]') | (A = 'shared_fifo.ll.tail[1]') ; ghost[shared_fifo.ll.head[0_1]] = 0_4 ; ghost[shared_fifo.ll.head[1_1]] = 4_4 ; ghost[shared_fifo.ll.free_list_head] = 8_4 ; ghost['shared_fifo.ll.tail[0]'][2:3] = 0_2 ; ghost['shared_fifo.ll.tail[1]'][2:3] = 1_2 ; ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2 ; ghost['shared_fifo.ll.tail[0]'][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2) ; ghost['shared_fifo.ll.tail[1]'][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2) ; ghost[shared_fifo.ll.free_list_tail][2:3] = (free_list_count[0:1] - 1_2); 
+assumptions: (A = free_tail_ptr) | (A = shared_fifo.ll.tail[0_1]) | (A = shared_fifo.ll.tail[1_1]) ; ghost[shared_fifo.ll.head[0_1]] = 0_4 ; ghost[shared_fifo.ll.head[1_1]] = 4_4 ; ghost[shared_fifo.ll.free_list_head] = 8_4 ; ghost[shared_fifo.ll.tail[0_1]][2:3] = 0_2 ; ghost[shared_fifo.ll.tail[1_1]][2:3] = 1_2 ; ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2 ; ghost[shared_fifo.ll.tail[0_1]][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2) ; ghost[shared_fifo.ll.tail[1_1]][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2) ; ghost[shared_fifo.ll.free_list_tail][2:3] = (free_list_count[0:1] - 1_2); 
 verification: simulation
 
 [A_IS_A_HEAD_SANITY_SIM]
 description: "Check the case where A is a head"
-assumptions: (A = shared_fifo.ll.free_list_head) | (A = shared_fifo.ll.head[0_1]) | (A = shared_fifo.ll.head[1_1]) ; ghost[shared_fifo.ll.head[0_1]] = 0_4 ; ghost[shared_fifo.ll.head[1_1]] = 4_4 ; ghost[shared_fifo.ll.free_list_head] = 8_4 ; ghost['shared_fifo.ll.tail[0]'][2:3] = 0_2 ; ghost['shared_fifo.ll.tail[1]'][2:3] = 1_2 ; ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2 ; ghost['shared_fifo.ll.tail[0]'][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2) ; ghost['shared_fifo.ll.tail[1]'][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2) ; ghost[shared_fifo.ll.free_list_tail][2:3] = (free_list_count[0:1] - 1_2) ; 
+assumptions: (A = shared_fifo.ll.free_list_head) | (A = shared_fifo.ll.head[0_1]) | (A = shared_fifo.ll.head[1_1]) ; ghost[shared_fifo.ll.head[0_1]] = 0_4 ; ghost[shared_fifo.ll.head[1_1]] = 4_4 ; ghost[shared_fifo.ll.free_list_head] = 8_4 ; ghost[shared_fifo.ll.tail[0_1]][2:3] = 0_2 ; ghost[shared_fifo.ll.tail[1_1]][2:3] = 1_2 ; ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2 ; ghost[shared_fifo.ll.tail[0_1]][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2) ; ghost[shared_fifo.ll.tail[1_1]][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2) ; ghost[shared_fifo.ll.free_list_tail][2:3] = (free_list_count[0:1] - 1_2) ; 
 verification: simulation
 
 [A_IS_NEITHER_HEAD_NOR_TAIL_SANITY_SIM]
 description: "Check the case where A is an arbitrary element that's not a head or tail"
-assumptions: (A != shared_fifo.ll.free_list_head) & (A != shared_fifo.ll.head[0_1]) & (A != shared_fifo.ll.head[1_1]) ; (A != free_tail_ptr) | (A != 'shared_fifo.ll.tail[0]') | (A != 'shared_fifo.ll.tail[1]') ; ghost[shared_fifo.ll.head[0_1]] = 0_4 ; ghost[shared_fifo.ll.head[1_1]] = 4_4 ; ghost[shared_fifo.ll.free_list_head] = 8_4 ; ghost['shared_fifo.ll.tail[0]'][2:3] = 0_2 ; ghost['shared_fifo.ll.tail[1]'][2:3] = 1_2 ; ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2 ; ghost['shared_fifo.ll.tail[0]'][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2) ; ghost['shared_fifo.ll.tail[1]'][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2) ; ghost[shared_fifo.ll.free_list_tail][2:3] = (free_list_count[0:1] - 1_2)
+assumptions: (A != shared_fifo.ll.free_list_head) & (A != shared_fifo.ll.head[0_1]) & (A != shared_fifo.ll.head[1_1]) ; (A != free_tail_ptr) | (A != shared_fifo.ll.tail[0_1]) | (A != shared_fifo.ll.tail[1_1]) ; ghost[shared_fifo.ll.head[0_1]] = 0_4 ; ghost[shared_fifo.ll.head[1_1]] = 4_4 ; ghost[shared_fifo.ll.free_list_head] = 8_4 ; ghost[shared_fifo.ll.tail[0_1]][2:3] = 0_2 ; ghost[shared_fifo.ll.tail[1_1]][2:3] = 1_2 ; ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2 ; ghost[shared_fifo.ll.tail[0_1]][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2) ; ghost[shared_fifo.ll.tail[1_1]][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2) ; ghost[shared_fifo.ll.free_list_tail][2:3] = (free_list_count[0:1] - 1_2)
 verification: simulation
 
 [A_IS_A_TAIL]
 description: "Check the case where A is a tail"
-formula: prop
-assumptions: (A = free_tail_ptr) | (A = 'shared_fifo.ll.tail[0]') | (A = 'shared_fifo.ll.tail[1]') ; ghost[shared_fifo.ll.head[0_1]] = 0_4 ; ghost[shared_fifo.ll.head[1_1]] = 4_4 ; ghost[shared_fifo.ll.free_list_head] = 8_4 ; ghost['shared_fifo.ll.tail[0]'][2:3] = 0_2 ; ghost['shared_fifo.ll.tail[1]'][2:3] = 1_2 ; ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2 ; ghost['shared_fifo.ll.tail[0]'][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2) ; ghost['shared_fifo.ll.tail[1]'][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2) ; ghost[shared_fifo.ll.free_list_tail][0:1] = (free_list_count[0:1] - 1_2)
+properties: prop
+assumptions: (A = free_tail_ptr) | (A = shared_fifo.ll.tail[0_1]) | (A = shared_fifo.ll.tail[1_1]) ; ghost[shared_fifo.ll.head[0_1]] = 0_4 ; ghost[shared_fifo.ll.head[1_1]] = 4_4 ; ghost[shared_fifo.ll.free_list_head] = 8_4 ; ghost[shared_fifo.ll.tail[0_1]][2:3] = 0_2 ; ghost[shared_fifo.ll.tail[1_1]][2:3] = 1_2 ; ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2 ; ghost[shared_fifo.ll.tail[0_1]][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2) ; ghost[shared_fifo.ll.tail[1_1]][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2) ; ghost[shared_fifo.ll.free_list_tail][0:1] = (free_list_count[0:1] - 1_2)
 verification: safety
 
 [A_IS_A_HEAD]
 description: "Check the case where A is a head"
-formula: prop
-assumptions: (A = shared_fifo.ll.free_list_head) | (A = shared_fifo.ll.head[0_1]) | (A = shared_fifo.ll.head[1_1]) ; ghost[shared_fifo.ll.head[0_1]] = 0_4 ; ghost[shared_fifo.ll.head[1_1]] = 4_4 ; ghost[shared_fifo.ll.free_list_head] = 8_4 ; ghost['shared_fifo.ll.tail[0]'][2:3] = 0_2 ; ghost['shared_fifo.ll.tail[1]'][2:3] = 1_2 ; ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2 ; ghost['shared_fifo.ll.tail[0]'][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2) ; ghost['shared_fifo.ll.tail[1]'][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2) ; ghost[shared_fifo.ll.free_list_tail][0:1] = (free_list_count[0:1] - 1_2)
+properties: prop
+assumptions: (A = shared_fifo.ll.free_list_head) | (A = shared_fifo.ll.head[0_1]) | (A = shared_fifo.ll.head[1_1]) ; ghost[shared_fifo.ll.head[0_1]] = 0_4 ; ghost[shared_fifo.ll.head[1_1]] = 4_4 ; ghost[shared_fifo.ll.free_list_head] = 8_4 ; ghost[shared_fifo.ll.tail[0_1]][2:3] = 0_2 ; ghost[shared_fifo.ll.tail[1_1]][2:3] = 1_2 ; ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2 ; ghost[shared_fifo.ll.tail[0_1]][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2) ; ghost[shared_fifo.ll.tail[1_1]][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2) ; ghost[shared_fifo.ll.free_list_tail][0:1] = (free_list_count[0:1] - 1_2)
 verification: safety
 
 [A_IS_NEITHER_HEAD_NOR_TAIL]
 description: "Check the case where A is an arbitrary element that's not a head or tail"
-formula: prop
-assumptions: (A != shared_fifo.ll.free_list_head) & (A != shared_fifo.ll.head[0_1]) & (A != shared_fifo.ll.head[1_1]) ; (A != free_tail_ptr) | (A != 'shared_fifo.ll.tail[0]') | (A != 'shared_fifo.ll.tail[1]') ; ghost[shared_fifo.ll.head[0_1]] = 0_4 ; ghost[shared_fifo.ll.head[1_1]] = 4_4 ; ghost[shared_fifo.ll.free_list_head] = 8_4 ; ghost['shared_fifo.ll.tail[0]'][2:3] = 0_2 ; ghost['shared_fifo.ll.tail[1]'][2:3] = 1_2 ; ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2 ; ghost['shared_fifo.ll.tail[0]'][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2) ; ghost['shared_fifo.ll.tail[1]'][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2) ; ghost[shared_fifo.ll.free_list_tail][0:1] = (free_list_count[0:1] - 1_2)
+properties: prop
+assumptions: (A != shared_fifo.ll.free_list_head) & (A != shared_fifo.ll.head[0_1]) & (A != shared_fifo.ll.head[1_1]) ; (A != free_tail_ptr) | (A != shared_fifo.ll.tail[0_1]) | (A != shared_fifo.ll.tail[1_1]) ; ghost[shared_fifo.ll.head[0_1]] = 0_4 ; ghost[shared_fifo.ll.head[1_1]] = 4_4 ; ghost[shared_fifo.ll.free_list_head] = 8_4 ; ghost[shared_fifo.ll.tail[0_1]][2:3] = 0_2 ; ghost[shared_fifo.ll.tail[1_1]][2:3] = 1_2 ; ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2 ; ghost[shared_fifo.ll.tail[0_1]][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2) ; ghost[shared_fifo.ll.tail[1_1]][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2) ; ghost[shared_fifo.ll.free_list_tail][0:1] = (free_list_count[0:1] - 1_2)
 verification: safety
 
 [GENERIC_A]
 description: "Check the case where A is an arbitrary element that's not a head or tail"
-formula: prop
-assumptions: ghost[shared_fifo.ll.head[0_1]] = 0_4 ; ghost[shared_fifo.ll.head[1_1]] = 4_4 ; ghost[shared_fifo.ll.free_list_head] = 8_4 ; ghost['shared_fifo.ll.tail[0]'][2:3] = 0_2 ; ghost['shared_fifo.ll.tail[1]'][2:3] = 1_2 ; ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2 ; ghost['shared_fifo.ll.tail[0]'][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2) ; ghost['shared_fifo.ll.tail[1]'][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2) ; ghost[shared_fifo.ll.free_list_tail][0:1] = (free_list_count[0:1] - 1_2)
+properties: prop
+assumptions: ghost[shared_fifo.ll.head[0_1]] = 0_4 ; ghost[shared_fifo.ll.head[1_1]] = 4_4 ; ghost[shared_fifo.ll.free_list_head] = 8_4 ; ghost[shared_fifo.ll.tail[0_1]][2:3] = 0_2 ; ghost[shared_fifo.ll.tail[1_1]][2:3] = 1_2 ; ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2 ; ghost[shared_fifo.ll.tail[0_1]][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2) ; ghost[shared_fifo.ll.tail[1_1]][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2) ; ghost[shared_fifo.ll.free_list_tail][0:1] = (free_list_count[0:1] - 1_2)
 verification: safety
 
 [HEAD0_MAPS_TO_0]
 description: "Check that the head actually maps to zero"
-formula: ghost[shared_fifo.ll.head[0_1]] = 0_4
-assumptions: (state_counter = 0_4) -> (ghost[shared_fifo.ll.head[0_1]] = 0_4) ; (shared_fifo.ll.head[0_1] = 'shared_fifo.ll.tail[0]') | (ghost[shared_fifo.ll.next_ptr[shared_fifo.ll.head[0_1]]] = 1_4) ; ghost[shared_fifo.ll.head[1_1]] = 4_4 ; ghost[shared_fifo.ll.free_list_head] = 8_4 ; ghost['shared_fifo.ll.tail[0]'][2:3] = 0_2 ; ghost['shared_fifo.ll.tail[1]'][2:3] = 1_2 ; ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2 ; ghost['shared_fifo.ll.tail[0]'][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2) ; ghost['shared_fifo.ll.tail[1]'][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2) ; ghost[shared_fifo.ll.free_list_tail][0:1] = (free_list_count[0:1] - 1_2)
+properties: ghost[shared_fifo.ll.head[0_1]] = 0_4
+assumptions: (state_counter = 0_4) -> (ghost[shared_fifo.ll.head[0_1]] = 0_4) ; (shared_fifo.ll.head[0_1] = shared_fifo.ll.tail[0_1]) | (ghost[shared_fifo.ll.next_ptr[shared_fifo.ll.head[0_1]]] = 1_4) ; ghost[shared_fifo.ll.head[1_1]] = 4_4 ; ghost[shared_fifo.ll.free_list_head] = 8_4 ; ghost[shared_fifo.ll.tail[0_1]][2:3] = 0_2 ; ghost[shared_fifo.ll.tail[1_1]][2:3] = 1_2 ; ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2 ; ghost[shared_fifo.ll.tail[0_1]][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2) ; ghost[shared_fifo.ll.tail[1_1]][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2) ; ghost[shared_fifo.ll.free_list_tail][0:1] = (free_list_count[0:1] - 1_2)
 verification: safety
