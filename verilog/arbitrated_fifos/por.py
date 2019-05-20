@@ -170,9 +170,10 @@ def reduced_instruction_set(hts, config, generic_interface):
     # blown-out existential quantification -- there is a delayed signal that's enabled
     exists_enabled_delay_signal = Or([Implies(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
 
-    for i in reversed(range(len(timed_actions[0]))):
+    for i in reversed(range(1, len(timed_actions[0]))):
         print("Proving enabled-ness condition for instruction cardinality = {}".format(i+1))
         prop = Implies(sn[i], exists_enabled_delay_signal)
+        # print("Prop:", prop)
         assumptions = [Not(prop)]
         res = bmc.solver.solver.solve(assumptions)
         if res:
