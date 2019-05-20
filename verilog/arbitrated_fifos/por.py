@@ -5,16 +5,41 @@ from cosa.encoders.verilog_yosys import VerilogYosysBtorParser
 from cosa.representation import HTS, TS
 from cosa.utils.formula_mngm import SortingNetwork, substitute, get_free_variables
 
-from pysmt.shortcuts import And, BOOL, BV, BVULE, BVType, EqualsOrIff, Implies, Not, Symbol, simplify
+from pysmt.shortcuts import And, BOOL, BV, BVULE, BVType, EqualsOrIff, Implies, Not, Or, Symbol, simplify, TRUE
 
 from collections import namedtuple, defaultdict
 from pathlib import Path
+
+# TODO: Need to hold data constant, e.g. non-actions should stay the same
 
 # hacky -- creating config here
 # should have an api command to get a generic config object from CoSA
 
 btor_config = namedtuple('btor_config', 'abstract_clock opt_circuit no_arrays symbolic_init strategy skip_solving smt2_tracing solver_name incremental solver_options')
 interface   = namedtuple('interface', 'actions ens')
+
+def copy_sys(hts, generic_interface):
+    '''
+    Creates a copy of an HTS
+    '''
+    prefix = 'copy.'
+    hts_copy = HTS("copy")
+    ts = TS()
+    copymap = {v.symbol_name():'{}{}'.format(prefix, v.symbol_name()) for v in hts.vars}
+    for sv in hts.state_vars:
+        primed_name = TS.get_prime(sv).symbol_name()
+        copymap[primed_name] = '{}{}'.format(prefix, primed_name)
+    ts.vars = set([TS.get_prefix(v, prefix) for v in hts.vars])
+    ts.set_behavior(substitute(hts.single_init(), copymap),
+                    substitute(hts.single_trans(), copymap),
+                    substitute(hts.single_invar(), copymap))
+    ts.state_vars = set([TS.get_prefix(v, prefix) for v in hts.state_vars])
+    hts_copy.add_ts(ts)
+
+    copy_interface = interface(actions=[substitute(a, copymap) for a in generic_interface.actions],
+                               ens=[substitute(e, copymap) for e in generic_interface.ens])
+
+    return hts_copy, copy_interface
 
 def ris_proof_setup(hts, config, generic_interface):
     B = 3
@@ -61,7 +86,7 @@ def ris_proof_setup(hts, config, generic_interface):
         for e in copy_interface.ens:
             copy_timed_ens[t].append(bmc.at_time(e, t))
         assert len(copy_timed_actions[t]) == len(copy_timed_ens[t])
-
+    print()
     print('TIMED ACTIONS:')
     for t in timed_actions:
         print("\t{}: {} - en: {}".format(t, timed_actions[t], timed_ens[t]))
@@ -69,6 +94,8 @@ def ris_proof_setup(hts, config, generic_interface):
     print('COPY TIMED ACTIONS:')
     for t in copy_timed_actions:
         print("\t{}: {} - en: {}".format(t, copy_timed_actions[t], copy_timed_ens[t]))
+
+    print()
 
     # Generate delay indicator for each action
     delay = []
@@ -92,8 +119,13 @@ def ris_proof_setup(hts, config, generic_interface):
 
         # assume that no actions are enabled in the last state (just comparing state now)
         for ta in generic_actions[2]:
-            assumption = Not(ta)
-            assume(assumption)
+            assume(Not(ta))
+
+    for a, e in zip(timed_actions[0], timed_ens[0]):
+        assume(Implies(a, e))
+
+    for a in timed_actions[1]:
+        assume(Not(a))
 
     ################ add assumptions about delay signal ###################
     # if delaying a signal, it must have been enabled
@@ -102,38 +134,33 @@ def ris_proof_setup(hts, config, generic_interface):
         assume(assumption)
 
     for d, a, ca in zip(delay, timed_actions[0], copy_timed_actions[0]):
-        assumption = Implies(Not(d), EqualsOrIff(a, ca))
-        assume(assumption)
+        assume(Implies(Not(d), EqualsOrIff(a, ca)))
+
+    for d, ca in zip(delay, copy_timed_actions[0]):
+        assume(Implies(d, Not(ca)))
 
     # Usage
     sn = SortingNetwork.sorting_network(timed_actions[0])
-    print(sn)
+    print("\nSorting Network:\n\t", sn)
 
-    return bmc, timed_actions, timed_ens, copy_timed_actions, copy_timed_ens, sn
+    return bmc, timed_actions, timed_ens, copy_timed_actions, copy_timed_ens, delay, sn
 
 def reduced_instruction_set(hts, config, generic_interface):
-    bmc, timed_actions, timed_ens, copy_timed_actions, copy_timed_ens, sn = ris_proof_setup(hts, config, generic_interface)
+    setup = ris_proof_setup(hts, config, generic_interface)
+    bmc, timed_actions, timed_ens, copy_timed_actions, copy_timed_ens, delay, sn = setup
 
+    # # assertion that delayed signal is enabled
+    # delayed_signal_enabled = And([Implies(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
+    # # blown-out existential quantification -- there is a delayed signal that's enabled
+    # exists_enabled_delay_signal = Or([And(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
 
-def copy_sys(hts, generic_interface):
-    '''
-    Creates a copy of an HTS
-    '''
-    prefix = 'copy.'
-    hts_copy = HTS("copy")
-    ts = TS()
-    copymap = {v.symbol_name():'{}{}'.format(prefix, v.symbol_name()) for v in hts.vars}
-    ts.vars = set([TS.get_prefix(v, prefix) for v in hts.vars])
-    ts.set_behavior(substitute(hts.single_init(), copymap),
-                    substitute(hts.single_trans(), copymap),
-                    substitute(hts.single_invar(), copymap))
-    ts.state_vars = set([TS.get_prefix(v, prefix) for v in hts.state_vars])
-    hts_copy.add_ts(ts)
-
-    copy_interface = interface(actions=[substitute(a, copymap) for a in generic_interface.actions],
-                               ens=[substitute(e, copymap) for e in generic_interface.ens])
-
-    return hts_copy, copy_interface
+    # prop = Implies(sn[1], exists_enabled_delay_signal)
+    # print("Trying to prove property:\n\t", prop)
+    # assumptions = [Not(prop)]
+    # print(bmc.solver.solver.solve(assumptions))
+    # model = bmc.solver.solver.get_model()
+    # print("+++++++++++++++++++++++ Model +++++++++++++++++++++++")
+    # print(model)
 
 def main():
     parser = VerilogYosysBtorParser()
@@ -155,6 +182,12 @@ def main():
     for v in hts.vars:
         symbols[v.symbol_name()] = v
 
+    rst   = symbols['rst']
+    # assume reset is zero
+    ts = TS()
+    ts.set_behavior(TRUE(), TRUE(), EqualsOrIff(rst, BV(0, 1)))
+    hts.add_ts(ts)
+
     push  = symbols['push']
     pop   = symbols['pop']
     full  = symbols['full']
@@ -162,7 +195,7 @@ def main():
 
     actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(pop, BV(1, 1))]
     en      = [EqualsOrIff(full, BV(0, 1)), EqualsOrIff(empty, BV(0, 1))]
-    
+
     generic_interface = interface(actions=actions, ens=en)
 
     reduced_instruction_set(hts, config, generic_interface)
