@@ -16,9 +16,8 @@ from pathlib import Path
 btor_config = namedtuple('btor_config', 'abstract_clock opt_circuit no_arrays symbolic_init strategy skip_solving smt2_tracing solver_name incremental solver_options')
 interface   = namedtuple('interface', 'actions ens')
 
-def reduced_instruction_set(hts, config, generic_interface):
+def ris_proof_setup(hts, config, generic_interface):
     B = 3
-
     for a in generic_interface.actions:
         assert a.get_type() == BOOL
 
@@ -27,18 +26,19 @@ def reduced_instruction_set(hts, config, generic_interface):
 
     # Create copy of system
     hts_copy, copy_interface = copy_sys(hts, generic_interface)
+    # update the main system
+    hts.combine(hts_copy)
 
     bmc = BMCSolver(hts, config)
-    union_vars = hts.vars.union(hts_copy.vars)
-    bmc._init_at_time(union_vars, 2)
-    for h in [hts, hts_copy]:
-        init = h.single_init()
-        invar = h.single_invar()
-        trans = h.single_invar()
-        init_0 = bmc.at_time(And(init, invar), 0)
-        bmc._add_assertion(bmc.solver, init_0)
-        unrolled = bmc.unroll(trans, invar, B)
-        bmc._add_assertion(bmc.solver, unrolled)
+    # union_vars = hts.vars.union(hts_copy.vars)
+    bmc._init_at_time(hts.vars, 2)
+    init = hts.single_init()
+    invar = hts.single_invar()
+    trans = hts.single_invar()
+    init_0 = bmc.at_time(And(init, invar), 0)
+    bmc._add_assertion(bmc.solver, init_0)
+    unrolled = bmc.unroll(trans, invar, B)
+    bmc._add_assertion(bmc.solver, unrolled)
 
     def assume(assumption):
         print('Adding assumption: {}'.format(assumption))
@@ -95,8 +95,7 @@ def reduced_instruction_set(hts, config, generic_interface):
             assumption = Not(ta)
             assume(assumption)
 
-    # add assumptions about delay signal
-
+    ################ add assumptions about delay signal ###################
     # if delaying a signal, it must have been enabled
     for d, a in zip(delay, timed_actions[0]):
         assumption = Implies(d, a)
@@ -107,7 +106,14 @@ def reduced_instruction_set(hts, config, generic_interface):
         assume(assumption)
 
     # Usage
-    # sn = SortingNetowrk.sorting_network(parameters)
+    sn = SortingNetwork.sorting_network(timed_actions[0])
+    print(sn)
+
+    return bmc, timed_actions, timed_ens, copy_timed_actions, copy_timed_ens, sn
+
+def reduced_instruction_set(hts, config, generic_interface):
+    bmc, timed_actions, timed_ens, copy_timed_actions, copy_timed_ens, sn = ris_proof_setup(hts, config, generic_interface)
+
 
 def copy_sys(hts, generic_interface):
     '''
@@ -156,7 +162,7 @@ def main():
 
     actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(pop, BV(1, 1))]
     en      = [EqualsOrIff(full, BV(0, 1)), EqualsOrIff(empty, BV(0, 1))]
-
+    
     generic_interface = interface(actions=actions, ens=en)
 
     reduced_instruction_set(hts, config, generic_interface)
