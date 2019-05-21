@@ -199,7 +199,11 @@ def reduced_instruction_set(hts, config, generic_interface):
 
     for i in reversed(range(1, len(timed_actions[0]))):
         print("Proving enabled-ness condition for instruction cardinality = {}".format(i+1))
-        prop = Implies(sn[i], full_consequent)
+        antecedent = sn[i]
+        if i < len(timed_actions[0]) - 1:
+            # it's exactly i+1 actions enabled
+            antecedent = And(antecedent, Not(sn[i+1]))
+        prop = Implies(antecedent, full_consequent)
         # print("Prop:", prop)
         assumptions = [Not(prop)]
         res = bmc.solver.solver.solve(assumptions)
