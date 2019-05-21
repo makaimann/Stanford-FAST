@@ -3,10 +3,12 @@ INPUT
 OUTPUT
 
 STATE
+state_counter: BV(4) ;
 
 VAR
 
 INIT
+state_counter = 0_4 ;
 
 INVAR
 # assignments
@@ -22,3 +24,4 @@ popped_head = shared_fifo.popped_head ;
 (count[0_1] <= depth) & (count[1_1] <= depth) & (free_list_count <= depth) ;
 
 TRANS
+next(state_counter) = state_counter + 1_4 ;
