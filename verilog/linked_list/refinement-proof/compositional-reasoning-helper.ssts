@@ -1,0 +1,29 @@
+INPUT
+
+OUTPUT
+
+STATE
+state_counter: BV(4) ;
+
+VAR
+prop: Bool ;
+
+INIT
+state_counter = 0_4 ;
+
+INVAR
+free_tail_ptr = shared_fifo.free_ptr ;
+popped_head = shared_fifo.popped_head ;
+rst = 0_1 ;
+(state_counter = 0_4) -> prop ;
+
+# proven elsewhere
+(count[0_1] = shared_fifo.ll.count[0_1]) & (count[1_1] = shared_fifo.ll.count[1_1]) ;
+(free_list_count + count[0_1] + count[1_1]) = depth ;
+(count[0_1] + count[1_1]) = shared_fifo.ll.total_count ;
+
+# harder to prove for some reason but don't want to worry about it now
+(count[0_1] <= depth) & (count[1_1] <= depth) & (free_list_count <= depth) ;
+
+TRANS
+next(state_counter) = state_counter + 1_4 ;
