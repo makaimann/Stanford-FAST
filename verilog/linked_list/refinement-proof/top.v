@@ -43,14 +43,15 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    wire [PTR_WIDTH:0]              depth;
    (* keep *)
    wire [SEL_WIDTH:0]              free_list;
+   (* keep *)
+   wire [$clog2(PTR_WIDTH+1)-1:0]  ptr_width;
+   (* keep *)
+   wire [$clog2(SEL_WIDTH+1)-1:0]  sel_width;
 
    assign depth = DEPTH;
    assign free_list = NUM_FIFOS;
-
-   // (* keep *)
-   // wire                            cppush, cppop;
-   // assign cppush = push & (push_sel == FIFO_SEL);
-   // assign cppop = pop & (pop_sel == FIFO_SEL);
+   assign ptr_width = PTR_WIDTH;
+   assign sel_width = SEL_WIDTH;
 
    // environmental assumptions
    generate
@@ -59,7 +60,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
          always @* begin
             assume(~empty[i] | ~(pop & (pop_sel == i)));
          end
-      end      
+      end
    endgenerate
    always @* begin
       assume (~full | ~push);

@@ -1,5 +1,5 @@
 [GENERAL]
-model_files: verif.vlist[top],compositional-reasoning.ssts
+model_files: verif.vlist[top],compositional-reasoning-helper.ssts
 abstract_clock: True
 vcd: True
 assume_if_true: True
