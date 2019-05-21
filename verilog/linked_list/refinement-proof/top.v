@@ -142,7 +142,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
 		              ghost[j] <= {push_sel, count[push_sel][PTR_WIDTH-1:0] - (pop & (pop_sel == push_sel))};
 	             end
 	             else if (ghost[j][SEL_WIDTH+PTR_WIDTH:PTR_WIDTH] == free_list) begin
-		              ghost[j] <= {free_list, ghost[j][PTR_WIDTH-1:0]-{{(PTR_WIDTH-1){1'b0}}, 1'b1}};
+                  ghost[j] <= ghost[j] - {{(PTR_WIDTH+SEL_WIDTH){1'b0}}, 1'b1};
 	               end
 	          end
 
