@@ -12,11 +12,11 @@ solver_name: btor
 # in particular, that the counts are less than or equal to the depth
 # IC3 would probably eat that up
 
-[BOUND_CHECK]
-description: "Check that we're doing one unroll"
-properties: state_counter != 1_4
-expected: False
-verification: safety
+# [BOUND_CHECK]
+# description: "Check that we're doing one unroll"
+# properties: state_counter != 1_4
+# expected: False
+# verification: safety
 
 [GENERIC_A]
 description: "Check the case where A is an arbitrary element"
@@ -26,10 +26,10 @@ assumptions:  (state_counter = 0_4) -> ((((A.value != shared_fifo.ll.free_list_t
                                          ((A.value!= shared_fifo.ll.tail[1_1]) | (empty[1:1] = 1_1))) ->
                                        ((ghost[shared_fifo.ll.next_ptr[A.value]][0:1] = (ghost[A.value][0:1] + 1_2)) &
                                        (ghost[shared_fifo.ll.next_ptr[A.value]][2:3] = ghost[A.value][2:3])));
-              (state_counter = 0_4) -> (ghost[shared_fifo.ll.head[0_1]] = 0_4) ;
-              (state_counter = 0_4) -> (ghost[shared_fifo.ll.head[1_1]] = 4_4) ;
-              (state_counter = 0_4) -> (ghost[shared_fifo.ll.free_list_head] = 8_4) ;
-              (state_counter = 0_4) -> (ghost[shared_fifo.ll.tail[0_1]][2:3] = 0_2) ;
+              (state_counter = 0_4) -> ((empty[0:0] = 0_1) -> (ghost[shared_fifo.ll.head[0_1]] = 0_4)) ;
+              (state_counter = 0_4) -> ((empty[1:1] = 0_1) -> (ghost[shared_fifo.ll.head[1_1]] = 4_4)) ;
+              (state_counter = 0_4) -> ((full = 0_1) -> (ghost[shared_fifo.ll.free_list_head] = 8_4)) ;
+              (state_counter = 0_4) -> ((empty[0:0] = 0_1) -> (ghost[shared_fifo.ll.tail[0_1]][2:3] = 0_2)) ;
               (state_counter = 0_4) -> (ghost[shared_fifo.ll.tail[1_1]][2:3] = 1_2) ;
               (state_counter = 0_4) -> (ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2) ;
               (state_counter = 0_4) -> (ghost[shared_fifo.ll.tail[0_1]][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2)) ;
