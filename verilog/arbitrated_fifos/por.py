@@ -16,7 +16,7 @@ from pathlib import Path
 # should have an api command to get a generic config object from CoSA
 
 btor_config = namedtuple('btor_config', 'abstract_clock opt_circuit no_arrays symbolic_init strategy skip_solving smt2_tracing solver_name incremental solver_options')
-interface   = namedtuple('interface', 'actions ens')
+interface   = namedtuple('interface', 'actions ens rst clk')
 
 def assume(bmc, assumption):
     print('Adding assumption: {}'.format(assumption))
@@ -42,7 +42,12 @@ def copy_sys(hts, generic_interface):
     hts_copy.add_ts(ts)
 
     copy_interface = interface(actions=[substitute(a, copymap) for a in generic_interface.actions],
-                               ens=[substitute(e, copymap) for e in generic_interface.ens])
+                               ens=[substitute(e, copymap) for e in generic_interface.ens],
+                               rst=substitute(generic_interface.rst, copymap),
+                               clk=substitute(generic_interface.clk, copymap))
+
+    print("Created copy of HTS")
+    print("\t", hts_copy)
 
     sys_equiv_output = And([EqualsOrIff(sv, substitute(sv, copymap)) for sv in hts.state_vars])
     return hts_copy, copy_interface, sys_equiv_output
@@ -55,6 +60,32 @@ def ris_proof_setup(hts, config, generic_interface):
     print("++++++++++++ automating reduced instruction set search ++++++++++++++++")
     print("Got HTS:", hts)
 
+    print("----------------- adding assumptions to the HTS definition ----------------")
+    action_vars = set()
+    for a in generic_interface.actions:
+        for v in get_free_variables(a):
+            action_vars.add(v)
+    data_inputs = hts.input_vars - action_vars
+    # remove reset and clock
+    data_inputs.remove(generic_interface.rst)
+    data_inputs.remove(generic_interface.clk)
+
+    print('Found the following data inputs:\n\t', data_inputs)
+
+    # assume reset is zero
+    rst_zero = EqualsOrIff(generic_interface.rst, BV(0, 1))
+    print("Simple assumption: Hold reset at zero:\n\t", rst_zero)
+
+    # assume data stays constant
+    data_stays_const = And([EqualsOrIff(TS.get_prime(di), di) for di in data_inputs])
+    print("Simple assumption: data inputs all remain constant:\n\t", data_stays_const)
+
+    # create a new transition system to add to the HTS
+    ts = TS()
+    ts.set_behavior(TRUE(), data_stays_const, rst_zero)
+    hts.add_ts(ts)
+
+    # Now the system is ready to be copied
     # Create copy of system
     hts_copy, copy_interface, sys_equiv_output = copy_sys(hts, generic_interface)
     # update the main system
@@ -235,6 +266,7 @@ def main():
     for v in hts.vars:
         symbols[v.symbol_name()] = v
 
+    clk   = symbols['clk']
     rst   = symbols['rst']
     push  = symbols['push']
     pop   = symbols['pop']
@@ -244,30 +276,7 @@ def main():
     actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(pop, BV(1, 1))]
     en      = [EqualsOrIff(full, BV(0, 1)), EqualsOrIff(empty, BV(0, 1))]
 
-    # assume reset is zero
-    # assume data stays constant
-    action_vars = set()
-    for a in actions:
-        for v in get_free_variables(a):
-            action_vars.add(v)
-    data_inputs = hts.input_vars - action_vars
-    data_inputs.remove(rst)
-    # hacky -- remove clock
-    to_remove = set()
-    for di in data_inputs:
-        if 'clk' in di.symbol_name() or 'clock' in di.symbol_name():
-            to_remove.add(di)
-    data_inputs = data_inputs - to_remove
-    print('data inputs:', data_inputs)
-
-    # build assumption that data stays constant and add to ts
-    data_stays_const = And([EqualsOrIff(TS.get_prime(di), di) for di in data_inputs])
-
-    ts = TS()
-    ts.set_behavior(TRUE(), data_stays_const, EqualsOrIff(rst, BV(0, 1)))
-    hts.add_ts(ts)
-
-    generic_interface = interface(actions=actions, ens=en)
+    generic_interface = interface(actions=actions, ens=en, rst=rst, clk=clk)
 
     reduced_instruction_set(hts, config, generic_interface)
 
