@@ -1,6 +1,6 @@
 from collections import namedtuple, defaultdict
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, List
 
 from cosa.analyzers.mcsolver import BMCSolver
 from cosa.encoders.verilog_yosys import VerilogYosysBtorParser
@@ -17,6 +17,7 @@ __all__ = ['btor_config', 'interface', 'reduced_instruction_set', 'read_verilog'
 
 btor_config = namedtuple('btor_config', 'abstract_clock opt_circuit no_arrays symbolic_init strategy skip_solving smt2_tracing solver_name incremental solver_options')
 interface   = namedtuple('interface', 'actions ens rst clk')
+temporal_sys = namedtuple('temporal_sys', 'bmc, timed_actions, timed_ens, timed_data_inputs, copy_timed_actions, copy_timed_ens, copy_timed_data_inputs, timed_sys_equiv')
 
 def assume(bmc, assumption):
     print('Adding assumption: {}'.format(assumption))
@@ -154,9 +155,28 @@ def ris_proof_setup(hts, config, generic_interface):
     for e in timed_sys_equiv:
         print("\t", e)
 
-    return bmc, timed_actions, timed_ens, timed_data_inputs, copy_timed_actions, copy_timed_ens, copy_timed_data_inputs, timed_sys_equiv
+    unrolled_sys = temporal_sys(bmc=bmc,
+                     timed_actions=timed_actions,
+                     timed_ens=timed_ens,
+                     timed_data_inputs=timed_data_inputs,
+                     copy_timed_actions=copy_timed_actions,
+                     copy_timed_ens=copy_timed_ens,
+                     copy_timed_data_inputs=copy_timed_data_inputs,
+                     timed_sys_equiv=timed_sys_equiv)
 
-def setup_delay_logic(bmc, timed_actions, timed_ens, timed_data_inputs, copy_timed_actions, copy_timed_ens, copy_timed_data_inputs, timed_sys_equiv):
+    return unrolled_sys
+
+def setup_delay_logic(unrolled_sys:temporal_sys)->Tuple[List[FNode], List[FNode]]:
+
+    # unpack the entire named tuple
+    bmc=unrolled_sys.bmc
+    timed_actions=unrolled_sys.timed_actions
+    timed_ens=unrolled_sys.timed_ens
+    timed_data_inputs=unrolled_sys.timed_data_inputs
+    copy_timed_actions=unrolled_sys.copy_timed_actions
+    copy_timed_ens=unrolled_sys.copy_timed_ens
+    copy_timed_data_inputs=unrolled_sys.copy_timed_data_inputs
+    timed_sys_equiv=unrolled_sys.timed_sys_equiv
 
     print("+++++++++++++++++ Setting up delay logic for automated proof +++++++++++++++++++++")
 
@@ -181,13 +201,6 @@ def setup_delay_logic(bmc, timed_actions, timed_ens, timed_data_inputs, copy_tim
     if len(timed_actions[0]) != 2**delay_width:
         assumption = BVULE(delay_var, BV(len(actions)-1, delay_width))
         assume(bmc, assumption)
-
-    # add constraints based on reduced instruction set proof goal
-    # 'monotonicity' assumptions
-    # TODO: figure out if this is always the case -- might not be in general?
-    #       if action not enabled in first state, then it shouldn't be in the second
-    # for ta1, ta2 in zip(timed_actions[0], timed_actions[1]):
-    #     assume(bmc, Implies(Not(ta1), Not(ta2)))
 
     # original system only uses actions in the first state
     for a in timed_actions[1]:
@@ -226,11 +239,6 @@ def setup_delay_logic(bmc, timed_actions, timed_ens, timed_data_inputs, copy_tim
 
     # simple delay assumptions
     print()
-    print("Assume that it's disabled in state 1 unless it's the delayed action:")
-    for i, (cta1, cta2) in enumerate(zip(copy_timed_actions[0], copy_timed_actions[1])):
-        assume(bmc, Implies(Not(cta1), Or(delay[i], Not(cta2))))
-
-    print()
     print("Assume that the delayed action is at time step 1 in the copied system")
     for d, ca in zip(delay, copy_timed_actions[1]):
         assume(bmc, Implies(d, ca))
@@ -244,8 +252,11 @@ def setup_delay_logic(bmc, timed_actions, timed_ens, timed_data_inputs, copy_tim
     return delay, sn, full_consequent
 
 def reduced_instruction_set(hts, config, generic_interface):
-    collateral = ris_proof_setup(hts, config, generic_interface)
-    bmc, timed_actions, timed_ens, timed_data_inputs, copy_timed_actions, copy_timed_ens, copy_timed_data_inputs, timed_sys_equiv = collateral
+    unrolled_sys = ris_proof_setup(hts, config, generic_interface)
+
+    bmc = unrolled_sys.bmc
+    timed_actions = unrolled_sys.timed_actions
+    timed_sys_equiv = unrolled_sys.timed_sys_equiv
 
     # cover -- not equal
     res = bmc.solver.solver.solve([Not(timed_sys_equiv[2])])
@@ -255,7 +266,7 @@ def reduced_instruction_set(hts, config, generic_interface):
     #     print('+++++++++++++++++++++++++++ Model ++++++++++++++++++++++++++++')
     #     print(model)
 
-    delay, sn, full_consequent = setup_delay_logic(*collateral)
+    delay, sn, full_consequent = setup_delay_logic(unrolled_sys)
 
     # another cover after the delay logic is added
     # can't expect there to be a trace resulting in different states after delay logic added
@@ -263,7 +274,7 @@ def reduced_instruction_set(hts, config, generic_interface):
     assert res
 
     for i in reversed(range(1, len(timed_actions[0]))):
-        print("Proving enabled-ness condition for instruction cardinality = {}".format(i+1))
+        print("======= Proving enabled-ness condition for instruction cardinality = {} ======".format(i+1))
         antecedent = sn[i]
         if i < len(timed_actions[0]) - 1:
             # it's exactly i+1 actions enabled
@@ -278,7 +289,7 @@ def reduced_instruction_set(hts, config, generic_interface):
             print(model)
             raise RuntimeError("Bummer. Simple delay failed -- try a more advanced approach")
         else:
-            print('Property holds')
+            print('\tProperty holds')
 
 def read_verilog(filepath:Path, topmod:str, config:btor_config)->Tuple[HTS, FNode, FNode]:
     parser = VerilogYosysBtorParser()
