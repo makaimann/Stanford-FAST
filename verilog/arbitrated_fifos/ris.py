@@ -148,6 +148,12 @@ def ris_proof_setup(hts, config, generic_interface):
     for e in timed_sys_equiv:
         print("\t", e)
 
+    return bmc, data_inputs, copy_data_inputs, timed_actions, timed_ens, copy_timed_actions, copy_timed_ens, timed_sys_equiv
+
+def setup_delay_logic(bmc, data_inputs, copy_data_inputs, timed_actions, timed_ens, copy_timed_actions, copy_timed_ens, timed_sys_equiv):
+
+    print("+++++++++++++++++ Setting up delay logic for automated proof +++++++++++++++++++++")
+
     print()
     # assume they start in the same state
     print("Assuming systems start in the same state:")
@@ -163,12 +169,12 @@ def ris_proof_setup(hts, config, generic_interface):
 
     # Generate delay indicator for each action
     delay = []
-    delay_width = (len(generic_interface.actions)-1).bit_length()
+    delay_width = (len(timed_actions[0])-1).bit_length()
     delay_var = Symbol('delay_sel', BVType(delay_width))
-    for i in range(len(generic_interface.actions)):
+    for i in range(len(timed_actions[0])):
         delay.append(EqualsOrIff(delay_var, BV(i, delay_width)))
 
-    if len(generic_interface.actions) != 2**delay_width:
+    if len(timed_actions[0]) != 2**delay_width:
         assumption = BVULE(delay_var, BV(len(actions)-1, delay_width))
         assume(bmc, assumption)
 
@@ -207,12 +213,6 @@ def ris_proof_setup(hts, config, generic_interface):
     sn = SortingNetwork.sorting_network(timed_actions[0])
     print("\nSorting Network:\n\t", sn)
 
-    return bmc, timed_actions, timed_ens, copy_timed_actions, copy_timed_ens, timed_sys_equiv, delay, sn
-
-def reduced_instruction_set(hts, config, generic_interface):
-    setup = ris_proof_setup(hts, config, generic_interface)
-    bmc, timed_actions, timed_ens, copy_timed_actions, copy_timed_ens, timed_sys_equiv, delay, sn = setup
-
     # assertion that delayed signal is enabled
     delayed_signal_enabled = And([Implies(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
     # blown-out existential quantification -- there is a delayed signal that's enabled
@@ -237,13 +237,24 @@ def reduced_instruction_set(hts, config, generic_interface):
         assume(bmc, Implies(Not(d), Not(ca)))
     print()
 
+    return delay, sn, full_consequent
+
+def reduced_instruction_set(hts, config, generic_interface):
+    collateral = ris_proof_setup(hts, config, generic_interface)
+    bmc,  data_inputs, copy_data_inputs, timed_actions, timed_ens, copy_timed_actions, copy_timed_ens, timed_sys_equiv = collateral
     # cover -- not equal
-    # res = bmc.solver.solver.solve([Not(timed_sys_equiv[2])])
-    # assert res
+    res = bmc.solver.solver.solve([Not(timed_sys_equiv[2])])
+    assert res
     # if res:
     #     model = bmc.solver.solver.get_model()
     #     print('+++++++++++++++++++++++++++ Model ++++++++++++++++++++++++++++')
     #     print(model)
+
+    delay, sn, full_consequent = setup_delay_logic(*collateral)
+
+    # another cover after the delay logic is added
+    res = bmc.solver.solver.solve()
+    assert res
 
     for i in reversed(range(1, len(timed_actions[0]))):
         print("Proving enabled-ness condition for instruction cardinality = {}".format(i+1))
