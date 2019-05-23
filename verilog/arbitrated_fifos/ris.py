@@ -114,20 +114,26 @@ def ris_proof_setup(hts, config, generic_interface):
 
     timed_actions = defaultdict(list)
     timed_ens     = defaultdict(list)
+    timed_data_inputs = defaultdict(list)
     for t in range(B):
         for a in generic_interface.actions:
             timed_actions[t].append(bmc.at_time(a, t))
         for e in generic_interface.ens:
             timed_ens[t].append(bmc.at_time(e, t))
+        for di in data_inputs:
+            timed_data_inputs[t].append(bmc.at_time(di, t))
         assert len(timed_actions[t]) == len(timed_ens[t])
 
     copy_timed_actions = defaultdict(list)
     copy_timed_ens    = defaultdict(list)
+    copy_timed_data_inputs = defaultdict(list)
     for t in range(B):
         for ca in copy_interface.actions:
             copy_timed_actions[t].append(bmc.at_time(ca, t))
         for e in copy_interface.ens:
             copy_timed_ens[t].append(bmc.at_time(e, t))
+        for cdi in copy_data_inputs:
+            copy_timed_data_inputs[t].append(bmc.at_time(cdi, t))
         assert len(copy_timed_actions[t]) == len(copy_timed_ens[t])
 
     timed_sys_equiv = list()
@@ -148,9 +154,9 @@ def ris_proof_setup(hts, config, generic_interface):
     for e in timed_sys_equiv:
         print("\t", e)
 
-    return bmc, data_inputs, copy_data_inputs, timed_actions, timed_ens, copy_timed_actions, copy_timed_ens, timed_sys_equiv
+    return bmc, timed_actions, timed_ens, timed_data_inputs, copy_timed_actions, copy_timed_ens, copy_timed_data_inputs, timed_sys_equiv
 
-def setup_delay_logic(bmc, data_inputs, copy_data_inputs, timed_actions, timed_ens, copy_timed_actions, copy_timed_ens, timed_sys_equiv):
+def setup_delay_logic(bmc, timed_actions, timed_ens, timed_data_inputs, copy_timed_actions, copy_timed_ens, copy_timed_data_inputs, timed_sys_equiv):
 
     print("+++++++++++++++++ Setting up delay logic for automated proof +++++++++++++++++++++")
 
@@ -161,9 +167,7 @@ def setup_delay_logic(bmc, data_inputs, copy_data_inputs, timed_actions, timed_e
 
     # assume the data starts the same
     print("Assume the data is equivalent")
-    for di, cdi in zip(data_inputs, copy_data_inputs):
-        di0 = bmc.at_time(di, 0)
-        cdi0 = bmc.at_time(cdi, 0)
+    for di0, cdi0 in zip(timed_data_inputs[0], copy_timed_data_inputs[0]):
         assume(bmc, EqualsOrIff(di0, cdi0))
     print()
 
@@ -241,7 +245,8 @@ def setup_delay_logic(bmc, data_inputs, copy_data_inputs, timed_actions, timed_e
 
 def reduced_instruction_set(hts, config, generic_interface):
     collateral = ris_proof_setup(hts, config, generic_interface)
-    bmc,  data_inputs, copy_data_inputs, timed_actions, timed_ens, copy_timed_actions, copy_timed_ens, timed_sys_equiv = collateral
+    bmc, timed_actions, timed_ens, timed_data_inputs, copy_timed_actions, copy_timed_ens, copy_timed_data_inputs, timed_sys_equiv = collateral
+
     # cover -- not equal
     res = bmc.solver.solver.solve([Not(timed_sys_equiv[2])])
     assert res
@@ -253,6 +258,7 @@ def reduced_instruction_set(hts, config, generic_interface):
     delay, sn, full_consequent = setup_delay_logic(*collateral)
 
     # another cover after the delay logic is added
+    # can't expect there to be a trace resulting in different states after delay logic added
     res = bmc.solver.solver.solve()
     assert res
 
