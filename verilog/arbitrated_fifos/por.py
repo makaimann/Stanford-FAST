@@ -23,7 +23,7 @@ def assume(bmc, assumption):
     bmc._add_assertion(bmc.solver, assumption)
 
 
-def copy_sys(hts, generic_interface):
+def copy_sys(hts, generic_interface, data_inputs):
     '''
     Creates a copy of an HTS
     '''
@@ -31,8 +31,8 @@ def copy_sys(hts, generic_interface):
     hts_copy = HTS("copy")
     ts = TS()
     copymap = {v.symbol_name():'{}{}'.format(prefix, v.symbol_name()) for v in hts.vars}
-    for sv in hts.state_vars:
-        primed_name = TS.get_prime(sv).symbol_name()
+    for var in get_free_variables(hts.single_trans()):
+        primed_name = TS.get_prime(var).symbol_name()
         copymap[primed_name] = '{}{}'.format(prefix, primed_name)
     ts.vars = set([TS.get_prefix(v, prefix) for v in hts.vars])
     ts.set_behavior(substitute(hts.single_init(), copymap),
@@ -40,6 +40,12 @@ def copy_sys(hts, generic_interface):
                     substitute(hts.single_invar(), copymap))
     ts.state_vars = set([TS.get_prefix(v, prefix) for v in hts.state_vars])
     hts_copy.add_ts(ts)
+
+    assert len(hts_copy.vars.intersection(hts.vars)) == 0
+
+    copy_free_vars = get_free_variables(hts_copy.single_invar()).union(get_free_variables(hts_copy.single_trans()))
+    orig_free_vars = get_free_variables(hts.single_invar()).union(get_free_variables(hts.single_trans()))
+#    assert len(copy_free_vars.intersection(orig_free_vars)) == 0
 
     copy_interface = interface(actions=[substitute(a, copymap) for a in generic_interface.actions],
                                ens=[substitute(e, copymap) for e in generic_interface.ens],
@@ -49,8 +55,10 @@ def copy_sys(hts, generic_interface):
     print("Created copy of HTS")
     print("\t", hts_copy)
 
+    assert isinstance(data_inputs, list)
+
     sys_equiv_output = And([EqualsOrIff(sv, substitute(sv, copymap)) for sv in hts.state_vars])
-    return hts_copy, copy_interface, sys_equiv_output
+    return hts_copy, copy_interface, [TS.get_prefix(d, prefix) for d in data_inputs], sys_equiv_output
 
 def ris_proof_setup(hts, config, generic_interface):
     B = 3
@@ -70,6 +78,9 @@ def ris_proof_setup(hts, config, generic_interface):
     data_inputs.remove(generic_interface.rst)
     data_inputs.remove(generic_interface.clk)
 
+    # convert to a list, we want it to be ordered now
+    data_inputs = list(data_inputs)
+
     print('Found the following data inputs:\n\t', data_inputs)
 
     # assume reset is zero
@@ -87,18 +98,17 @@ def ris_proof_setup(hts, config, generic_interface):
 
     # Now the system is ready to be copied
     # Create copy of system
-    hts_copy, copy_interface, sys_equiv_output = copy_sys(hts, generic_interface)
+    hts_copy, copy_interface, copy_data_inputs, sys_equiv_output = copy_sys(hts, generic_interface, data_inputs)
     # update the main system
     hts.combine(hts_copy)
 
     bmc = BMCSolver(hts, config)
     # union_vars = hts.vars.union(hts_copy.vars)
     bmc._init_at_time(hts.vars, 2)
-    init = hts.single_init()
     invar = hts.single_invar()
     trans = hts.single_trans()
-    init_0 = bmc.at_time(And(init, invar), 0)
-    bmc._add_assertion(bmc.solver, init_0)
+    invar0 = bmc.at_time(invar, 0)
+    bmc._add_assertion(bmc.solver, invar0)
     unrolled = bmc.unroll(trans, invar, B)
     bmc._add_assertion(bmc.solver, unrolled)
 
@@ -143,6 +153,12 @@ def ris_proof_setup(hts, config, generic_interface):
     print("Assuming systems start in the same state:")
     assume(bmc, timed_sys_equiv[0])
 
+    # assume the data starts the same
+    print("Assume the data is equivalent")
+    for di, cdi in zip(data_inputs, copy_data_inputs):
+        di0 = bmc.at_time(di, 0)
+        cdi0 = bmc.at_time(cdi, 0)
+        assume(bmc, EqualsOrIff(di0, cdi0))
     print()
 
     # Generate delay indicator for each action
@@ -160,8 +176,12 @@ def ris_proof_setup(hts, config, generic_interface):
     # 'monotonicity' assumptions
     # TODO: figure out if this is always the case -- might not be in general?
     #       if action not enabled in first state, then it shouldn't be in the second
-    for ta1, ta2 in zip(timed_actions[0], timed_actions[1]):
-        assume(bmc, Implies(Not(ta1), Not(ta2)))
+    # for ta1, ta2 in zip(timed_actions[0], timed_actions[1]):
+    #     assume(bmc, Implies(Not(ta1), Not(ta2)))
+
+    # original system only uses actions in the first state
+    for a in timed_actions[1]:
+        assume(bmc, Not(a))
 
     for generic_actions in [timed_actions, copy_timed_actions]:
         # assume that no actions are enabled in the last state (just comparing state now)
@@ -170,9 +190,6 @@ def ris_proof_setup(hts, config, generic_interface):
 
     for a, e in zip(timed_actions[0], timed_ens[0]):
         assume(bmc, Implies(a, e))
-
-    for a in timed_actions[1]:
-        assume(bmc, Not(a))
 
     ################ add assumptions about delay signal ###################
     # if delaying a signal, it must have been enabled
@@ -220,9 +237,9 @@ def reduced_instruction_set(hts, config, generic_interface):
         assume(bmc, Implies(Not(d), Not(ca)))
     print()
 
-    # cover -- delaying push
-    res = bmc.solver.solver.solve([delay[0]])
-    assert res
+    # cover -- not equal
+    # res = bmc.solver.solver.solve([Not(timed_sys_equiv[2])])
+    # assert res
     # if res:
     #     model = bmc.solver.solver.get_model()
     #     print('+++++++++++++++++++++++++++ Model ++++++++++++++++++++++++++++')
@@ -252,7 +269,7 @@ def main():
     config = btor_config(abstract_clock=True,
                          opt_circuit=False,
                          no_arrays=False,
-                         symbolic_init=False,
+                         symbolic_init=True,
                          strategy='FWD',
                          skip_solving=False,
                          smt2_tracing=None,
