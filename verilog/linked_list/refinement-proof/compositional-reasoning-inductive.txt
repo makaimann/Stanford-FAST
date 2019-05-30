@@ -18,9 +18,33 @@ solver_name: btor
 # expected: False
 # verification: safety
 
+# [DEBUGGING]
+# description: "Check the case where A is an arbitrary element"
+# properties: (shared_fifo.ll.count[1_1] = 1_3) -> (shared_fifo.ll.head[1_1] = shared_fifo.ll.tail[1_1])
+# assumptions:  (state_counter = 0_4) -> ((((A.value != shared_fifo.ll.free_list_tail) | (full = 1_1)) &
+#                                          ((A.value!= shared_fifo.ll.tail[0_1]) | (empty[0:0] = 1_1)) &
+#                                          ((A.value!= shared_fifo.ll.tail[1_1]) | (empty[1:1] = 1_1))) ->
+#                                        ((ghost[shared_fifo.ll.next_ptr[A.value]][0:1] = (ghost[A.value][0:1] + 1_2)) &
+#                                        (ghost[shared_fifo.ll.next_ptr[A.value]][2:3] = ghost[A.value][2:3]) &
+#                                        (ghost[A.value][0:1] != 3_2)));
+#               (state_counter = 0_4) -> ((empty[0:0] = 0_1) -> (ghost[shared_fifo.ll.head[0_1]] = 0_4)) ;
+#               (state_counter = 0_4) -> ((empty[1:1] = 0_1) -> (ghost[shared_fifo.ll.head[1_1]] = 4_4)) ;
+#               (state_counter = 0_4) -> ((full = 0_1) -> (ghost[shared_fifo.ll.free_list_head] = 8_4)) ;
+#               (state_counter = 0_4) -> ((empty[0:0] = 0_1) -> (ghost[shared_fifo.ll.tail[0_1]][2:3] = 0_2)) ;
+#               (state_counter = 0_4) -> (ghost[shared_fifo.ll.tail[1_1]][2:3] = 1_2) ;
+#               (state_counter = 0_4) -> (ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2) ;
+#               (state_counter = 0_4) -> (ghost[shared_fifo.ll.tail[0_1]][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2)) ;
+#               (state_counter = 0_4) -> (ghost[shared_fifo.ll.tail[1_1]][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2)) ;
+#               (state_counter = 0_4) -> (ghost[shared_fifo.ll.free_list_tail][0:1] = (free_list_count[0:1] - 1_2));
+#               rst = 0_1
+# generators: A=Random(shared_fifo.ll.free_list_head)
+# verification: safety
+
+
 [GENERIC_A]
 description: "Check the case where A is an arbitrary element"
-properties: ((((A.value != shared_fifo.ll.free_list_tail) | (full = 1_1)) & ((A.value!= shared_fifo.ll.tail[0_1]) | (empty[0:0] = 1_1)) & ((A.value!= shared_fifo.ll.tail[1_1]) | (empty[1:1] = 1_1))) -> ((ghost[shared_fifo.ll.next_ptr[A.value]][0:1] = (ghost[A.value][0:1] + 1_2)) & (ghost[shared_fifo.ll.next_ptr[A.value]][2:3] = ghost[A.value][2:3]) & (ghost[A.value][0:1] != 3_2)))
+properties: (state_counter != 1_4)
+# properties: ((((A.value != shared_fifo.ll.free_list_tail) | (full = 1_1)) & ((A.value!= shared_fifo.ll.tail[0_1]) | (empty[0:0] = 1_1)) & ((A.value!= shared_fifo.ll.tail[1_1]) | (empty[1:1] = 1_1))) -> ((ghost[shared_fifo.ll.next_ptr[A.value]][0:1] = (ghost[A.value][0:1] + 1_2)) & (ghost[shared_fifo.ll.next_ptr[A.value]][2:3] = ghost[A.value][2:3]) & (ghost[A.value][0:1] != 3_2)))
 assumptions:  (state_counter = 0_4) -> ((((A.value != shared_fifo.ll.free_list_tail) | (full = 1_1)) &
                                          ((A.value!= shared_fifo.ll.tail[0_1]) | (empty[0:0] = 1_1)) &
                                          ((A.value!= shared_fifo.ll.tail[1_1]) | (empty[1:1] = 1_1))) ->
@@ -31,29 +55,33 @@ assumptions:  (state_counter = 0_4) -> ((((A.value != shared_fifo.ll.free_list_t
               (state_counter = 0_4) -> ((empty[1:1] = 0_1) -> (ghost[shared_fifo.ll.head[1_1]] = 4_4)) ;
               (state_counter = 0_4) -> ((full = 0_1) -> (ghost[shared_fifo.ll.free_list_head] = 8_4)) ;
               (state_counter = 0_4) -> ((empty[0:0] = 0_1) -> (ghost[shared_fifo.ll.tail[0_1]][2:3] = 0_2)) ;
-              (state_counter = 0_4) -> (ghost[shared_fifo.ll.tail[1_1]][2:3] = 1_2) ;
-              (state_counter = 0_4) -> (ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2) ;
-              (state_counter = 0_4) -> (ghost[shared_fifo.ll.tail[0_1]][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2)) ;
-              (state_counter = 0_4) -> (ghost[shared_fifo.ll.tail[1_1]][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2)) ;
-              (state_counter = 0_4) -> (ghost[shared_fifo.ll.free_list_tail][0:1] = (free_list_count[0:1] - 1_2));
-              rst = 0_1
+              (state_counter = 0_4) -> ((empty[1:1] = 0_1) -> (ghost[shared_fifo.ll.tail[1_1]][2:3] = 1_2)) ;
+              (state_counter = 0_4) -> ((full = 0_1) -> (ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2)) ;
+              (state_counter = 0_4) -> ((empty[0:0] = 0_1) -> (ghost[shared_fifo.ll.tail[0_1]][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2))) ;
+              (state_counter = 0_4) -> ((empty[1:1] = 0_1) -> (ghost[shared_fifo.ll.tail[1_1]][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2))) ;
+              (state_counter = 0_4) -> ((full = 0_1) -> (ghost[shared_fifo.ll.free_list_tail][0:1] = (free_list_count[0:1] - 1_2)));
+              rst = 0_1;
+              (state_counter = 0_4) -> (ghost[A.value] = 4_4);
+              (state_counter = 0_4) -> (pop = 1_1);
+              (state_counter = 0_4) -> (popped_head = shared_fifo.ll.head[1_1]);
+              (state_counter = 0_4) -> (popped_head != A.value);
 generators: A=Random(shared_fifo.ll.free_list_head)
 verification: safety
 
-[HEAD0_MAPS_TO_0]
-description: "Check that the head actually maps to zero"
-properties: (empty[0:0] = 0_1) -> (ghost[shared_fifo.ll.head[0_1]] = 0_4)
-assumptions: (state_counter = 0_4) -> (ghost[shared_fifo.ll.head[0_1]] = 0_4) ;
-             # instantiated GENERIC_A property with A=shared_fifo.ll.head[0_1]
-             (state_counter = 0_4) -> (((((shared_fifo.ll.head[0_1] != shared_fifo.ll.free_list_tail) | (full = 1_1)) & ((shared_fifo.ll.head[0_1]!= shared_fifo.ll.tail[0_1]) | (empty[0:0] = 1_1)) & ((shared_fifo.ll.head[0_1]!= shared_fifo.ll.tail[1_1]) | (empty[1:1] = 1_1))) -> ((ghost[shared_fifo.ll.next_ptr[shared_fifo.ll.head[0_1]]][0:1] = (ghost[shared_fifo.ll.head[0_1]][0:1] + 1_2)) & (ghost[shared_fifo.ll.next_ptr[shared_fifo.ll.head[0_1]]][2:3] = ghost[shared_fifo.ll.head[0_1]][2:3])))) ;
-             (state_counter = 0_4) -> ((shared_fifo.ll.head[0_1] = shared_fifo.ll.tail[0_1]) | (ghost[shared_fifo.ll.next_ptr[shared_fifo.ll.head[0_1]]] = 1_4)) ;
-             (state_counter = 0_4) -> (ghost[shared_fifo.ll.head[1_1]] = 4_4) ;
-             (state_counter = 0_4) -> (ghost[shared_fifo.ll.free_list_head] = 8_4) ;
-             (state_counter = 0_4) -> (ghost[shared_fifo.ll.tail[0_1]][2:3] = 0_2) ;
-             (state_counter = 0_4) -> (ghost[shared_fifo.ll.tail[1_1]][2:3] = 1_2) ;
-             (state_counter = 0_4) -> (ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2) ;
-             (state_counter = 0_4) -> (ghost[shared_fifo.ll.tail[0_1]][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2)) ;
-             (state_counter = 0_4) -> (ghost[shared_fifo.ll.tail[1_1]][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2)) ;
-             (state_counter = 0_4) -> (ghost[shared_fifo.ll.free_list_tail][0:1] = (free_list_count[0:1] - 1_2));
-             rst = 0_1
-verification: safety
+# [HEAD0_MAPS_TO_0]
+# description: "Check that the head actually maps to zero"
+# properties: (empty[0:0] = 0_1) -> (ghost[shared_fifo.ll.head[0_1]] = 0_4)
+# assumptions: (state_counter = 0_4) -> (ghost[shared_fifo.ll.head[0_1]] = 0_4) ;
+#              # instantiated GENERIC_A property with A=shared_fifo.ll.head[0_1]
+#              (state_counter = 0_4) -> (((((shared_fifo.ll.head[0_1] != shared_fifo.ll.free_list_tail) | (full = 1_1)) & ((shared_fifo.ll.head[0_1]!= shared_fifo.ll.tail[0_1]) | (empty[0:0] = 1_1)) & ((shared_fifo.ll.head[0_1]!= shared_fifo.ll.tail[1_1]) | (empty[1:1] = 1_1))) -> ((ghost[shared_fifo.ll.next_ptr[shared_fifo.ll.head[0_1]]][0:1] = (ghost[shared_fifo.ll.head[0_1]][0:1] + 1_2)) & (ghost[shared_fifo.ll.next_ptr[shared_fifo.ll.head[0_1]]][2:3] = ghost[shared_fifo.ll.head[0_1]][2:3])))) ;
+#              (state_counter = 0_4) -> ((shared_fifo.ll.head[0_1] = shared_fifo.ll.tail[0_1]) | (ghost[shared_fifo.ll.next_ptr[shared_fifo.ll.head[0_1]]] = 1_4)) ;
+#              (state_counter = 0_4) -> (ghost[shared_fifo.ll.head[1_1]] = 4_4) ;
+#              (state_counter = 0_4) -> (ghost[shared_fifo.ll.free_list_head] = 8_4) ;
+#              (state_counter = 0_4) -> (ghost[shared_fifo.ll.tail[0_1]][2:3] = 0_2) ;
+#              (state_counter = 0_4) -> (ghost[shared_fifo.ll.tail[1_1]][2:3] = 1_2) ;
+#              (state_counter = 0_4) -> (ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2) ;
+#              (state_counter = 0_4) -> (ghost[shared_fifo.ll.tail[0_1]][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2)) ;
+#              (state_counter = 0_4) -> (ghost[shared_fifo.ll.tail[1_1]][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2)) ;
+#              (state_counter = 0_4) -> (ghost[shared_fifo.ll.free_list_tail][0:1] = (free_list_count[0:1] - 1_2));
+#              rst = 0_1
+# verification: safety
