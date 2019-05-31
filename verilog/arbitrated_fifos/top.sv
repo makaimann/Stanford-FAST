@@ -86,6 +86,9 @@ module top(clk, rst, start, push, flat_data_in, reqs, quantums,
       genvar i;
       for(i = 0; i < NUM_REQS; i++) begin
          always @* begin
+            // Note: this one isn't actually necessary,
+            //       because the arbitrated_fifos module
+            //       guards against requesting when empty
             assume (!empty[i] || !reqs[i]);
             assume (!full[i] || !push[i]);
          end
