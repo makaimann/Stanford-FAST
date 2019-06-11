@@ -34,6 +34,7 @@ precondition: reset_done
 verification: compositional
 prove: True
 
+# last property needs an extra condition about the head
 # [COMPOSITIONAL_FAIL]
 # description: "Check the following properties compositionally"
 # properties: ((empty[0:0] = 0_1) -> (ghost[shared_fifo.ll.head[0_1]] = 0_4)) ;
