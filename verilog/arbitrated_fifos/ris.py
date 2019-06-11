@@ -199,7 +199,7 @@ def setup_delay_logic(unrolled_sys:temporal_sys)->Tuple[List[FNode], List[FNode]
         delay.append(EqualsOrIff(delay_var, BV(i, delay_width)))
 
     if len(timed_actions[0]) != 2**delay_width:
-        assumption = BVULE(delay_var, BV(len(actions)-1, delay_width))
+        assumption = BVULE(delay_var, BV(len(timed_actions[0])-1, delay_width))
         assume(bmc, assumption)
 
     # original system only uses actions in the first state
