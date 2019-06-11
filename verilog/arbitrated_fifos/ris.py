@@ -15,7 +15,7 @@ __all__ = ['btor_config', 'interface', 'reduced_instruction_set', 'read_verilog'
 # hacky -- creating config here
 # should have an api command to get a generic config object from CoSA
 
-btor_config = namedtuple('btor_config', 'abstract_clock opt_circuit no_arrays symbolic_init strategy skip_solving smt2_tracing solver_name incremental solver_options')
+btor_config = namedtuple('btor_config', 'abstract_clock opt_circuit no_arrays symbolic_init strategy skip_solving smt2_tracing solver_name incremental solver_options synchronize verific')
 interface   = namedtuple('interface', 'actions ens rst clk')
 temporal_sys = namedtuple('temporal_sys', 'bmc, timed_actions, timed_ens, timed_data_inputs, copy_timed_actions, copy_timed_ens, copy_timed_data_inputs, timed_sys_equiv')
 

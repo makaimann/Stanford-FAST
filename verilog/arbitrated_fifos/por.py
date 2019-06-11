@@ -15,7 +15,9 @@ def main():
                          smt2_tracing=None,
                          solver_name='btor',
                          incremental=True,
-                         solver_options=None)
+                         solver_options=None,
+                         synchronize=False,
+                         verific=False)
 
     hts, _, _ = read_verilog(Path("./fifo.sv"), "fifo", config)
 
