@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pysmt.shortcuts import BV, EqualsOrIff
 
-from ris import btor_config, interface, reduced_instruction_set, read_verilog
+from ris import btor_config, interface, reduced_instruction_set, read_verilog, test_actions
 
 def main():
     config = btor_config(abstract_clock=True,
@@ -37,6 +37,7 @@ def main():
 
     generic_interface = interface(actions=actions, ens=en, rst=rst, clk=clk)
 
+    test_actions(actions, en)
     reduced_instruction_set(hts, config, generic_interface)
 
 if __name__ == "__main__":

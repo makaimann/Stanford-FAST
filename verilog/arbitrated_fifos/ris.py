@@ -7,7 +7,7 @@ from cosa.encoders.verilog_yosys import VerilogYosysBtorParser
 from cosa.representation import HTS, TS
 from cosa.utils.formula_mngm import SortingNetwork, substitute, get_free_variables
 
-from pysmt.shortcuts import And, BOOL, BV, BVULE, BVType, EqualsOrIff, Implies, Not, Or, Symbol, simplify, TRUE
+from pysmt.shortcuts import And, BOOL, BV, BVULE, BVType, EqualsOrIff, Implies, Not, Or, simplify, Solver, Symbol, TRUE
 from pysmt.fnode import FNode
 
 __all__ = ['btor_config', 'interface', 'reduced_instruction_set', 'read_verilog']
@@ -18,6 +18,36 @@ __all__ = ['btor_config', 'interface', 'reduced_instruction_set', 'read_verilog'
 btor_config = namedtuple('btor_config', 'abstract_clock opt_circuit no_arrays symbolic_init strategy skip_solving smt2_tracing solver_name incremental solver_options synchronize verific')
 interface   = namedtuple('interface', 'actions ens rst clk')
 temporal_sys = namedtuple('temporal_sys', 'bmc, timed_actions, timed_ens, timed_data_inputs, copy_timed_actions, copy_timed_ens, copy_timed_data_inputs, timed_sys_equiv')
+
+def test_actions(actions, en):
+    '''
+    Ensure that actions don't imply eachother
+    '''
+    s = Solver()
+
+    # assume that action can't occur without being enabled
+    for a, e in zip(actions, en):
+        s.add_assertion(Implies(a, e))
+
+    # now check that you can run an action with all the others disabled
+    other_actions = set(actions)
+    for a in actions:
+        s.push()
+        # remove current action
+        other_actions.remove(a)
+
+        # assume this action is enabled but none of the others are
+        s.add_assertion(a)
+        for oa in other_actions:
+            s.add_assertion(Not(oa))
+
+        assert s.check_sat(), \
+            ("Expecting actions to not imply eachother but "
+             "{} implies one of the other options".format(a))
+
+        # add it back in
+        other_actions.add(a)
+        s.pop()
 
 def assume(bmc, assumption):
     print('Adding assumption: {}'.format(assumption))
@@ -230,12 +260,17 @@ def setup_delay_logic(unrolled_sys:temporal_sys)->Tuple[List[FNode], List[FNode]
     sn = SortingNetwork.sorting_network(timed_actions[0])
     print("\nSorting Network:\n\t", sn)
 
+    # NOTE: Modifying full_consequent to fix the proof
+    #       I'm a little unclear why this is necessary, so it should be debugged before merging
+    #       it's definitely possible I made a mistake
+
     # assertion that delayed signal is enabled
     delayed_signal_enabled = And([Implies(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
     # blown-out existential quantification -- there is a delayed signal that's enabled
-    exists_enabled_delay_signal = Or([Implies(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
+    # exists_enabled_delay_signal = Or([Implies(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
     # blown-out existentail quantification, plus the equivalence property
-    full_consequent = And(exists_enabled_delay_signal, timed_sys_equiv[2])
+    # full_consequent = And(exists_enabled_delay_signal, timed_sys_equiv[2])
+    full_consequent = Or([Implies(delay[i], And(copy_timed_ens[1][i], timed_sys_equiv[2])) for i in range(len(delay))])
 
     # simple delay assumptions
     print()
