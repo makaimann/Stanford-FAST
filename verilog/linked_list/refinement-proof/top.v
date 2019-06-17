@@ -14,9 +14,13 @@
 module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
            // dummy inputs
            free_tail_ptr, popped_head, ghost_sel,
+           // scoreboard input
+           start,
            // outputs
            empty, full, data_out,
-           cpempty, cpfull, cpdata_out);
+           cpempty, cpfull, cpdata_out,
+           // scoreboard outputs
+           data_out_vld, prop_signal);
    parameter WIDTH=`WIDTH,
      DEPTH=`DEPTH,
      NUM_FIFOS=`NUM_FIFOS,
@@ -30,11 +34,13 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    input [WIDTH-1:0]               data_in;
    input [PTR_WIDTH-1:0]           free_tail_ptr, popped_head; // will be constrained by CoSA/Jasper
    input [PTR_WIDTH-1:0]           ghost_sel;
+   input                           start;
    output                          full;
    output [NUM_FIFOS-1:0]          empty;
    output [WIDTH-1:0]              data_out;
    output                          cpempty, cpfull;
    output [WIDTH-1:0]              cpdata_out;
+   output                          data_out_vld, prop_signal;
 
    wire                            data_out_vld;
 
@@ -83,6 +89,19 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
                 .full(full),
                 .empty(empty),
                 .data_out(data_out));
+
+   SimpleScoreboard
+     #(.DEPTH(DEPTH),
+       .WIDTH(WIDTH))
+   sb (.clk(clk),
+       .rst(rst),
+       .push(push & (push_sel == FIFO_SEL)),
+       .pop(pop & (pop_sel == FIFO_SEL)),
+       .start(start),
+       .data_in(data_in),
+       .data_out(data_out),
+       .data_out_vld(data_out_vld),
+       .prop_signal(prop_signal));
 
    (* keep *)
    reg [PTR_WIDTH:0] free_list_count;
