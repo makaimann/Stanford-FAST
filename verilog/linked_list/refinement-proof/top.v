@@ -13,7 +13,7 @@
 
 module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
            // dummy inputs
-           free_tail_ptr, popped_head, ghost_sel,
+           free_ptr, popped_head, ghost_sel,
            // scoreboard input
            start,
            // outputs
@@ -32,7 +32,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    input                           clk, rst, push, pop;
    input [SEL_WIDTH-1:0]           push_sel, pop_sel;
    input [WIDTH-1:0]               data_in;
-   input [PTR_WIDTH-1:0]           free_tail_ptr, popped_head; // will be constrained by CoSA/Jasper
+   input [PTR_WIDTH-1:0]           free_ptr, popped_head; // will be constrained by CoSA/Jasper
    input [PTR_WIDTH-1:0]           ghost_sel;
    input                           start;
    output                          full;
@@ -154,29 +154,24 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
       end
       else begin
 	       for (j=0; j < DEPTH; j=j+1) begin
-	          if (push) begin
-	             if (j == free_tail_ptr) begin
-		              // Need to subtract pop to handle simultaneous pop case (if it's the same fifo)
-		              // the other if case won't catch it because still referring to stale
-		              // fifo identifier
-		              ghost[j] <= {{1'b0, push_sel}, count[push_sel][PTR_WIDTH-1:0] - (pop & (pop_sel == push_sel))};
-	             end
-	             else if (ghost[j][SEL_WIDTH+PTR_WIDTH:PTR_WIDTH] == free_list) begin
-                  ghost[j] <= {free_list, ghost[j][PTR_WIDTH-1:0]-{{(PTR_WIDTH-1){1'b0}}, 1'b1}};
-	               end
-	          end
-
-	          if (pop & (pop_sel == ghost[j][SEL_WIDTH+PTR_WIDTH:PTR_WIDTH])) begin
-               if (j != popped_head) begin
-                  // subtract one from number if not head
-		              ghost[j] <= {ghost[j][SEL_WIDTH+PTR_WIDTH:PTR_WIDTH], ghost[j][PTR_WIDTH-1:0]-{{(PTR_WIDTH-1){1'b0}}, 1'b1}};
-               end
-               else begin
-                  // if head, then add to free list
-		              // need to subtract push in case pushing simultaneously
-		              ghost[j] <= {free_list, free_list_count[PTR_WIDTH-1:0] - push};
-               end
-	          end
+            if ((j == free_ptr) & push) begin
+               // Need to subtract pop to handle simultaneous pop case (if it's the same fifo)
+		           // the other if case won't catch it because still referring to stale
+		           // fifo identifier
+               ghost[j] <= {{1'b0, push_sel}, count[push_sel][PTR_WIDTH-1:0] - (pop & (pop_sel == push_sel))};
+            end
+            else if (pop & (j == popped_head)) begin
+               // if head, then add to free list
+		           // need to subtract push in case pushing simultaneously
+		           ghost[j] <= {free_list, free_list_count[PTR_WIDTH-1:0] - push};
+            end
+            else if (pop & (pop_sel == ghost[j][SEL_WIDTH+PTR_WIDTH:PTR_WIDTH])) begin
+               // decrement on pop from a list
+               ghost[j] <= {ghost[j][SEL_WIDTH+PTR_WIDTH:PTR_WIDTH], ghost[j][PTR_WIDTH-1:0]-{{(PTR_WIDTH-1){1'b0}}, 1'b1}};
+            end
+            else if (push & (ghost[j][SEL_WIDTH+PTR_WIDTH:PTR_WIDTH] == free_list)) begin
+               ghost[j] <= {free_list, ghost[j][PTR_WIDTH-1:0]-{{(PTR_WIDTH-1){1'b0}}, 1'b1}};
+            end
 	       end
       end
    end // block: ghost_state_update_logic

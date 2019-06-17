@@ -12,7 +12,7 @@ state_counter = 0_4 ;
 
 INVAR
 # assignments
-free_tail_ptr = shared_fifo.free_ptr ;
+free_ptr = shared_fifo.free_ptr ;
 popped_head = shared_fifo.popped_head ;
 
 # proven elsewhere
