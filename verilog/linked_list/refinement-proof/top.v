@@ -159,7 +159,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
 		              // Need to subtract pop to handle simultaneous pop case (if it's the same fifo)
 		              // the other if case won't catch it because still referring to stale
 		              // fifo identifier
-		              ghost[j] <= {push_sel, count[push_sel][PTR_WIDTH-1:0] - (pop & (pop_sel == push_sel))};
+		              ghost[j] <= {{1'b0, push_sel}, count[push_sel][PTR_WIDTH-1:0] - (pop & (pop_sel == push_sel))};
 	             end
 	             else if (ghost[j][SEL_WIDTH+PTR_WIDTH:PTR_WIDTH] == free_list) begin
                   ghost[j] <= {free_list, ghost[j][PTR_WIDTH-1:0]-{{(PTR_WIDTH-1){1'b0}}, 1'b1}};
