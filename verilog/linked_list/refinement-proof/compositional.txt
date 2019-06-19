@@ -29,13 +29,13 @@ properties: ((empty[0:0] = 0_1) -> ((F[shared_fifo.ll.head[0_1]] = 0_2) & ((I[sh
               ((I[A.value] = 0_2) -> (((A.value = shared_fifo.ll.head[0_1]) & (empty[0:0] = 0_1)) |
                                       ((A.value = shared_fifo.ll.head[1_1]) & (empty[1:1] = 0_1)) |
                                       ((A.value = shared_fifo.ll.free_list_head) & (full = 0_1))))) ;
-            # (sb.en = 0_1) -> (shared_fifo.ll.count[0_1] = sb.cnt)  ;
-            # ((sb.en = 1_1) & (sb.cnt = 0_3)) -> (sb.magic_packet_exited = 1_1) ;
-            # ((sb.en = 1_1) & (sb.magic_packet_exited = 0_1)) -> (shared_fifo.ll.count[0_1] >= sb.cnt) ;
-            # (sb.magic_packet_exited = 0_1) -> (sb.cnt <= depth) ;
-            # ((F[B.value] = 0_2) & (sb.en = 1_1) & (sb.magic_packet_exited = 0_1) & (I[B.value] + 1_2 = sb.cnt[0:1])) -> (shared_fifo.mem[B.value] = sb.magic_packet) ;
-            # ((sb.cnt = 1_3) & (sb.en = 1_1) & (sb.magic_packet_exited = 0_1)) -> (shared_fifo.mem[shared_fifo.ll.head[0_1]] = sb.magic_packet) ;
-            # (prop_signal = 1_1) ;
+            (sb.en = 0_1) -> (shared_fifo.ll.count[0_1] = sb.cnt)  ;
+            ((sb.en = 1_1) & (sb.cnt = 0_3)) -> (sb.magic_packet_exited = 1_1) ;
+            ((sb.en = 1_1) & (sb.magic_packet_exited = 0_1)) -> (shared_fifo.ll.count[0_1] >= sb.cnt) ;
+            (sb.magic_packet_exited = 0_1) -> (sb.cnt <= depth) ;
+            ((F[B.value] = 0_2) & (sb.en = 1_1) & (sb.magic_packet_exited = 0_1) & (I[B.value] + 1_2 = sb.cnt[0:1])) -> (shared_fifo.mem[B.value] = sb.magic_packet) ;
+            ((sb.cnt = 1_3) & (sb.en = 1_1) & (sb.magic_packet_exited = 0_1)) -> (shared_fifo.mem[shared_fifo.ll.head[0_1]] = sb.magic_packet) ;
+            (prop_signal = 1_1) ;
 generators: A=Random(shared_fifo.ll.free_list_head); B=Random(shared_fifo.ll.free_list_head)
 precondition: reset_done
 verification: compositional
