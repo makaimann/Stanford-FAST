@@ -1,0 +1,80 @@
+# For now, this uses the compositional branch of CoSA -- not merged yet
+[GENERAL]
+model_files: verif.vlist[top],reset.ets,global-assumptions.ssts
+abstract_clock: True
+vcd: True
+assume_if_true: True
+
+[DEFAULT]
+bmc_length: 1
+solver_name: btor
+
+# Testing what knowledge is needed to prove HEAD is mapped to zero
+
+# Nothing
+# [EMPTY_CASE]
+# description: "empty case should be easy"
+# properties: ((empty[0:0] = 0_1) -> ((F[shared_fifo.ll.head[0_1]] = 0_2) & ((I[shared_fifo.ll.head[0_1]] = 0_2)))) ;
+#             (empty[0:0] = 1_1)
+# verification: compositional
+# prove: True
+# precondition: reset_done
+
+# neq free_ptr
+# [COUNT_EQ_1]
+# description: "just need to know that the element added on is correct, in case we push and pop at the same time"
+# properties: ((empty[0:0] = 0_1) -> ((F[shared_fifo.ll.head[0_1]] = 0_2) & ((I[shared_fifo.ll.head[0_1]] = 0_2)))) ;
+#             ((count[0_1] = 1_3) &
+#              (((empty[0:0] = 0_1) & (full = 0_1)) -> (free_ptr != shared_fifo.ll.head[0_1])) &
+#              (((empty[0:0] = 0_1) & (empty[1:1] = 0_1)) -> (shared_fifo.ll.head[0_1] != shared_fifo.ll.head[1_1])))
+# verification: compositional
+# prove: True
+# precondition: reset_done
+
+# neq free_ptr
+[COUNT_GT_1]
+description: "this is the hardest case -- free_ptr needs to be distinct and has to point to the right element"
+properties: ((empty[0:0] = 0_1) -> ((F[shared_fifo.ll.head[0_1]] = 0_2) & ((I[shared_fifo.ll.head[0_1]] = 0_2)))) ;
+            ((count[0_1] > 1_3) &
+             (((empty[0:0] = 0_1) & (full = 0_1)) -> (free_ptr != shared_fifo.ll.head[0_1])) &
+             (((empty[0:0] = 0_1) & (empty[1:1] = 0_1)) -> (shared_fifo.ll.head[0_1] != shared_fifo.ll.head[1_1])) &
+             (I[shared_fifo.ll.next_ptr[shared_fifo.ll.head[0_1]]] = 1_2) &
+             (F[shared_fifo.ll.next_ptr[shared_fifo.ll.head[0_1]]] = 0_2) &
+             (F[free_ptr] = free_list) &
+             (free_ptr != shared_fifo.ll.next_ptr[shared_fifo.ll.head[0_1]])
+             )
+verification: compositional
+prove: True
+precondition: reset_done
+
+# [COMPOSITIONAL]
+# description: "Check the following properties compositionally"
+# properties: ((empty[0:0] = 0_1) -> ((F[shared_fifo.ll.head[0_1]] = 0_2) & ((I[shared_fifo.ll.head[0_1]] = 0_2))));
+#             ((empty[1:1] = 0_1) -> ((F[shared_fifo.ll.head[1_1]] = 1_2) & ((I[shared_fifo.ll.head[1_1]] = 0_2))));
+#             ((full = 0_1) -> ((F[shared_fifo.ll.free_list_head] = free_list) & ((I[shared_fifo.ll.free_list_head] = 0_2))));
+#             ((empty[0:0] = 0_1) -> (F[shared_fifo.ll.tail[0_1]] = 0_2)) ;
+#             ((empty[1:1] = 0_1) -> (F[shared_fifo.ll.tail[1_1]] = 1_2)) ;
+#             ((full = 0_1) -> (F[shared_fifo.ll.free_list_tail] = free_list)) ;
+#             ((empty[0:0] = 0_1) -> (I[shared_fifo.ll.tail[0_1]] = (shared_fifo.ll.count[0_1][0:1] - 1_2))) ;
+#             ((empty[1:1] = 0_1) -> (I[shared_fifo.ll.tail[1_1]] = (shared_fifo.ll.count[1_1][0:1] - 1_2))) ;
+#             ((full = 0_1) -> (I[shared_fifo.ll.free_list_tail] = (free_list_count[0:1] - 1_2))) ;
+#             (((((A.value != shared_fifo.ll.free_list_tail) | (full = 1_1)) &
+#                ((A.value != shared_fifo.ll.tail[0_1]) | (empty[0:0] = 1_1)) &
+#                ((A.value != shared_fifo.ll.tail[1_1]) | (empty[1:1] = 1_1))) ->
+#                ((I[shared_fifo.ll.next_ptr[A.value]] = (I[A.value] + 1_2)) &
+#                (F[shared_fifo.ll.next_ptr[A.value]] = F[A.value]) &
+#                (I[A.value] != 3_2))) &
+#               ((I[A.value] = 0_2) -> (((A.value = shared_fifo.ll.head[0_1]) & (empty[0:0] = 0_1)) |
+#                                       ((A.value = shared_fifo.ll.head[1_1]) & (empty[1:1] = 0_1)) |
+#                                       ((A.value = shared_fifo.ll.free_list_head) & (full = 0_1))))) ;
+#             (sb.en = 0_1) -> (shared_fifo.ll.count[0_1] = sb.cnt)  ;
+#             ((sb.en = 1_1) & (sb.cnt = 0_3)) -> (sb.magic_packet_exited = 1_1) ;
+#             ((sb.en = 1_1) & (sb.magic_packet_exited = 0_1)) -> (shared_fifo.ll.count[0_1] >= sb.cnt) ;
+#             (sb.magic_packet_exited = 0_1) -> (sb.cnt <= depth) ;
+#             ((F[B.value] = 0_2) & (sb.en = 1_1) & (sb.magic_packet_exited = 0_1) & (I[B.value] + 1_2 = sb.cnt[0:1])) -> (shared_fifo.mem[B.value] = sb.magic_packet) ;
+#             ((sb.cnt = 1_3) & (sb.en = 1_1) & (sb.magic_packet_exited = 0_1)) -> (shared_fifo.mem[shared_fifo.ll.head[0_1]] = sb.magic_packet) ;
+#             (prop_signal = 1_1) ;
+# generators: A=Random(shared_fifo.ll.free_list_head); B=Random(shared_fifo.ll.free_list_head)
+# precondition: reset_done
+# verification: compositional
+# prove: True
