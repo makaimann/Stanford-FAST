@@ -11,31 +11,31 @@ solver_name: btor
 
 [COMPOSITIONAL]
 description: "Check the following properties compositionally"
-properties: ((empty[0:0] = 0_1) -> (ghost[shared_fifo.ll.head[0_1]] = 0_4)) ;
-            ((empty[1:1] = 0_1) -> (ghost[shared_fifo.ll.head[1_1]] = 4_4)) ;
-            ((full = 0_1) -> (ghost[shared_fifo.ll.free_list_head] = 8_4)) ;
-            ((empty[0:0] = 0_1) -> (ghost[shared_fifo.ll.tail[0_1]][2:3] = 0_2)) ;
-            ((empty[1:1] = 0_1) -> (ghost[shared_fifo.ll.tail[1_1]][2:3] = 1_2)) ;
-            ((full = 0_1) -> (ghost[shared_fifo.ll.free_list_tail][2:3] = 2_2)) ;
-            ((empty[0:0] = 0_1) -> (ghost[shared_fifo.ll.tail[0_1]][0:1] = (shared_fifo.ll.count[0_1][0:1] - 1_2))) ;
-            ((empty[1:1] = 0_1) -> (ghost[shared_fifo.ll.tail[1_1]][0:1] = (shared_fifo.ll.count[1_1][0:1] - 1_2))) ;
-            ((full = 0_1) -> (ghost[shared_fifo.ll.free_list_tail][0:1] = (free_list_count[0:1] - 1_2))) ;
+properties: ((empty[0:0] = 0_1) -> ((F[shared_fifo.ll.head[0_1]] = 0_2) & ((I[shared_fifo.ll.head[0_1]] = 0_2))));
+            ((empty[1:1] = 0_1) -> ((F[shared_fifo.ll.head[1_1]] = 1_2) & ((I[shared_fifo.ll.head[1_1]] = 0_2))));
+            ((full = 0_1) -> ((F[shared_fifo.ll.free_list_head] = free_list) & ((I[shared_fifo.ll.free_list_head] = 0_2))));
+            ((empty[0:0] = 0_1) -> (F[shared_fifo.ll.tail[0_1]] = 0_2)) ;
+            ((empty[1:1] = 0_1) -> (F[shared_fifo.ll.tail[1_1]] = 1_2)) ;
+            ((full = 0_1) -> (F[shared_fifo.ll.free_list_tail] = free_list)) ;
+            ((empty[0:0] = 0_1) -> (I[shared_fifo.ll.tail[0_1]] = (shared_fifo.ll.count[0_1][0:1] - 1_2))) ;
+            ((empty[1:1] = 0_1) -> (I[shared_fifo.ll.tail[1_1]] = (shared_fifo.ll.count[1_1][0:1] - 1_2))) ;
+            ((full = 0_1) -> (I[shared_fifo.ll.free_list_tail] = (free_list_count[0:1] - 1_2))) ;
             (((((A.value != shared_fifo.ll.free_list_tail) | (full = 1_1)) &
                ((A.value != shared_fifo.ll.tail[0_1]) | (empty[0:0] = 1_1)) &
                ((A.value != shared_fifo.ll.tail[1_1]) | (empty[1:1] = 1_1))) ->
-               ((ghost[shared_fifo.ll.next_ptr[A.value]][0:1] = (ghost[A.value][0:1] + 1_2)) &
-               (ghost[shared_fifo.ll.next_ptr[A.value]][2:3] = ghost[A.value][2:3]) &
-               (ghost[A.value][0:1] != 3_2))) &
-              ((ghost[A.value][0:1] = 0_2) -> (((A.value = shared_fifo.ll.head[0_1]) & (empty[0:0] = 0_1)) |
-                                               ((A.value = shared_fifo.ll.head[1_1]) & (empty[1:1] = 0_1)) |
-                                               ((A.value = shared_fifo.ll.free_list_head) & (full = 0_1))))) ;
-            (sb.en = 0_1) -> (shared_fifo.ll.count[0_1] = sb.cnt)  ;
-            ((sb.en = 1_1) & (sb.cnt = 0_3)) -> (sb.magic_packet_exited = 1_1) ;
-            ((sb.en = 1_1) & (sb.magic_packet_exited = 0_1)) -> (shared_fifo.ll.count[0_1] >= sb.cnt) ;
-            (sb.magic_packet_exited = 0_1) -> (sb.cnt <= depth) ;
-            ((ghost[B.value][2:3] = 0_2) & (sb.en = 1_1) & (sb.magic_packet_exited = 0_1) & (ghost[B.value][0:1] + 1_2 = sb.cnt[0:1])) -> (shared_fifo.mem[B.value] = sb.magic_packet) ;
-            ((sb.cnt = 1_3) & (sb.en = 1_1) & (sb.magic_packet_exited = 0_1)) -> (shared_fifo.mem[shared_fifo.ll.head[0_1]] = sb.magic_packet) ;
-            (prop_signal = 1_1) ;
+               ((I[shared_fifo.ll.next_ptr[A.value]] = (I[A.value] + 1_2)) &
+               (F[shared_fifo.ll.next_ptr[A.value]] = F[A.value]) &
+               (I[A.value] != 3_2))) &
+              ((I[A.value] = 0_2) -> (((A.value = shared_fifo.ll.head[0_1]) & (empty[0:0] = 0_1)) |
+                                      ((A.value = shared_fifo.ll.head[1_1]) & (empty[1:1] = 0_1)) |
+                                      ((A.value = shared_fifo.ll.free_list_head) & (full = 0_1))))) ;
+            # (sb.en = 0_1) -> (shared_fifo.ll.count[0_1] = sb.cnt)  ;
+            # ((sb.en = 1_1) & (sb.cnt = 0_3)) -> (sb.magic_packet_exited = 1_1) ;
+            # ((sb.en = 1_1) & (sb.magic_packet_exited = 0_1)) -> (shared_fifo.ll.count[0_1] >= sb.cnt) ;
+            # (sb.magic_packet_exited = 0_1) -> (sb.cnt <= depth) ;
+            # ((F[B.value] = 0_2) & (sb.en = 1_1) & (sb.magic_packet_exited = 0_1) & (I[B.value] + 1_2 = sb.cnt[0:1])) -> (shared_fifo.mem[B.value] = sb.magic_packet) ;
+            # ((sb.cnt = 1_3) & (sb.en = 1_1) & (sb.magic_packet_exited = 0_1)) -> (shared_fifo.mem[shared_fifo.ll.head[0_1]] = sb.magic_packet) ;
+            # (prop_signal = 1_1) ;
 generators: A=Random(shared_fifo.ll.free_list_head); B=Random(shared_fifo.ll.free_list_head)
 precondition: reset_done
 verification: compositional

@@ -13,7 +13,7 @@
 
 module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
            // dummy inputs
-           free_ptr, popped_head, ghost_sel,
+           free_ptr, popped_head, F_sel, I_sel,
            // scoreboard input
            start,
            // outputs
@@ -33,7 +33,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    input [SEL_WIDTH-1:0]           push_sel, pop_sel;
    input [WIDTH-1:0]               data_in;
    input [PTR_WIDTH-1:0]           free_ptr, popped_head; // will be constrained by CoSA/Jasper
-   input [PTR_WIDTH-1:0]           ghost_sel;
+   input [PTR_WIDTH-1:0]           F_sel, I_sel;
    input                           start;
    output                          full;
    output [NUM_FIFOS-1:0]          empty;
@@ -134,12 +134,17 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
 
    // TODO Check if this parameterization works for non-trivial sizes!
    (* keep *)
-   reg [SEL_WIDTH+PTR_WIDTH:0] ghost [DEPTH-1:0];
+   reg [SEL_WIDTH:0]   F [DEPTH-1:0];
    (* keep *)
-   wire [SEL_WIDTH+PTR_WIDTH:0] ghost_result;
+   reg [PTR_WIDTH-1:0] I [DEPTH-1:0];
+   (* keep *)
+   wire [SEL_WIDTH:0]   F_result;
+   (* keep *)
+   wire [PTR_WIDTH-1:0] I_result;
 
    // just to stop yosys from optimizing it out
-   assign ghost_result = ghost[ghost_sel];
+   assign F_result = F[F_sel];
+   assign I_result = I[I_sel];
 
    reg [PTR_WIDTH-1:0]          tmp;
    // need update logic for the ghost state
@@ -149,28 +154,31 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
       if (rst) begin
 	       for(k=0; k < DEPTH; k=k+1) begin
 	          tmp = k;
-	          ghost[k] <= {free_list, tmp};
+            F[k] <= free_list;
+            I[k] <= tmp;
 	       end
       end
       else begin
 	       for (j=0; j < DEPTH; j=j+1) begin
             if ((j == free_ptr) & push) begin
-               // Need to subtract pop to handle simultaneous pop case (if it's the same fifo)
+               // Need to subtract pop to hoandle simultaneous pop case (if it's the same fifo)
 		           // the other if case won't catch it because still referring to stale
 		           // fifo identifier
-               ghost[j] <= {{1'b0, push_sel}, count[push_sel][PTR_WIDTH-1:0] - (pop & (pop_sel == push_sel))};
+               F[j] <= {1'b0, push_sel};
+               I[j] <= (count[push_sel][PTR_WIDTH-1:0] - (pop & (pop_sel == push_sel)));
             end
             else if (pop & (j == popped_head)) begin
                // if head, then add to free list
 		           // need to subtract push in case pushing simultaneously
-		           ghost[j] <= {free_list, free_list_count[PTR_WIDTH-1:0] - push};
+               F[j] <= free_list;
+               I[j] <= (free_list_count[PTR_WIDTH-1:0] - push);
             end
-            else if (pop & (pop_sel == ghost[j][SEL_WIDTH+PTR_WIDTH:PTR_WIDTH])) begin
+            else if (pop & ({1'b0, pop_sel} == F[j])) begin
                // decrement on pop from a list
-               ghost[j] <= {ghost[j][SEL_WIDTH+PTR_WIDTH:PTR_WIDTH], ghost[j][PTR_WIDTH-1:0]-{{(PTR_WIDTH-1){1'b0}}, 1'b1}};
+               I[j] <= (I[j] - {{(PTR_WIDTH-1){1'b0}}, 1'b1});
             end
-            else if (push & (ghost[j][SEL_WIDTH+PTR_WIDTH:PTR_WIDTH] == free_list)) begin
-               ghost[j] <= {free_list, ghost[j][PTR_WIDTH-1:0]-{{(PTR_WIDTH-1){1'b0}}, 1'b1}};
+            else if (push & (F[j] == free_list)) begin
+               I[j] <= (I[j] - {{(PTR_WIDTH-1){1'b0}}, 1'b1});
             end
 	       end
       end
