@@ -9,5 +9,6 @@ INIT
 INVAR
 free_ptr = shared_fifo.free_ptr ;
 popped_head = shared_fifo.popped_head ;
+head = shared_fifo.ll.head[0_1] ;
 
 TRANS

@@ -13,7 +13,7 @@
 
 module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
            // dummy inputs
-           free_ptr, popped_head, F_sel, I_sel,
+           free_ptr, popped_head, head, F_sel, I_sel,
            // scoreboard input
            start,
            // outputs
@@ -32,7 +32,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    input                           clk, rst, push, pop;
    input [SEL_WIDTH-1:0]           push_sel, pop_sel;
    input [WIDTH-1:0]               data_in;
-   input [PTR_WIDTH-1:0]           free_ptr, popped_head; // will be constrained by CoSA/Jasper
+   input [PTR_WIDTH-1:0]           free_ptr, popped_head, head; // will be constrained by CoSA/Jasper
    input [PTR_WIDTH-1:0]           F_sel, I_sel;
    input                           start;
    output                          full;
@@ -131,6 +131,9 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
       end
    endgenerate
 
+   // should be true only once, exactly when the magic packet is being captured
+   (* keep *)
+   wire capturing;
 
    // TODO Check if this parameterization works for non-trivial sizes!
    (* keep *)
@@ -146,12 +149,34 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    assign F_result = F[F_sel];
    assign I_result = I[I_sel];
 
+   reg [PTR_WIDTH-1:0]  ptr;
+   reg [PTR_WIDTH-1:0]  start_ptr;
+   always @(posedge clk) begin
+      if (rst) begin
+         ptr <= 0;
+      end
+      else if (push & (push_sel == FIFO_SEL)) begin
+         ptr <= ptr + 1;
+      end
+   end
+
+   always @(posedge clk) begin
+      if (capturing) begin
+         if (empty[FIFO_SEL:FIFO_SEL]) begin
+            start_ptr <= ptr;
+         end
+         else begin
+            start_ptr <= I[head];
+         end
+      end
+   end
+
    always @(posedge clk) begin: ghost_state_update_logic
       if (push & (push_sel == FIFO_SEL)) begin
          // mark it as the one we care about
          F[free_ptr] <= 0;
          // tag it with the place in the list and subtract pop to account for simultaneous pop
-         I[free_ptr] <= count[FIFO_SEL];
+         I[free_ptr] <= ptr;
       end
       else if (pop & (pop_sel == FIFO_SEL)) begin
          // tag it as "other"
@@ -200,11 +225,12 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
 
    reg [WIDTH-1:0] magic_packet;
    always @(posedge clk) begin
-      if (start & !sb_en & push & (push_sel == FIFO_SEL)) begin
+      if (capturing) begin
          magic_packet <= data_in;
       end
    end
 
+   assign capturing = (start & !sb_en & push & (push_sel == FIFO_SEL));
    assign data_out_vld = (sb_en & (pos_cnt == (sb_count - 1)) & (pop_sel == FIFO_SEL));
    assign prop_signal = (!data_out_vld | (data_out == magic_packet));
 
