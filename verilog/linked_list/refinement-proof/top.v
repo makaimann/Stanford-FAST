@@ -47,15 +47,15 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    // just for CoSA properties
    (* keep *)
    wire [PTR_WIDTH:0]              depth;
-   (* keep *)
-   wire [SEL_WIDTH:0]              free_list;
+   // (* keep *)
+   // wire [SEL_WIDTH:0]              free_list;
    (* keep *)
    wire [$clog2(PTR_WIDTH+1)-1:0]  ptr_width;
    (* keep *)
    wire [$clog2(SEL_WIDTH+1)-1:0]  sel_width;
 
    assign depth = DEPTH;
-   assign free_list = NUM_FIFOS;
+   // assign free_list = NUM_FIFOS;
    assign ptr_width = PTR_WIDTH;
    assign sel_width = SEL_WIDTH;
 
@@ -90,30 +90,30 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
                 .empty(empty),
                 .data_out(data_out));
 
-   SimpleScoreboard
-     #(.DEPTH(DEPTH),
-       .WIDTH(WIDTH))
-   sb (.clk(clk),
-       .rst(rst),
-       .push(push & (push_sel == FIFO_SEL)),
-       .pop(pop & (pop_sel == FIFO_SEL)),
-       .start(start),
-       .data_in(data_in),
-       .data_out(data_out),
-       .data_out_vld(data_out_vld),
-       .prop_signal(prop_signal));
+   // SimpleScoreboard
+   //   #(.DEPTH(DEPTH),
+   //     .WIDTH(WIDTH))
+   // sb (.clk(clk),
+   //     .rst(rst),
+   //     .push(push & (push_sel == FIFO_SEL)),
+   //     .pop(pop & (pop_sel == FIFO_SEL)),
+   //     .start(start),
+   //     .data_in(data_in),
+   //     .data_out(data_out),
+   //     .data_out_vld(data_out_vld),
+   //     .prop_signal(prop_signal));
 
-   (* keep *)
-   reg [PTR_WIDTH:0] free_list_count;
+   // (* keep *)
+   // reg [PTR_WIDTH:0] free_list_count;
 
-   always @(posedge clk) begin
-      if (rst) begin
-	       free_list_count <= depth;
-      end
-      else begin
-	       free_list_count <= free_list_count + pop - push;
-      end
-   end
+   // always @(posedge clk) begin
+   //    if (rst) begin
+	 //       free_list_count <= depth;
+   //    end
+   //    else begin
+	 //       free_list_count <= free_list_count + pop - push;
+   //    end
+   // end
 
    // mirrors the logic in linked_list.v
    (* keep *)
@@ -134,11 +134,11 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
 
    // TODO Check if this parameterization works for non-trivial sizes!
    (* keep *)
-   reg [SEL_WIDTH:0]   F [DEPTH-1:0];
+   reg [0:0]            F [DEPTH-1:0];
    (* keep *)
-   reg [PTR_WIDTH-1:0] I [DEPTH-1:0];
+   reg [PTR_WIDTH-1:0]  I [DEPTH-1:0];
    (* keep *)
-   wire [SEL_WIDTH:0]   F_result;
+   wire                 F_result;
    (* keep *)
    wire [PTR_WIDTH-1:0] I_result;
 
@@ -146,42 +146,66 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    assign F_result = F[F_sel];
    assign I_result = I[I_sel];
 
-   reg [PTR_WIDTH-1:0]          tmp;
-   // need update logic for the ghost state
-   integer                      k;
-   integer                      j;
-   always @(posedge clk) begin : ghost_state_update_logic
+   always @(posedge clk) begin: ghost_state_update_logic
+      if (push & (push_sel == FIFO_SEL)) begin
+         // mark it as the one we care about
+         F[free_ptr] <= 0;
+         // tag it with the place in the list and subtract pop to account for simultaneous pop
+         I[free_ptr] <= count[FIFO_SEL];
+      end
+      else if (pop & (pop_sel == FIFO_SEL)) begin
+         // tag it as "other"
+         F[popped_head] <= 1;
+         // don't even need to update I
+      end
+   end: ghost_state_update_logic
+
+   // an in-line scoreboard
+   reg [PTR_WIDTH:0] sb_count;
+   reg               sb_en;
+   always @(posedge clk) begin: sb_count_update_logic
       if (rst) begin
-	       for(k=0; k < DEPTH; k=k+1) begin
-	          tmp = k;
-            F[k] <= free_list;
-            I[k] <= tmp;
-	       end
+         sb_count <= 0;
+      end
+      else if (!sb_en) begin
+         sb_count <= sb_count + (push & (push_sel == FIFO_SEL)) - (pop & (pop_sel == FIFO_SEL));
+      end
+      // holds the counter-value once sb_en goes high
+   end: sb_count_update_logic
+
+   always @(posedge clk) begin: sb_en_update_logic
+      if (rst) begin
+         sb_en <= 0;
       end
       else begin
-	       for (j=0; j < DEPTH; j=j+1) begin
-            if ((j == free_ptr) & push) begin
-               // Need to subtract pop to hoandle simultaneous pop case (if it's the same fifo)
-		           // the other if case won't catch it because still referring to stale
-		           // fifo identifier
-               F[j] <= {1'b0, push_sel};
-               I[j] <= (count[push_sel][PTR_WIDTH-1:0] - (pop & (pop_sel == push_sel)));
-            end
-            else if (pop & (j == popped_head)) begin
-               // if head, then add to free list
-		           // need to subtract push in case pushing simultaneously
-               F[j] <= free_list;
-               I[j] <= (free_list_count[PTR_WIDTH-1:0] - push);
-            end
-            else if (pop & ({1'b0, pop_sel} == F[j])) begin
-               // decrement on pop from a list
-               I[j] <= (I[j] - {{(PTR_WIDTH-1){1'b0}}, 1'b1});
-            end
-            else if (push & (F[j] == free_list)) begin
-               I[j] <= (I[j] - {{(PTR_WIDTH-1){1'b0}}, 1'b1});
-            end
-	       end
+         sb_en <= ((start & push & (push_sel == FIFO_SEL)) | sb_en);
       end
-   end // block: ghost_state_update_logic
+   end
+
+   reg [PTR_WIDTH:0] pos_cnt;
+   reg               exited;
+   always @(posedge clk) begin: pos_cnt_update_logic
+      if (rst) begin
+         pos_cnt <= 0;
+         exited <= 0;
+      end
+      else if (sb_en & pop & (pop_sel == FIFO_SEL) & (pos_cnt < sb_count)) begin
+         pos_cnt <= pos_cnt + 1;
+         exited <= 1;
+      end
+      else if (sb_en & pop & (pop_sel == FIFO_SEL)) begin
+         exited <= 1;
+      end
+   end: pos_cnt_update_logic
+
+   reg [WIDTH-1:0] magic_packet;
+   always @(posedge clk) begin
+      if (start & !sb_en & push & (push_sel == FIFO_SEL)) begin
+         magic_packet <= data_in;
+      end
+   end
+
+   assign data_out_vld = (sb_en & (pos_cnt == (sb_count - 1)) & (pop_sel == FIFO_SEL));
+   assign prop_signal = (!data_out_vld | (data_out == magic_packet));
 
 endmodule // top

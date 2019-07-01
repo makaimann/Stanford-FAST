@@ -7,7 +7,7 @@ STATE
 INIT
 
 INVAR
-free_tail_ptr = shared_fifo.free_ptr ;
+free_ptr = shared_fifo.free_ptr ;
 popped_head = shared_fifo.popped_head ;
 
 TRANS

@@ -8,45 +8,59 @@ assume_if_true: True
 bmc_length: 5
 solver_name: btor
 
-[NEVER RESET DONE]
-description: "Basic cover for reset sequence"
-properties: !reset_done
-verification: safety
-expected: False
+# [NEVER RESET DONE]
+# description: "Basic cover for reset sequence"
+# properties: !reset_done
+# verification: safety
+# expected: False
 
-[COUNTS_MATCH]
-description: "Check that the counter logic is identical"
-properties: (count[0_1] = shared_fifo.ll.count[0_1]) & (count[1_1] = shared_fifo.ll.count[1_1])
-precondition: reset_done
+[DATA_INTEGRITY]
+description: "Check data integrity with new scoreboard"
+properties: prop_signal = 1_1
 verification: safety
-expected: True
-prove: True
+expected: Unknown
+precondition: reset_done
 
-[COUNTS_CONSISTENT_DEPTH]
-description: "Check that the counts add up to the depth"
-properties: (free_list_count + count[0_1] + count[1_1]) = depth
-precondition: reset_done
+[HEAD_MAPS_TO_POS_CNT]
+description: "Check that the ghost state tracks correctly"
+properties: ((empty[0:0] = 0_1) & (sb_en = 1_1) & (exited = 0_1)) -> ((F[shared_fifo.ll.head[0_1]] = 0_1) & (I[shared_fifo.ll.head[0_1]] = pos_cnt[0:1]))
 verification: safety
-prove: True
+expected: Unknown
+precondition: reset_done
 
-[COUNTS_CONSISTENT_TOTAL]
-description: "Check that the fifo counts equal the total count"
-# TODO  NEED TO ADAPT FOR MORE FIFOS
-properties: (count[0_1] + count[1_1]) = shared_fifo.ll.total_count
-precondition: reset_done
-verification: safety
-prove: True
+# [COUNTS_MATCH]
+# description: "Check that the counter logic is identical"
+# properties: (count[0_1] = shared_fifo.ll.count[0_1]) & (count[1_1] = shared_fifo.ll.count[1_1])
+# precondition: reset_done
+# verification: safety
+# expected: True
+# prove: True
 
-[COUNTERS_LTE_DEPTH]
-description: "Check that counters are less than or equal to the depth"
-properties: (count[0_1] <= depth) & (count[1_1] <= depth) & (free_list_count <= depth)
-precondition: reset_done
-verification: safety
-prove: True
+# [COUNTS_CONSISTENT_DEPTH]
+# description: "Check that the counts add up to the depth"
+# properties: (free_list_count + count[0_1] + count[1_1]) = depth
+# precondition: reset_done
+# verification: safety
+# prove: True
 
-[REFINEMENT]
-description: "Check the refinement property"
-properties: refinement.txt
-precondition: reset_done
-verification: safety
-prove: True
+# [COUNTS_CONSISTENT_TOTAL]
+# description: "Check that the fifo counts equal the total count"
+# # TODO  NEED TO ADAPT FOR MORE FIFOS
+# properties: (count[0_1] + count[1_1]) = shared_fifo.ll.total_count
+# precondition: reset_done
+# verification: safety
+# prove: True
+
+# [COUNTERS_LTE_DEPTH]
+# description: "Check that counters are less than or equal to the depth"
+# properties: (count[0_1] <= depth) & (count[1_1] <= depth) & (free_list_count <= depth)
+# precondition: reset_done
+# verification: safety
+# prove: True
+
+# [REFINEMENT]
+# description: "Check the refinement property"
+# properties: refinement.txt
+# precondition: reset_done
+# verification: safety
+# prove: True
