@@ -149,7 +149,9 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    assign F_result = F[F_sel];
    assign I_result = I[I_sel];
 
+   (* keep *)
    reg [PTR_WIDTH-1:0]  ptr;
+   (* keep *)
    reg [PTR_WIDTH-1:0]  start_ptr;
    always @(posedge clk) begin
       if (rst) begin
@@ -162,12 +164,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
 
    always @(posedge clk) begin
       if (capturing) begin
-         if (empty[FIFO_SEL:FIFO_SEL]) begin
-            start_ptr <= ptr;
-         end
-         else begin
-            start_ptr <= I[head];
-         end
+         start_ptr <= ((empty[0:0] ? ptr : I[head]) + (pop & (pop_sel == FIFO_SEL)));
       end
    end
 
@@ -207,7 +204,9 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
       end
    end
 
+   (* keep *)
    reg [PTR_WIDTH:0] pos_cnt;
+   (* keep *)
    reg               exited;
    always @(posedge clk) begin: pos_cnt_update_logic
       if (rst) begin
@@ -233,5 +232,17 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    assign capturing = (start & !sb_en & push & (push_sel == FIFO_SEL));
    assign data_out_vld = (sb_en & (pos_cnt == (sb_count - 1)) & (pop_sel == FIFO_SEL));
    assign prop_signal = (!data_out_vld | (data_out == magic_packet));
+
+   // debugging wires
+   (* keep *)
+   wire [PTR_WIDTH-1:0] ptr_p_pos_cnt;
+   (* keep *)
+   wire [PTR_WIDTH-1:0] I_head;
+   (* keep *)
+   wire F_head;
+
+   assign ptr_p_pos_cnt = start_ptr + pos_cnt[PTR_WIDTH-2:0];
+   assign I_head = I[head];
+   assign F_head = F[head];
 
 endmodule // top

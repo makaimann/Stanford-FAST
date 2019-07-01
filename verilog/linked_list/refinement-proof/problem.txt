@@ -24,8 +24,7 @@ precondition: reset_done
 [HEAD_MAPS_TO_POS_CNT]
 description: "Check that the ghost state tracks correctly"
 properties: ((empty[0:0] = 0_1) & (sb_en = 1_1) & (exited = 0_1)) ->
-            ((F[shared_fifo.ll.head[0_1]] = 0_1) & (I[shared_fifo.ll.head[0_1]] = (start_ptr + (pos_cnt - 1_3)[0:1])))
-#  & (I[shared_fifo.ll.head[0_1]] = pos_cnt[0:1])
+            ((F_head = 0_1) & (I_head = ptr_p_pos_cnt))
 verification: safety
 expected: Unknown
 precondition: reset_done
