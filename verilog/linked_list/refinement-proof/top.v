@@ -169,24 +169,29 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    end
 
    always @(posedge clk) begin: ghost_state_update_logic
-      integer i;
-      if (rst) begin
-         for(i=0; i < DEPTH; i=i+1) begin
-            I[i] <= 1'b1;
-         end
-      end
-      else if (push & (push_sel == FIFO_SEL)) begin
+      if (!rst & push & (push_sel == FIFO_SEL)) begin
          // mark it as the one we care about
          F[free_ptr] <= 0;
          // tag it with the place in the list and subtract pop to account for simultaneous pop
          I[free_ptr] <= ptr;
       end
-      else if (pop & (pop_sel == FIFO_SEL)) begin
+      else if (!rst & pop & (pop_sel == FIFO_SEL)) begin
          // tag it as "other"
          F[popped_head] <= 1;
          // don't even need to update I
       end
    end: ghost_state_update_logic
+
+   generate
+      genvar                               i;
+      for(i=0; i < DEPTH; i=i+1) begin
+         always @* begin
+            if (rst) begin
+              assume(I[i] == 1'b1);
+            end
+         end
+      end
+   endgenerate
 
    // an in-line scoreboard
    reg [PTR_WIDTH:0] sb_count;
