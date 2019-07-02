@@ -169,7 +169,13 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
    end
 
    always @(posedge clk) begin: ghost_state_update_logic
-      if (push & (push_sel == FIFO_SEL)) begin
+      integer i;
+      if (rst) begin
+         for(i=0; i < DEPTH; i=i+1) begin
+            I[i] <= 1'b1;
+         end
+      end
+      else if (push & (push_sel == FIFO_SEL)) begin
          // mark it as the one we care about
          F[free_ptr] <= 0;
          // tag it with the place in the list and subtract pop to account for simultaneous pop
