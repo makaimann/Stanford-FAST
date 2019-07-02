@@ -8,11 +8,11 @@ assume_if_true: True
 bmc_length: 5
 solver_name: btor
 
-# [NEVER RESET DONE]
-# description: "Basic cover for reset sequence"
-# properties: !reset_done
-# verification: safety
-# expected: False
+[NEVER RESET DONE]
+description: "Basic cover for reset sequence"
+properties: !reset_done
+verification: safety
+expected: False
 
 [DATA_INTEGRITY]
 description: "Check data integrity with new scoreboard"
