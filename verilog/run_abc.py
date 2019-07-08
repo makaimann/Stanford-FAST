@@ -8,23 +8,15 @@ import sys
 YOSYS_COMMAND="""
 read_verilog -sv -formal {source_files}; prep -top {top}; \
 memory_map; \
-async2sync; \
+{synchronize}; \
 chformal -assume -early; \
 chformal -live -fair -cover -remove; \
-opt_clean; \
-setundef -anyseq; \
-opt -keepdc -fast; \
 check; \
 hierarchy -simcheck; \
 flatten; \
-setattr -unset keep; \
-delete -output; \
-opt -full; \
 techmap; \
-opt -fast; \
 abc -g AND -fast; \
-opt_clean; \
-stat; \
+setundef -anyseq; \
 write_aiger -I -B -zinit -map {top}.aim {top}.aig;
 """
 
@@ -40,13 +32,19 @@ if __name__ == '__main__':
     parser.add_argument("--options", '-o', help='options to pass through to abc', default='')
     parser.add_argument('-s', '--source_files', help='Verilog source files', action='append')
     parser.add_argument('--top', '-t', default='top')
+    parser.add_argument('--synchronize', action='store_true')
 
     args = parser.parse_args()
+
+    synchronize = ""
+    if args.synchronize:
+        synchronize = "async2sync"
 
     res = subprocess.check_call(['yosys',
                                  '-l', 'yosys.log',
                                  '-p', YOSYS_COMMAND.format(source_files=" ".join(args.source_files),
-                                                            top=args.top)
+                                                            top=args.top,
+                                                            synchronize=synchronize)
     ])
 
     if res != 0:
