@@ -9,7 +9,7 @@
 `endif
 
 module fifo_top(clk, rst, start, push, data_in, pop,
-                empty, full, data_out, prop_signal, packet_out);
+                empty, full, data_out, prop_signal);
 
    parameter WIDTH      =    `FIFO_DWIDTH,
         	   DEPTH      =    `FIFO_DEPTH,
@@ -21,7 +21,6 @@ module fifo_top(clk, rst, start, push, data_in, pop,
    output                      full;
    output [WIDTH-1:0]          data_out;
    output                      prop_signal;
-   output [WIDTH-1:0]          packet_out;
 
    (* keep *)
    wire                        data_out_vld;
@@ -50,7 +49,6 @@ module fifo_top(clk, rst, start, push, data_in, pop,
        .start(start),
        .data_in(data_in),
        .data_out(data_out),
-       .packet_out(packet_out),
        .data_out_vld(data_out_vld),
        .prop_signal(prop_signal));
 

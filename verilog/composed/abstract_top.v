@@ -47,25 +47,43 @@ module top(clk, rst, start, push, data_in, pop,
    wire                        prop_signal0;
    wire                        prop_signal1;
 
-   (* keep *)
-   wire [WIDTH-1:0]            intm_data;
+   fifo
+     #(.WIDTH(WIDTH),
+       .DEPTH(DEPTH/2))
+   f0 (.clk(clk),
+	    .rst(rst),
+	    .push(push[0]),
+	    .pop(pop[0]),
+      .data_in(data_in),
+      .empty(empty[0]),
+      .full(full[0]),
+	    .data_out(packet_out0));
 
    SimpleScoreboard
      #(.DEPTH(DEPTH/2),
        .WIDTH(WIDTH))
 
    sb0 (.clk(clk),
-        .rst(rst),
-        .push(push[0]),
-        .pop(pop[0]),
-        .start(start),
-        .data_in(data_in),
-        .data_out(0), // unused
-        .packet_out(packet_out0),
-        .data_out_vld(data_out_vld0),
-        .empty(empty[0]),
-        .full(full[0]),
-        .prop_signal(prop_signal0)); // unused
+       .rst(rst),
+       .push(push[0]),
+       .pop(pop[0]),
+       .start(start),
+       .data_in(data_in),
+       .data_out(packet_out0t),
+       .data_out_vld(data_out_vld0),
+       .prop_signal(prop_signal0));
+
+   fifo
+     #(.WIDTH(WIDTH),
+       .DEPTH(DEPTH/2))
+   f1 (.clk(clk),
+	     .rst(rst),
+	     .push(pop[0]),
+	     .pop(pop[1]),
+       .data_in(packet_out0),
+       .empty(empty[1]),
+       .full(full[1]),
+	     .data_out(data_out));
 
    SimpleScoreboard
      #(.DEPTH(DEPTH/2),
@@ -77,12 +95,9 @@ module top(clk, rst, start, push, data_in, pop,
         .pop(pop[1]),
         .start(data_out_vld0),
         .data_in(packet_out0),
-        .data_out(0), // unused
-        .packet_out(data_out),
+        .data_out(data_out),
         .data_out_vld(data_out_vld1),
-        .empty(empty[1]),
-        .full(full[1]),
-        .prop_signal(prop_signal1)); // unused
+        .prop_signal(prop_signal1));
 
    SimpleScoreboard
      #(.DEPTH(DEPTH),
