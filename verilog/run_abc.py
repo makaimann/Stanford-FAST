@@ -62,6 +62,9 @@ if __name__ == '__main__':
     topaig = Path("{top}.aig".format(top=args.top))
     if topaig.exists():
         topaim = topaig.with_suffix('.aim')
+        topaiw = topaig.with_suffix('.aiw')
         topaig.unlink()
         if topaim.exists():
             topaim.unlink()
+        if topaiw.exists():
+            topaiw.unlink()
