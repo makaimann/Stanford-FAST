@@ -11,12 +11,13 @@ memory_map; \
 {synchronize}; \
 chformal -assume -early; \
 chformal -live -fair -cover -remove; \
+setundef -anyseq; \
 check; \
 hierarchy -simcheck; \
 flatten; \
+delete -output; \
 techmap; \
 abc -g AND -fast; \
-setundef -anyseq; \
 write_aiger -I -B -zinit -map {top}.aim {top}.aig;
 """
 
@@ -36,9 +37,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    synchronize = ""
+    synchronize=""
     if args.synchronize:
-        synchronize = "async2sync"
+        synchronize="async2sync"
 
     res = subprocess.check_call(['yosys',
                                  '-l', 'yosys.log',
