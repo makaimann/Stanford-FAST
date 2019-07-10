@@ -232,6 +232,7 @@ def setup_delay_logic(unrolled_sys:temporal_sys)->Tuple[List[FNode], List[FNode]
         assumption = BVULE(delay_var, BV(len(timed_actions[0])-1, delay_width))
         assume(bmc, assumption)
 
+    print("Add assumptions about actions in second and third states:")
     # original system only uses actions in the first state
     for a in timed_actions[1]:
         assume(bmc, Not(a))
@@ -240,12 +241,39 @@ def setup_delay_logic(unrolled_sys:temporal_sys)->Tuple[List[FNode], List[FNode]
         # assume that no actions are enabled in the last state (just comparing state now)
         for ta in generic_actions[2]:
             assume(bmc, Not(ta))
+    print()
 
+    print("Add enabled-ness assumptions:")
     for a, e in zip(timed_actions[0], timed_ens[0]):
         assume(bmc, Implies(a, e))
+    print()
 
+    # Usage
+    sn = SortingNetwork.sorting_network(timed_actions[0])
+    print("\nSorting Network:\n\t", sn)
+    print()
+
+    # assertion that delayed signal is enabled
+    delayed_signal_enabled = And([Implies(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
+
+    return delay, sn
+
+def simple_delay_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode])->bool:
+
+    # unpack the entire named tuple
+    bmc=unrolled_sys.bmc
+    timed_actions=unrolled_sys.timed_actions
+    timed_ens=unrolled_sys.timed_ens
+    timed_data_inputs=unrolled_sys.timed_data_inputs
+    copy_timed_actions=unrolled_sys.copy_timed_actions
+    copy_timed_ens=unrolled_sys.copy_timed_ens
+    copy_timed_data_inputs=unrolled_sys.copy_timed_data_inputs
+    timed_sys_equiv=unrolled_sys.timed_sys_equiv
+
+    print("++++++++++++++++++++ Running Simple Delay Strategy +++++++++++++++++++++")
     ################ add assumptions about delay signal ###################
     # if delaying a signal, it must have been enabled
+    print("Add assumptions about delaying an action")
     for d, a in zip(delay, timed_actions[0]):
         assumption = Implies(d, a)
         assume(bmc, assumption)
@@ -255,22 +283,7 @@ def setup_delay_logic(unrolled_sys:temporal_sys)->Tuple[List[FNode], List[FNode]
 
     for d, ca in zip(delay, copy_timed_actions[0]):
         assume(bmc, Implies(d, Not(ca)))
-
-    # Usage
-    sn = SortingNetwork.sorting_network(timed_actions[0])
-    print("\nSorting Network:\n\t", sn)
-
-    # NOTE: Modifying full_consequent to fix the proof
-    #       I'm a little unclear why this is necessary, so it should be debugged before merging
-    #       it's definitely possible I made a mistake
-
-    # assertion that delayed signal is enabled
-    delayed_signal_enabled = And([Implies(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
-    # blown-out existential quantification -- there is a delayed signal that's enabled
-    # exists_enabled_delay_signal = Or([Implies(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
-    # blown-out existentail quantification, plus the equivalence property
-    # full_consequent = And(exists_enabled_delay_signal, timed_sys_equiv[2])
-    full_consequent = Or([Implies(delay[i], And(copy_timed_ens[1][i], timed_sys_equiv[2])) for i in range(len(delay))])
+    print()
 
     # simple delay assumptions
     print()
@@ -284,7 +297,33 @@ def setup_delay_logic(unrolled_sys:temporal_sys)->Tuple[List[FNode], List[FNode]
         assume(bmc, Implies(Not(d), Not(ca)))
     print()
 
-    return delay, sn, full_consequent
+    # NOTE: Modifying full_consequent to fix the proof
+    #       I'm a little unclear why this is necessary, so it should be debugged before merging
+    #       it's definitely possible I made a mistake
+    # blown-out existential quantification -- there is a delayed signal that's enabled
+    # exists_enabled_delay_signal = Or([Implies(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
+    # blown-out existentail quantification, plus the equivalence property
+    # full_consequent = And(exists_enabled_delay_signal, timed_sys_equiv[2])
+    full_consequent = Or([Implies(delay[i], And(copy_timed_ens[1][i], timed_sys_equiv[2])) for i in range(len(delay))])
+
+    for i in range(1, len(timed_actions[0])):
+        print("======= Proving enabled-ness condition for instruction cardinality = {} ======".format(i+1))
+        antecedent = sn[i]
+        if i < len(timed_actions[0]) - 1:
+            # it's exactly i+1 actions enabled
+            antecedent = And(antecedent, Not(sn[i+1]))
+        prop = Implies(antecedent, full_consequent)
+        # print("Prop:", prop)
+        assumptions = [Not(prop)]
+        res = bmc.solver.solver.solve(assumptions)
+        if res:
+            model = bmc.solver.solver.get_model()
+            print("+++++++++++++++++++++++ Model +++++++++++++++++++++++")
+            print(model)
+            return False
+        else:
+            return True
+
 
 def reduced_instruction_set(hts, config, generic_interface):
     unrolled_sys = ris_proof_setup(hts, config, generic_interface)
@@ -301,30 +340,20 @@ def reduced_instruction_set(hts, config, generic_interface):
     #     print('+++++++++++++++++++++++++++ Model ++++++++++++++++++++++++++++')
     #     print(model)
 
-    delay, sn, full_consequent = setup_delay_logic(unrolled_sys)
+    delay, sn = setup_delay_logic(unrolled_sys)
 
     # another cover after the delay logic is added
     # can't expect there to be a trace resulting in different states after delay logic added
     res = bmc.solver.solver.solve()
     assert res
 
-    for i in reversed(range(1, len(timed_actions[0]))):
-        print("======= Proving enabled-ness condition for instruction cardinality = {} ======".format(i+1))
-        antecedent = sn[i]
-        if i < len(timed_actions[0]) - 1:
-            # it's exactly i+1 actions enabled
-            antecedent = And(antecedent, Not(sn[i+1]))
-        prop = Implies(antecedent, full_consequent)
-        # print("Prop:", prop)
-        assumptions = [Not(prop)]
-        res = bmc.solver.solver.solve(assumptions)
-        if res:
-            model = bmc.solver.solver.get_model()
-            print("+++++++++++++++++++++++ Model +++++++++++++++++++++++")
-            print(model)
-            raise RuntimeError("Bummer. Simple delay failed -- try a more advanced approach")
-        else:
-            print('\tProperty holds')
+    res = simple_delay_strategy(unrolled_sys, delay, sn)
+
+    if res:
+        print("\tProperty holds")
+    else:
+        raise RuntimeError("Bummer. Simple delay failed -- try a more advanced approach")
+
 
 def read_verilog(filepath:Path, topmod:str, config:btor_config)->Tuple[HTS, FNode, FNode]:
     parser = VerilogYosysBtorParser()

@@ -3,9 +3,12 @@ from pathlib import Path
 
 from pysmt.shortcuts import BV, BVAnd, EqualsOrIff
 
+from cosa.environment import reset_env
+
 from ris import btor_config, interface, reduced_instruction_set, read_verilog, test_actions
 
 def main():
+    reset_env()
     config = btor_config(abstract_clock=True,
                          opt_circuit=False,
                          no_arrays=False,
