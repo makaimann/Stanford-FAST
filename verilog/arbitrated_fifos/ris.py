@@ -49,8 +49,11 @@ def test_actions(actions, en):
         other_actions.add(a)
         s.pop()
 
-def assume(bmc, assumption):
-    print('Adding assumption: {}'.format(assumption))
+def assume(bmc, assumption, msg=None):
+    if msg is not None:
+        print(msg)
+    else:
+        print('Adding assumption: {}'.format(assumption))
     bmc._add_assertion(bmc.solver, assumption)
 
 
@@ -139,9 +142,9 @@ def ris_proof_setup(hts, config, generic_interface):
     invar = hts.single_invar()
     trans = hts.single_trans()
     invar0 = bmc.at_time(invar, 0)
-    bmc._add_assertion(bmc.solver, invar0)
+    assume(bmc, invar0, "Assuming invariant at 0")
     unrolled = bmc.unroll(trans, invar, B)
-    bmc._add_assertion(bmc.solver, unrolled)
+    assume(bmc, unrolled, "Assuming unrolled system")
 
     timed_actions = defaultdict(list)
     timed_ens     = defaultdict(list)
@@ -222,6 +225,7 @@ def setup_delay_logic(unrolled_sys:temporal_sys)->Tuple[List[FNode], List[FNode]
     print()
 
     # Generate delay indicator for each action
+    print("Generating delay indicator for each action")
     delay = []
     delay_width = (len(timed_actions[0])-1).bit_length()
     delay_var = Symbol('delay_sel', BVType(delay_width))
@@ -231,6 +235,7 @@ def setup_delay_logic(unrolled_sys:temporal_sys)->Tuple[List[FNode], List[FNode]
     if len(timed_actions[0]) != 2**delay_width:
         assumption = BVULE(delay_var, BV(len(timed_actions[0])-1, delay_width))
         assume(bmc, assumption)
+    print()
 
     print("Add assumptions about actions in second and third states:")
     # original system only uses actions in the first state
