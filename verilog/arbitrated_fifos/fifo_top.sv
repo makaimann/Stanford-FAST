@@ -22,14 +22,19 @@ module fifo_top(clk, rst, start, push, data_in, pop,
 
    (* keep *)
    wire                        data_out_vld;
+   (* keep *)
+   wire                        en;
 
+   (* keep *)
+   wire                        qual_push;
+   assign qual_push = push | (start & ~en);
 
    fifo
      #(.WIDTH(WIDTH),
        .DEPTH(DEPTH))
    f (.clk(clk),
 	    .rst(rst),
-	    .push(push),
+	    .push(qual_push),
 	    .pop(pop),
       .data_in(data_in),
       .empty(empty),
@@ -42,11 +47,12 @@ module fifo_top(clk, rst, start, push, data_in, pop,
 
    sb (.clk(clk),
        .rst(rst),
-       .push(push),
+       .push(qual_push),
        .pop(pop),
        .start(start),
        .data_in(data_in),
        .data_out(data_out),
+       .en(en),
        .data_out_vld(data_out_vld),
        .prop_signal(prop_signal));
 

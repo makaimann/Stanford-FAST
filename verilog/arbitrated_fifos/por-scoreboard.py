@@ -39,7 +39,7 @@ def main():
 
     # FIXME TODO BUG this doesn't work because the third action implies the first -- it will be trivially unsat when it tries to drive action3 without action1
     # One possible fix is to change the rtl such that start forces a push (we'd also have to assume that you can't start when empty)
-    actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(pop, BV(1, 1)), EqualsOrIff(BVAnd(start, push), BV(1, 1))]
+    actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(pop, BV(1, 1)), EqualsOrIff(start, BV(1, 1))]
     en      = [EqualsOrIff(full, BV(0, 1)), EqualsOrIff(empty, BV(0, 1)), EqualsOrIff(full, BV(0, 1))]
 
     generic_interface = interface(actions=actions, ens=en, rst=rst, clk=clk)
