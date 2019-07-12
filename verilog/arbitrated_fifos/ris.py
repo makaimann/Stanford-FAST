@@ -302,14 +302,14 @@ def simple_delay_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[
         assume(bmc, Implies(Not(d), Not(ca)))
     print()
 
-    # NOTE: Modifying full_consequent to fix the proof
-    #       I'm a little unclear why this is necessary, so it should be debugged before merging
-    #       it's definitely possible I made a mistake
-    # blown-out existential quantification -- there is a delayed signal that's enabled
-    # exists_enabled_delay_signal = Or([Implies(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
-    # blown-out existentail quantification, plus the equivalence property
-    # full_consequent = And(exists_enabled_delay_signal, timed_sys_equiv[2])
-    full_consequent = Or([Implies(delay[i], And(copy_timed_ens[1][i], timed_sys_equiv[2])) for i in range(len(delay))])
+    # previous bug explanation
+    # I had a property like (a -> b) OR (c -> d), which when negated becomes (a AND -b) AND (c AND -d), but a AND c is already unsat in this case so that does NOT work
+
+    # looked like this:
+    # full_consequent = Or(Implies(delay[0], And(copy_timed_ens[1][0], timed_sys_equiv[2])),
+    #                      Implies(delay[1], And(copy_timed_ens[1][1], timed_sys_equiv[2])))
+    # raise RuntimeError("Currently buggy")
+
 
     for i in range(1, len(timed_actions[0])):
         print("======= Proving enabled-ness condition for instruction cardinality = {} ======".format(i+1))
@@ -317,8 +317,7 @@ def simple_delay_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[
         if i < len(timed_actions[0]) - 1:
             # it's exactly i+1 actions enabled
             antecedent = And(antecedent, Not(sn[i+1]))
-        prop = Implies(antecedent, full_consequent)
-        # print("Prop:", prop)
+        prop = Implies(antecedent, timed_sys_equiv[2])
         assumptions = [Not(prop)]
         res = bmc.solver.solver.solve(assumptions)
         if res:
