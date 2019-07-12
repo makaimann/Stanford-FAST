@@ -13,8 +13,8 @@
  `include "fifo.sv"
 `endif
 
-`ifndef SIMPLE_SCOREBOARD
- `include "SimpleScoreboard.sv"
+`ifndef SIMPLE_SCOREBOARD_MODIFIED
+ `include "SimpleScoreboardModified.sv"
 `endif
 
 module top(clk, rst, start, push, data_in, pop,
@@ -47,19 +47,6 @@ module top(clk, rst, start, push, data_in, pop,
    wire                        prop_signal0;
    wire                        prop_signal1;
 
-   fifo
-     #(.WIDTH(WIDTH),
-       .DEPTH(DEPTH/2))
-   f0 (.clk(clk),
-	    .rst(rst),
-	    .push(push[0]),
-	    .pop(pop[0]),
-//      .data_in(data_in),
-      .empty(empty[0]),
-      .full(full[0]),
-//	    .data_out(packet_out0)
-       );
-
    SimpleScoreboard
      #(.DEPTH(DEPTH/2),
        .WIDTH(WIDTH))
@@ -71,25 +58,15 @@ module top(clk, rst, start, push, data_in, pop,
        .start(start),
        .data_in(data_in),
        .data_out(packet_out0),
+       .empty(empty[0]),
+       .full(full[0]),
+       .packet_out(packet_out0),
        .data_out_vld(data_out_vld0),
        .prop_signal(prop_signal0));
 
    always @* begin
       assume(prop_signal0);
    end
-
-   fifo
-     #(.WIDTH(WIDTH),
-       .DEPTH(DEPTH/2))
-   f1 (.clk(clk),
-	     .rst(rst),
-	     .push(pop[0]),
-	     .pop(pop[1]),
-//       .data_in(packet_out0),
-       .empty(empty[1]),
-       .full(full[1]),
-//	     .data_out(data_out)
-       );
 
    SimpleScoreboard
      #(.DEPTH(DEPTH/2),
@@ -102,6 +79,9 @@ module top(clk, rst, start, push, data_in, pop,
         .start(data_out_vld0),
         .data_in(packet_out0),
         .data_out(data_out),
+        .empty(empty[1]),
+        .full(full[1]),
+        .packet_out(data_out),
         .data_out_vld(data_out_vld1),
         .prop_signal(prop_signal1));
 

@@ -6,7 +6,7 @@
  `include "MagicPacketTracker.v"
 `endif
 
-`define SIMPLE_SCOREBOARD
+`define SIMPLE_SCOREBOARD_MODIFIED
 
   module SimpleScoreboard(clk, rst, push, pop, start, data_in, data_out,
                           packet_out, data_out_vld, empty, full, prop_signal);
@@ -26,6 +26,7 @@
 
    output wire [WIDTH-1:0]                   packet_out;
    output wire                               data_out_vld;
+   (* keep *)
    output wire                               empty, full;
    output wire                               prop_signal;
 
@@ -77,8 +78,14 @@
   assign data_out_vld = en & !magic_packet_exited & (cnt != 0) & (next_cnt == 0);
 
   // this is an approximation of empty -- it's not quite right
-  assign empty = !en & (cnt == 0);
-  assign full = (cnt == DEPTH);
+  always_comb begin
+     if (!en) begin
+        assume(empty == (cnt == 0));
+        assume(full == (cnt == DEPTH));
+     end
+  end
+  // assign empty = !en & (cnt == 0);
+  // assign full = (cnt == DEPTH);
 
   assign prop_signal = ~data_out_vld | (magic_packet == data_out);
 
