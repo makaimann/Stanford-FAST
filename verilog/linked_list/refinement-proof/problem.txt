@@ -50,7 +50,29 @@ properties: ((full = 0_1) & (empty[0:0] = 0_1) & (pop_sel = 0_1)) -> free_ptr !=
 verification: safety
 expected: Unknown
 precondition: reset_done
-bmc_length: 10
+
+[TAGS_CONNECT]
+description: "Check that arbitrary elements map to the same kind of tag unless it's a tail"
+properties: (((A.value != shared_fifo.ll.free_list_tail) | (full = 1_1)) &
+             ((A.value != shared_fifo.ll.tail[0_1]) | (empty[0:0] = 1_1)) &
+             ((A.value != shared_fifo.ll.tail[1_1]) | (empty[1:1] = 1_1)))
+            -> (F[A.value] = F[shared_fifo.ll.next_ptr[A.value]])
+verification: safety
+generators: A=Random(shared_fifo.ll.free_list_head)
+expected: Unknown
+precondition: reset_done
+
+[IDX_INC_IN_0]
+description: "Check that index increments in tracked fifo"
+properties: ((F[B.value] = 0_1) &
+             ((B.value != shared_fifo.ll.tail[0_1]) |
+              (empty[0:0] = 1_1)))
+            -> (I[shared_fifo.ll.next_ptr[B.value]] = I[B.value] + 1_2)
+verification: safety
+generators: B=Random(shared_fifo.ll.free_list_head)
+expected: Unknown
+precondition: reset_done
+
 
 # [COMPOSITIONAL]
 # description: "Check properties compositionally"
