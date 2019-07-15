@@ -34,6 +34,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--source_files', help='Verilog source files', action='append')
     parser.add_argument('--top', '-t', default='top')
     parser.add_argument('--synchronize', action='store_true')
+    parser.add_argument('--quiet', '-q', action='store_true')
 
     args = parser.parse_args()
 
@@ -41,8 +42,10 @@ if __name__ == '__main__':
     if args.synchronize:
         synchronize="async2sync"
 
+    log_flag = '-ql' if args.quiet else '-l'
+
     res = subprocess.check_call(['yosys',
-                                 '-l', 'yosys.log',
+                                 log_flag, 'yosys.log',
                                  '-p', YOSYS_COMMAND.format(source_files=" ".join(args.source_files),
                                                             top=args.top,
                                                             synchronize=synchronize)

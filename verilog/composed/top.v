@@ -16,7 +16,7 @@ module top(clk, rst, start, push, data_in, pop,
            empty, full, data_out, prop_signal);
 
    parameter WIDTH      =    `FIFO_DWIDTH,
-        	   DEPTH      =    `FIFO_DEPTH,
+             DEPTH      =    2*`FIFO_DEPTH,
              QWID       =    `ARB_QWID;
 
    input                       clk, rst, start;

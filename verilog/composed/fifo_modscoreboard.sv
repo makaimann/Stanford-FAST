@@ -4,15 +4,15 @@
  `include "fifo.sv"
 `endif
 
-`ifndef SIMPLE_SCOREBOARD
- `include "SimpleScoreboard.sv"
+`ifndef SIMPLE_SCOREBOARD_MODIFIED
+ `include "SimpleScoreboardModified.sv"
 `endif
 
 module fifo_top(clk, rst, start, push, data_in, pop,
                 empty, full, data_out, prop_signal);
 
    parameter WIDTH      =    `FIFO_DWIDTH,
-             DEPTH      =    `FIFO_DEPTH,
+        	   DEPTH      =    `FIFO_DEPTH,
              QWID       =    `ARB_QWID;
 
    input                       clk, rst, start, push, pop;
@@ -24,6 +24,9 @@ module fifo_top(clk, rst, start, push, data_in, pop,
 
    (* keep *)
    wire                        data_out_vld;
+
+   (* keep *)
+   wire                        en_prop;
 
    fifo
      #(.WIDTH(WIDTH),
@@ -47,8 +50,11 @@ module fifo_top(clk, rst, start, push, data_in, pop,
        .pop(pop),
        .start(start),
        .data_in(data_in),
+       .empty_ref(empty),
+       .full_ref(full),
        .data_out(data_out),
        .data_out_vld(data_out_vld),
+       .en_prop(en_prop),
        .prop_signal(prop_signal));
 
 `ifdef FORMAL
@@ -69,6 +75,7 @@ module fifo_top(clk, rst, start, push, data_in, pop,
    always @(posedge clk) begin
       if (!initstate) begin
          assert(prop_signal);
+         assert(en_prop);
       end
    end
 
