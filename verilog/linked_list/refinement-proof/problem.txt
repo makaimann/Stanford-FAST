@@ -29,6 +29,21 @@ verification: safety
 expected: Unknown
 precondition: reset_done
 
+[FREE_PTR_IN_OTHER]
+description: "Check that free_ptr is tagged other unless the FIFOs are full"
+properties: (full = 0_1) -> (F[free_ptr] = 1_1)
+verification: safety
+expected: Unknown
+precondition: reset_done
+
+# [COMPOSITIONAL]
+# description: "Check properties compositionally"
+# properties:
+# verification: compsoitional
+# generators: A=Random(shared_fifo.ll.free_list_head); B=Random(shared_fifo.ll.free_list_head)
+# precondition: reset_done
+# prove: True
+
 # [COUNTS_MATCH]
 # description: "Check that the counter logic is identical"
 # properties: (count[0_1] = shared_fifo.ll.count[0_1]) & (count[1_1] = shared_fifo.ll.count[1_1])

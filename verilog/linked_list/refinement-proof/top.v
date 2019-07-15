@@ -175,7 +175,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
          // tag it with the place in the list and subtract pop to account for simultaneous pop
          I[free_ptr] <= ptr;
       end
-      else if (!rst & pop & (pop_sel == FIFO_SEL)) begin
+      if (!rst & pop & (pop_sel == FIFO_SEL)) begin
          // tag it as "other"
          F[popped_head] <= 1;
          // don't even need to update I
@@ -187,7 +187,7 @@ module top(clk, rst, push, pop, push_sel, pop_sel, data_in,
       for(i=0; i < DEPTH; i=i+1) begin
          always @* begin
             if (rst) begin
-              assume(I[i] == 1'b1);
+              assume(F[i] == 1'b1);
             end
          end
       end
