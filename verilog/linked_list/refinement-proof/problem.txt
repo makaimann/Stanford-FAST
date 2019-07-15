@@ -36,6 +36,22 @@ verification: safety
 expected: Unknown
 precondition: reset_done
 
+[POPPED_HEAD_TAG]
+description: "Check tag of popped_head"
+properties: ((empty[0:0] = 0_1) & (pop_sel = 0_1)) -> (F[popped_head] = 0_1)
+verification: safety
+expected: Unknown
+precondition: reset_done
+bmc_length: 10
+
+[FREE_PTR_NOT_POPPED_HEAD]
+description: "Check that free_ptr can never equal popped_head if they're both valid"
+properties: ((full = 0_1) & (empty[0:0] = 0_1) & (pop_sel = 0_1)) -> free_ptr != popped_head
+verification: safety
+expected: Unknown
+precondition: reset_done
+bmc_length: 10
+
 # [COMPOSITIONAL]
 # description: "Check properties compositionally"
 # properties:
