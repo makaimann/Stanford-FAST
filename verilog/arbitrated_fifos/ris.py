@@ -341,9 +341,7 @@ def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode], d
     # internal option
     # monotonicity with respect to the original systems, actions
     # e.g. only consider applied actions from the original system when learning the witness function
-
-    # doesn't seem to work when True, haven't figured out why not yet
-    monotonic = False
+    monotonic = True
 
     if delay_sel is None:
         print("Auto-detecting delay_sel...")
@@ -386,30 +384,34 @@ def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode], d
         assume(bmc, Implies(Not(d), Not(ca)))
     print()
 
+    model = None
+    # property is equivalence at time 2
+    prop = timed_sys_equiv[2]
     for i in range(1, len(timed_actions[0])):
         print("======= Proving that an action can be delayed for instruction cardinality = {} ======".format(i+1))
         antecedent = sn[i]
         if i < len(timed_actions[0]) - 1:
             # it's exactly i+1 actions enabled, e.g. don't let it be more
             antecedent = And(antecedent, Not(sn[i+1]))
-        prop = Implies(antecedent, timed_sys_equiv[2])
 
         res = True
-        model = None
 
         while res:
             # check that we haven't over-constrained with the learned witness
             if not bmc.solver.solver.solve([antecedent]):
-                print("Last Model:")
-                print(model)
+                res2 = bmc.solver.solver.solve([sn[i-1], Not(sn[i])])
+                if res2:
+                    print("Previous model")
+                    print(model)
                 raise RuntimeError("Bummer: Over-constrained by witness -- giving up")
 
-            assumptions = [Not(prop)]
+            assumptions = [antecedent, Not(prop)]
             res = bmc.solver.solver.solve(assumptions)
 
             if res:
                 model = bmc.solver.solver.get_model()
-                witness_antecedent = []
+                # witness function depends on the property being negated at time 2
+                witness_antecedent = [Not(prop)]
                 witness_neg_consequent = []
                 for ta in timed_actions[0]:
                     vta = bmc.solver.solver.get_value(ta).constant_value()
