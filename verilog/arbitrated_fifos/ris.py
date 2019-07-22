@@ -355,6 +355,7 @@ def reduced_instruction_set(hts, config, generic_interface):
 
     if res:
         print("\tProperty holds")
+        print("IMPORTANT NOTE: This procedure for finding the reduced instruction set relies on proving that actions don't disable each other -- use IC3 for this.")
     else:
         raise RuntimeError("Bummer. Simple delay failed -- try a more advanced approach")
 
