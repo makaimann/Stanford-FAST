@@ -125,9 +125,13 @@ def ris_proof_setup(hts, config, generic_interface):
     data_stays_const = And([EqualsOrIff(TS.get_prime(di), di) for di in data_inputs])
     print("Simple assumption: data inputs all remain constant:\n\t", data_stays_const)
 
+    # isn't even necessary for simple FIFO without scoreboard (because pointers still end up in same place)
+    enabled_conds = And([Implies(a, e) for a, e in zip(generic_interface.actions, generic_interface.ens)])
+    print("Add enabled-ness assumptions:\n\t", enabled_conds.serialize(100))
+
     # create a new transition system to add to the HTS
     ts = TS()
-    ts.set_behavior(TRUE(), data_stays_const, rst_zero)
+    ts.set_behavior(TRUE(), And(data_stays_const, enabled_conds), rst_zero)
     hts.add_ts(ts)
 
     # Now the system is ready to be copied
@@ -248,11 +252,6 @@ def setup_delay_logic(unrolled_sys:temporal_sys)->Tuple[List[FNode], List[FNode]
             assume(bmc, Not(ta))
     print()
 
-    print("Add enabled-ness assumptions:")
-    for a, e in zip(timed_actions[0], timed_ens[0]):
-        assume(bmc, Implies(a, e))
-    print()
-
     # Usage
     sn = SortingNetwork.sorting_network(timed_actions[0])
     print("\nSorting Network:\n\t", sn)
@@ -283,9 +282,77 @@ def simple_delay_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[
         assumption = Implies(d, a)
         assume(bmc, assumption)
 
+    print("Assume that delayed action can't occur in first state in copy")
+    for d, ca in zip(delay, copy_timed_actions[0]):
+        assume(bmc, Implies(d, Not(ca)))
+
+    print("Assume that if not delayed, the action and copy of action are equal")
     for d, a, ca in zip(delay, timed_actions[0], copy_timed_actions[0]):
         assume(bmc, Implies(Not(d), EqualsOrIff(a, ca)))
+    print()
 
+    # simple delay assumptions
+    print()
+    print("Assume that the delayed action is at time step 1 in the copied system")
+    for d, ca in zip(delay, copy_timed_actions[1]):
+        assume(bmc, Implies(d, ca))
+    print()
+
+    print("Assume that the delayed action is the only action at time 1")
+    for d, ca in zip(delay, copy_timed_actions[1]):
+        assume(bmc, Implies(Not(d), Not(ca)))
+    print()
+
+    # previous bug explanation
+    # I had a property like (a -> b) OR (c -> d), which when negated becomes (a AND -b) AND (c AND -d), but a AND c is already unsat in this case so that does NOT work
+
+    # looked like this:
+    # full_consequent = Or(Implies(delay[0], And(copy_timed_ens[1][0], timed_sys_equiv[2])),
+    #                      Implies(delay[1], And(copy_timed_ens[1][1], timed_sys_equiv[2])))
+    # raise RuntimeError("Currently buggy")
+
+
+    for i in range(1, len(timed_actions[0])):
+        print("======= Proving enabled-ness condition for instruction cardinality = {} ======".format(i+1))
+        antecedent = sn[i]
+        if i < len(timed_actions[0]) - 1:
+            # it's exactly i+1 actions enabled
+            antecedent = And(antecedent, Not(sn[i+1]))
+        prop = Implies(antecedent, timed_sys_equiv[2])
+        assumptions = [Not(prop)]
+        res = bmc.solver.solver.solve(assumptions)
+        if res:
+            model = bmc.solver.solver.get_model()
+            print("+++++++++++++++++++++++ Model +++++++++++++++++++++++")
+            print(model)
+            return False
+        else:
+            return True
+
+def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode])->bool:
+    '''
+    Counter-example guided strategy
+    '''
+
+    # unpack the entire named tuple
+    bmc=unrolled_sys.bmc
+    timed_actions=unrolled_sys.timed_actions
+    timed_ens=unrolled_sys.timed_ens
+    timed_data_inputs=unrolled_sys.timed_data_inputs
+    copy_timed_actions=unrolled_sys.copy_timed_actions
+    copy_timed_ens=unrolled_sys.copy_timed_ens
+    copy_timed_data_inputs=unrolled_sys.copy_timed_data_inputs
+    timed_sys_equiv=unrolled_sys.timed_sys_equiv
+
+    print("++++++++++++++++++++ Running Counter-Example Strategy +++++++++++++++++++++")
+    ################ add assumptions about delay signal ###################
+    # if delaying a signal, it must have been enabled
+    print("Add assumptions about delaying an action")
+    for d, a in zip(delay, timed_actions[0]):
+        assumption = Implies(d, a)
+        assume(bmc, assumption)
+
+    print("Assume that delayed action can't occur in first state in copy")
     for d, ca in zip(delay, copy_timed_actions[0]):
         assume(bmc, Implies(d, Not(ca)))
     print()
@@ -328,8 +395,12 @@ def simple_delay_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[
         else:
             return True
 
+strategies = {
+    'simple': simple_delay_strategy,
+    'ceg': ceg_strategy
+}
 
-def reduced_instruction_set(hts, config, generic_interface):
+def reduced_instruction_set(hts, config, generic_interface, strategy='simple'):
     unrolled_sys = ris_proof_setup(hts, config, generic_interface)
 
     bmc = unrolled_sys.bmc
@@ -351,13 +422,13 @@ def reduced_instruction_set(hts, config, generic_interface):
     res = bmc.solver.solver.solve()
     assert res
 
-    res = simple_delay_strategy(unrolled_sys, delay, sn)
+    res = strategies[strategy](unrolled_sys, delay, sn)
 
     if res:
         print("\tProperty holds")
         print("IMPORTANT NOTE: This procedure for finding the reduced instruction set relies on proving that actions don't disable each other -- use IC3 for this.")
     else:
-        raise RuntimeError("Bummer. Simple delay failed -- try a more advanced approach")
+        raise RuntimeError("Bummer: {} delay failed -- try a more advanced approach".format(strategy))
 
 
 def read_verilog(filepath:Path, topmod:str, config:btor_config)->Tuple[HTS, FNode, FNode]:
