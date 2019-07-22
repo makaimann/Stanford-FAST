@@ -49,11 +49,15 @@ def test_actions(actions, en):
         other_actions.add(a)
         s.pop()
 
-def assume(bmc, assumption, msg=None):
+def assume(bmc, assumption, msg=None, serialize=None):
     if msg is not None:
         print(msg)
     else:
-        print('Adding assumption: {}'.format(assumption))
+        if serialize is not None:
+            assumptionstr = assumption.serialize(serialize)
+        else:
+            assumptionstr = repr(assumption)
+        print('Adding assumption: {}'.format(assumptionstr))
     bmc._add_assertion(bmc.solver, assumption)
 
 
@@ -387,24 +391,41 @@ def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode], d
             # it's exactly i+1 actions enabled
             antecedent = And(antecedent, Not(sn[i+1]))
         prop = Implies(antecedent, timed_sys_equiv[2])
-        assumptions = [Not(prop)]
-        res = bmc.solver.solver.solve(assumptions)
-        if res:
-            for i in range(3):
-                for ta in timed_actions[i]:
+
+        res = True
+
+        while res:
+            # check that we haven't over-constrained with the learned witness
+            if not bmc.solver.solver.solve([antecedent]):
+                raise RuntimeError("Bummer: Over-constrained by witness -- giving up")
+
+            assumptions = [Not(prop)]
+            res = bmc.solver.solver.solve(assumptions)
+
+            if res:
+                witness_antecedent = []
+                witness_neg_consequent = []
+                for ta in timed_actions[0]:
                     vta = bmc.solver.solver.get_value(ta).constant_value()
-                    print(ta.serialize(100), ":", vta)
-                for cta in copy_timed_actions[i]:
-                    vta = bmc.solver.solver.get_value(cta).constant_value()
-                    print(cta.serialize(100), ":", vta)
-            vdelay = bmc.solver.solver.get_value(delay_sel)
-            print(delay_sel.serialize(100), ":", vdelay)
-            # model = bmc.solver.solver.get_model()
-            # print("+++++++++++++++++++++++ Model +++++++++++++++++++++++")
-            # print(model)
-            return False
-        else:
-            return True
+                    if vta:
+                        witness_antecedent.append(ta)
+                # potential optimization: only consider time 0 and only allow delayed action at time 1, might be good enough
+                for i in range(2):
+                    for cta in copy_timed_actions[i]:
+                        vcta = bmc.solver.solver.get_value(cta).constant_value()
+                        if vcta:
+                            witness_neg_consequent.append(cta)
+                        else:
+                            witness_neg_consequent.append(Not(cta))
+                vdelay = bmc.solver.solver.get_value(delay_sel)
+                witness_neg_consequent.append(EqualsOrIff(delay_sel, vdelay))
+                witness_constraint = Implies(And(witness_antecedent), Not(And(witness_neg_consequent)))
+                print()
+                print("Learned witness constraint:")
+                assume(bmc, witness_constraint, serialize=100)
+                print()
+            else:
+                return True
 
 strategies = {
     'simple': simple_delay_strategy,
@@ -436,7 +457,7 @@ def reduced_instruction_set(hts, config, generic_interface, strategy='simple'):
     res = strategies[strategy](unrolled_sys, delay, sn, delay_sel=delay_sel)
 
     if res:
-        print("\tProperty holds")
+        print("Property holds")
         print("IMPORTANT NOTE: This procedure for finding the reduced instruction set relies on proving that actions don't disable each other -- use IC3 for this.")
     else:
         raise RuntimeError("Bummer: {} delay failed -- try a more advanced approach".format(strategy))
