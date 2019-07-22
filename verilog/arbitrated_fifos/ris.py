@@ -333,15 +333,19 @@ def simple_delay_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[
         else:
             return True
 
-def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode], delay_sel:Optional[FNode]=None)->bool:
+def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode],
+                 delay_sel:Optional[FNode]=None, monotonic:bool=True, constrain_copy=True)->bool:
     '''
     Counter-example guided strategy
+
+    Options:
+    # monotonic       : monotonicity with respect to the original system actions
+    #                   when true only consider applied actions from the original system when learning the witness function
+    # constrain_copy  : extra guidance for the copy system
+    #                   when true add the assumption that actions that don't occur at time 0 in the original
+    #                   also don't occur in the copy at time 0
     '''
 
-    # internal option
-    # monotonicity with respect to the original systems, actions
-    # e.g. only consider applied actions from the original system when learning the witness function
-    monotonic = True
 
     if delay_sel is None:
         print("Auto-detecting delay_sel...")
@@ -373,7 +377,6 @@ def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode], d
         assume(bmc, Implies(d, Not(ca)))
     print()
 
-    # counter-example guided loop
     print("Assume that the delayed action is at time step 1 in the copied system")
     for d, ca in zip(delay, copy_timed_actions[1]):
         assume(bmc, Implies(d, ca))
@@ -384,6 +387,13 @@ def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode], d
         assume(bmc, Implies(Not(d), Not(ca)))
     print()
 
+    if constrain_copy:
+        print("Assume that copy can apply options that original did in time 0")
+        for a, ca in zip(timed_actions[0], copy_timed_actions[0]):
+            assume(bmc, Implies(ca, a))
+        print()
+
+    # counter-example guided loop
     model = None
     # property is equivalence at time 2
     prop = timed_sys_equiv[2]
@@ -423,14 +433,14 @@ def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode], d
                             witness_antecedent.append(ta)
                         else:
                             witness_antecedent.append(Not(ta))
-                # potential optimization: only consider time 0 and only allow delayed action at time 1, might be good enough
-                for j in range(2):
-                    for cta in copy_timed_actions[j]:
-                        vcta = bmc.solver.solver.get_value(cta).constant_value()
-                        if vcta:
-                            witness_neg_consequent.append(cta)
-                        else:
-                            witness_neg_consequent.append(Not(cta))
+                # only considering time 0 and only allow delayed action at time 1
+                # to be more general, could let the witness constraint range over time 0 and time 1
+                for cta in copy_timed_actions[0]:
+                    vcta = bmc.solver.solver.get_value(cta).constant_value()
+                    if vcta:
+                        witness_neg_consequent.append(cta)
+                    elif not constrain_copy:
+                        witness_neg_consequent.append(Not(cta))
                 vdelay = bmc.solver.solver.get_value(delay_sel)
                 witness_neg_consequent.append(EqualsOrIff(delay_sel, vdelay))
                 witness_constraint = Implies(And(witness_antecedent), Not(And(witness_neg_consequent)))
