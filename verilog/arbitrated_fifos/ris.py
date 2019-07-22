@@ -277,7 +277,7 @@ def simple_delay_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[
     print("++++++++++++++++++++ Running Simple Delay Strategy +++++++++++++++++++++")
     ################ add assumptions about delay signal ###################
     # if delaying a signal, it must have been enabled
-    print("Add assumptions about delaying an action")
+    print("Assume that delayed action must occur in first state in original system")
     for d, a in zip(delay, timed_actions[0]):
         assumption = Implies(d, a)
         assume(bmc, assumption)
@@ -347,7 +347,7 @@ def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode])->
     print("++++++++++++++++++++ Running Counter-Example Strategy +++++++++++++++++++++")
     ################ add assumptions about delay signal ###################
     # if delaying a signal, it must have been enabled
-    print("Add assumptions about delaying an action")
+    print("Assume that delayed action must occur in first state in original system")
     for d, a in zip(delay, timed_actions[0]):
         assumption = Implies(d, a)
         assume(bmc, assumption)
