@@ -45,7 +45,7 @@ def main():
     generic_interface = interface(actions=actions, ens=en, rst=rst, clk=clk)
 
     test_actions(actions, en)
-    reduced_instruction_set(hts, config, generic_interface)
+    reduced_instruction_set(hts, config, generic_interface, strategy='ceg')
 
 if __name__ == "__main__":
     main()
