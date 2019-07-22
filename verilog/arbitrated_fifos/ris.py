@@ -313,7 +313,7 @@ def simple_delay_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[
 
 
     for i in range(1, len(timed_actions[0])):
-        print("======= Proving enabled-ness condition for instruction cardinality = {} ======".format(i+1))
+        print("======= Proving that an action can be delayed for instruction cardinality = {} ======".format(i+1))
         antecedent = sn[i]
         if i < len(timed_actions[0]) - 1:
             # it's exactly i+1 actions enabled
@@ -379,7 +379,7 @@ def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode])->
 
 
     for i in range(1, len(timed_actions[0])):
-        print("======= Proving enabled-ness condition for instruction cardinality = {} ======".format(i+1))
+        print("======= Proving that an action can be delayed for instruction cardinality = {} ======".format(i+1))
         antecedent = sn[i]
         if i < len(timed_actions[0]) - 1:
             # it's exactly i+1 actions enabled
