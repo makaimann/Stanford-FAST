@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
-from pysmt.shortcuts import BV, BVAnd, EqualsOrIff
+from pysmt.shortcuts import And, BV, BVAnd, EqualsOrIff
 
 from cosa.environment import reset_env
 
@@ -35,9 +35,11 @@ def main():
     pop   = symbols['pop']
     full  = symbols['full']
     empty = symbols['empty']
+    en    = symbols['sb.en']
 
+    # note: need to make !sb.en part of the enabledness condition for start, otherwise it can be activated without affecting the wrPtr (if already enabled), which stumps the witness learner
     actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(pop, BV(1, 1)), EqualsOrIff(start, BV(1, 1))]
-    en      = [EqualsOrIff(full, BV(0, 1)), EqualsOrIff(empty, BV(0, 1)), EqualsOrIff(full, BV(0, 1))]
+    en      = [EqualsOrIff(full, BV(0, 1)), EqualsOrIff(empty, BV(0, 1)), And(EqualsOrIff(full, BV(0, 1)), EqualsOrIff(en, BV(0, 1)))]
 
     generic_interface = interface(actions=actions, ens=en, rst=rst, clk=clk)
 

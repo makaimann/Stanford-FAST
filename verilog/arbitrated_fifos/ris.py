@@ -341,7 +341,9 @@ def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode], d
     # internal option
     # monotonicity with respect to the original systems, actions
     # e.g. only consider applied actions from the original system when learning the witness function
-    monotonic = True
+
+    # doesn't seem to work when True, haven't figured out why not yet
+    monotonic = False
 
     if delay_sel is None:
         print("Auto-detecting delay_sel...")
@@ -388,30 +390,40 @@ def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode], d
         print("======= Proving that an action can be delayed for instruction cardinality = {} ======".format(i+1))
         antecedent = sn[i]
         if i < len(timed_actions[0]) - 1:
-            # it's exactly i+1 actions enabled
+            # it's exactly i+1 actions enabled, e.g. don't let it be more
             antecedent = And(antecedent, Not(sn[i+1]))
         prop = Implies(antecedent, timed_sys_equiv[2])
 
         res = True
+        model = None
 
         while res:
             # check that we haven't over-constrained with the learned witness
             if not bmc.solver.solver.solve([antecedent]):
+                print("Last Model:")
+                print(model)
                 raise RuntimeError("Bummer: Over-constrained by witness -- giving up")
 
             assumptions = [Not(prop)]
             res = bmc.solver.solver.solve(assumptions)
 
             if res:
+                model = bmc.solver.solver.get_model()
                 witness_antecedent = []
                 witness_neg_consequent = []
                 for ta in timed_actions[0]:
                     vta = bmc.solver.solver.get_value(ta).constant_value()
-                    if vta:
-                        witness_antecedent.append(ta)
+                    if monotonic:
+                        if vta:
+                            witness_antecedent.append(ta)
+                    else:
+                        if vta:
+                            witness_antecedent.append(ta)
+                        else:
+                            witness_antecedent.append(Not(ta))
                 # potential optimization: only consider time 0 and only allow delayed action at time 1, might be good enough
-                for i in range(2):
-                    for cta in copy_timed_actions[i]:
+                for j in range(2):
+                    for cta in copy_timed_actions[j]:
                         vcta = bmc.solver.solver.get_value(cta).constant_value()
                         if vcta:
                             witness_neg_consequent.append(cta)
@@ -425,7 +437,8 @@ def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode], d
                 assume(bmc, witness_constraint, serialize=100)
                 print()
             else:
-                return True
+                continue
+    return True
 
 strategies = {
     'simple': simple_delay_strategy,
