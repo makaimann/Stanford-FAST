@@ -1,6 +1,6 @@
 from collections import namedtuple, defaultdict
 from pathlib import Path
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 from cosa.analyzers.mcsolver import BMCSolver
 from cosa.encoders.verilog_yosys import VerilogYosysBtorParser
@@ -232,12 +232,12 @@ def setup_delay_logic(unrolled_sys:temporal_sys)->Tuple[List[FNode], List[FNode]
     print("Generating delay indicator for each action")
     delay = []
     delay_width = (len(timed_actions[0])-1).bit_length()
-    delay_var = Symbol('delay_sel', BVType(delay_width))
+    delay_sel = Symbol('delay_sel', BVType(delay_width))
     for i in range(len(timed_actions[0])):
-        delay.append(EqualsOrIff(delay_var, BV(i, delay_width)))
+        delay.append(EqualsOrIff(delay_sel, BV(i, delay_width)))
 
     if len(timed_actions[0]) != 2**delay_width:
-        assumption = BVULE(delay_var, BV(len(timed_actions[0])-1, delay_width))
+        assumption = BVULE(delay_sel, BV(len(timed_actions[0])-1, delay_width))
         assume(bmc, assumption)
     print()
 
@@ -260,9 +260,9 @@ def setup_delay_logic(unrolled_sys:temporal_sys)->Tuple[List[FNode], List[FNode]
     # assertion that delayed signal is enabled
     delayed_signal_enabled = And([Implies(delay[i], copy_timed_ens[1][i]) for i in range(len(delay))])
 
-    return delay, sn
+    return delay_sel, delay, sn
 
-def simple_delay_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode])->bool:
+def simple_delay_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode], delay_sel:Optional[FNode]=None)->bool:
 
     # unpack the entire named tuple
     bmc=unrolled_sys.bmc
@@ -285,6 +285,7 @@ def simple_delay_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[
     print("Assume that delayed action can't occur in first state in copy")
     for d, ca in zip(delay, copy_timed_actions[0]):
         assume(bmc, Implies(d, Not(ca)))
+    print()
 
     print("Assume that if not delayed, the action and copy of action are equal")
     for d, a, ca in zip(delay, timed_actions[0], copy_timed_actions[0]):
@@ -292,7 +293,6 @@ def simple_delay_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[
     print()
 
     # simple delay assumptions
-    print()
     print("Assume that the delayed action is at time step 1 in the copied system")
     for d, ca in zip(delay, copy_timed_actions[1]):
         assume(bmc, Implies(d, ca))
@@ -329,10 +329,21 @@ def simple_delay_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[
         else:
             return True
 
-def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode])->bool:
+def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode], delay_sel:Optional[FNode]=None)->bool:
     '''
     Counter-example guided strategy
     '''
+
+    # internal option
+    # monotonicity with respect to the original systems, actions
+    # e.g. only consider applied actions from the original system when learning the witness function
+    monotonic = True
+
+    if delay_sel is None:
+        print("Auto-detecting delay_sel...")
+        delay_sel = get_free_variables(delay[0])
+        assert len(delay_sel) == 1
+        delay_sel = delay_sel[0]
 
     # unpack the entire named tuple
     bmc=unrolled_sys.bmc
@@ -351,14 +362,14 @@ def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode])->
     for d, a in zip(delay, timed_actions[0]):
         assumption = Implies(d, a)
         assume(bmc, assumption)
+    print()
 
     print("Assume that delayed action can't occur in first state in copy")
     for d, ca in zip(delay, copy_timed_actions[0]):
         assume(bmc, Implies(d, Not(ca)))
     print()
 
-    # simple delay assumptions
-    print()
+    # counter-example guided loop
     print("Assume that the delayed action is at time step 1 in the copied system")
     for d, ca in zip(delay, copy_timed_actions[1]):
         assume(bmc, Implies(d, ca))
@@ -368,15 +379,6 @@ def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode])->
     for d, ca in zip(delay, copy_timed_actions[1]):
         assume(bmc, Implies(Not(d), Not(ca)))
     print()
-
-    # previous bug explanation
-    # I had a property like (a -> b) OR (c -> d), which when negated becomes (a AND -b) AND (c AND -d), but a AND c is already unsat in this case so that does NOT work
-
-    # looked like this:
-    # full_consequent = Or(Implies(delay[0], And(copy_timed_ens[1][0], timed_sys_equiv[2])),
-    #                      Implies(delay[1], And(copy_timed_ens[1][1], timed_sys_equiv[2])))
-    # raise RuntimeError("Currently buggy")
-
 
     for i in range(1, len(timed_actions[0])):
         print("======= Proving that an action can be delayed for instruction cardinality = {} ======".format(i+1))
@@ -388,9 +390,18 @@ def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode])->
         assumptions = [Not(prop)]
         res = bmc.solver.solver.solve(assumptions)
         if res:
-            model = bmc.solver.solver.get_model()
-            print("+++++++++++++++++++++++ Model +++++++++++++++++++++++")
-            print(model)
+            for i in range(3):
+                for ta in timed_actions[i]:
+                    vta = bmc.solver.solver.get_value(ta).constant_value()
+                    print(ta.serialize(100), ":", vta)
+                for cta in copy_timed_actions[i]:
+                    vta = bmc.solver.solver.get_value(cta).constant_value()
+                    print(cta.serialize(100), ":", vta)
+            vdelay = bmc.solver.solver.get_value(delay_sel)
+            print(delay_sel.serialize(100), ":", vdelay)
+            # model = bmc.solver.solver.get_model()
+            # print("+++++++++++++++++++++++ Model +++++++++++++++++++++++")
+            # print(model)
             return False
         else:
             return True
@@ -415,14 +426,14 @@ def reduced_instruction_set(hts, config, generic_interface, strategy='simple'):
     #     print('+++++++++++++++++++++++++++ Model ++++++++++++++++++++++++++++')
     #     print(model)
 
-    delay, sn = setup_delay_logic(unrolled_sys)
+    delay_sel, delay, sn = setup_delay_logic(unrolled_sys)
 
     # another cover after the delay logic is added
     # can't expect there to be a trace resulting in different states after delay logic added
     res = bmc.solver.solver.solve()
     assert res
 
-    res = strategies[strategy](unrolled_sys, delay, sn)
+    res = strategies[strategy](unrolled_sys, delay, sn, delay_sel=delay_sel)
 
     if res:
         print("\tProperty holds")
