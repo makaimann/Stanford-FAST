@@ -6,6 +6,8 @@
  `include "SimpleScoreboard.sv"
 `endif
 
+`define FORMAL
+
 module fifo_top(clk, rst, start, push, data_in, pop,
            empty, full, data_out, prop_signal);
 
@@ -49,5 +51,18 @@ module fifo_top(clk, rst, start, push, data_in, pop,
        .data_out(data_out),
        .data_out_vld(data_out_vld),
        .prop_signal(prop_signal));
+
+`ifdef FORMAL
+   reg                         initstate = 1'b1;
+   always @(posedge clk) begin
+      initstate <= 1'b0;
+   end
+
+   always @* begin
+      assume(rst == initstate);
+      if (!initstate)
+        assert(prop_signal);
+   end
+`endif
 
 endmodule // fifo_top

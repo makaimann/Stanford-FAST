@@ -25,13 +25,22 @@ module fifo(clk, rst, push, pop, data_in,
 
   wire clkEn = push | pop | rst;
 
+  //*************** cnt logic ******************//
+   logic [PTRWID-1:0] cnt;
+   always @(posedge clk) begin
+      if (rst)
+        cnt <= 0;
+      else
+        cnt <= cnt + {{(PTRWID-1){1'b0}}, push} - {{(PTRWID-1){1'b0}}, pop};
+   end
+
   //************** wrPtr logic *****************//
 
  (* keep *)
   logic [PTRWID-1:0] wrPtr;
   wire  [PTRWID-1:0] wrPtrNxt;
 
-  assign wrPtrNxt = rst ? {PTRWID{1'b0}} : wrPtr + {{(PTRWID-1){1'b0}}, push};
+  assign wrPtrNxt = rst ? 1 : wrPtr + {{(PTRWID-1){1'b0}}, push};
 
   FF #(.WIDTH(PTRWID)) ff_wrPtr (.rst(rst),
                                  .clk(clk),
@@ -49,14 +58,16 @@ module fifo(clk, rst, push, pop, data_in,
   assign rdPtrNxt = rst ? {PTRWID{1'b0}} : rdPtr + {{(PTRWID-1){1'b0}}, pop};
 
   FF #(.WIDTH(PTRWID)) ff_rdPtr (.rst(rst),
-                         .clk(clk),
+                                 .clk(clk),
                                  .en(clkEn),
                                  .D(rdPtrNxt),
                                  .Q(rdPtr));
 
   //************** empty and full logic ********//
-  assign empty = rdPtr == wrPtr;
-  assign full = (rdPtr[PTRWID-2:0] == wrPtr[PTRWID-2:0]) & (rdPtr[PTRWID-1] != wrPtr[PTRWID-1]);
+  // assign empty = rdPtr == wrPtr;
+  // assign full = (rdPtr[PTRWID-2:0] == wrPtr[PTRWID-2:0]) & (rdPtr[PTRWID-1] != wrPtr[PTRWID-1]);
+   assign empty = (cnt == 0);
+   assign full = (cnt == DEPTH);
 
   //************** latch entries ***************//
 
