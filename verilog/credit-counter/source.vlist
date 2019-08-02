@@ -1,0 +1,3 @@
+-I../arbitrated_fifos/
+./credit_counter.v
+./credit_fifo_top.v
