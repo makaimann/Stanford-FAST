@@ -1,4 +1,4 @@
 ../arbitrated_fifos/fifo.sv
 ../arbitrated_fifos/MagicPacketTracker.v
-SimpleScoreboard.sv
+../arbitrated_fifos/SimpleScoreboard.sv
 ./top.v

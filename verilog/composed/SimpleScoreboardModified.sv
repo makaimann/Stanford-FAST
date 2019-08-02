@@ -6,10 +6,10 @@
  `include "MagicPacketTracker.v"
 `endif
 
-`define SIMPLE_SCOREBOARD
+`define SIMPLE_SCOREBOARD_MODIFIED
 
-  module SimpleScoreboard(clk, rst, push, pop, start, data_in, data_out,
-                          packet_out, data_out_vld, empty, full, prop_signal);
+  module SimpleScoreboard(clk, rst, push, pop, start, data_in, data_out, empty_ref, full_ref,
+                          packet_out, data_out_vld, en_prop, prop_signal);
    parameter DEPTH  = 8,
              WIDTH  = 8,
              CNTWID = $clog2(DEPTH) + 1;
@@ -23,11 +23,14 @@
    input wire [WIDTH-1:0]                    data_in;
    // data outflow from DUT
    input wire [WIDTH-1:0]                    data_out;
+   input wire                                empty_ref, full_ref;
 
    output wire [WIDTH-1:0]                   packet_out;
    output wire                               data_out_vld;
-   output wire                               empty, full;
-   output wire                               prop_signal;
+   output wire                               en_prop, prop_signal;
+
+   (* keep *)
+   wire                                      empty, full;
 
    wire                                      en;
    wire                                      next_en;
@@ -77,9 +80,16 @@
   assign data_out_vld = en & !magic_packet_exited & (cnt != 0) & (next_cnt == 0);
 
   // this is an approximation of empty -- it's not quite right
-  assign empty = !en & (cnt == 0);
-  assign full = (cnt == DEPTH);
+  always_comb begin
+     if (!en) begin
+        assume(empty == (cnt == 0));
+        assume(full == (cnt == DEPTH));
+     end
+  end
+  // assign empty = !en & (cnt == 0);
+  // assign full = (cnt == DEPTH);
 
+  assign en_prop = en | ((empty == empty_ref) && (full == full_ref));
   assign prop_signal = ~data_out_vld | (magic_packet == data_out);
 
 endmodule
