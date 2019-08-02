@@ -1,6 +1,6 @@
 from collections import namedtuple, defaultdict
 from pathlib import Path
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, NamedTuple
 
 from cosa.analyzers.mcsolver import BMCSolver
 from cosa.encoders.verilog_yosys import VerilogYosysBtorParser
@@ -10,14 +10,12 @@ from cosa.utils.formula_mngm import SortingNetwork, substitute, get_free_variabl
 from pysmt.shortcuts import And, BOOL, BV, BVULE, BVType, EqualsOrIff, Implies, Not, Or, simplify, Solver, Symbol, TRUE
 from pysmt.fnode import FNode
 
-__all__ = ['btor_config', 'interface', 'reduced_instruction_set', 'read_verilog']
+from por_utils import assume, btor_config, copy_sys, interface, temporal_sys
+
+__all__ = ['reduced_instruction_set', 'read_verilog']
 
 # hacky -- creating config here
 # should have an api command to get a generic config object from CoSA
-
-btor_config = namedtuple('btor_config', 'abstract_clock opt_circuit no_arrays symbolic_init strategy skip_solving smt2_tracing solver_name incremental solver_options synchronize verific')
-interface   = namedtuple('interface', 'actions ens rst clk')
-temporal_sys = namedtuple('temporal_sys', 'bmc, timed_actions, timed_ens, timed_data_inputs, copy_timed_actions, copy_timed_ens, copy_timed_data_inputs, timed_sys_equiv')
 
 def test_actions(actions, en):
     '''
@@ -49,55 +47,6 @@ def test_actions(actions, en):
         other_actions.add(a)
         s.pop()
 
-def assume(bmc, assumption, msg=None, serialize=None):
-    if msg is not None:
-        print(msg)
-    else:
-        if serialize is not None:
-            assumptionstr = assumption.serialize(serialize)
-        else:
-            assumptionstr = repr(assumption)
-        print('Adding assumption: {}'.format(assumptionstr))
-    bmc._add_assertion(bmc.solver, assumption)
-
-
-def copy_sys(hts, generic_interface, data_inputs):
-    '''
-    Creates a copy of an HTS
-    '''
-    prefix = 'copy.'
-    hts_copy = HTS("copy")
-    ts = TS()
-    copymap = {v.symbol_name():'{}{}'.format(prefix, v.symbol_name()) for v in hts.vars}
-    for var in get_free_variables(hts.single_trans()):
-        primed_name = TS.get_prime(var).symbol_name()
-        copymap[primed_name] = '{}{}'.format(prefix, primed_name)
-    ts.vars = set([TS.get_prefix(v, prefix) for v in hts.vars])
-    ts.set_behavior(substitute(hts.single_init(), copymap),
-                    substitute(hts.single_trans(), copymap),
-                    substitute(hts.single_invar(), copymap))
-    ts.state_vars = set([TS.get_prefix(v, prefix) for v in hts.state_vars])
-    hts_copy.add_ts(ts)
-
-    assert len(hts_copy.vars.intersection(hts.vars)) == 0
-
-    copy_free_vars = get_free_variables(hts_copy.single_invar()).union(get_free_variables(hts_copy.single_trans()))
-    orig_free_vars = get_free_variables(hts.single_invar()).union(get_free_variables(hts.single_trans()))
-    assert len(copy_free_vars.intersection(orig_free_vars)) == 0
-
-    copy_interface = interface(actions=[substitute(a, copymap) for a in generic_interface.actions],
-                               ens=[substitute(e, copymap) for e in generic_interface.ens],
-                               rst=substitute(generic_interface.rst, copymap),
-                               clk=substitute(generic_interface.clk, copymap))
-
-    print("Created copy of HTS")
-    print("\t", hts_copy)
-
-    assert isinstance(data_inputs, list)
-
-    sys_equiv_output = And([EqualsOrIff(sv, substitute(sv, copymap)) for sv in hts.state_vars])
-    return hts_copy, copy_interface, [TS.get_prefix(d, prefix) for d in data_inputs], sys_equiv_output
-
 def ris_proof_setup(hts, config, generic_interface):
     B = 3
     for a in generic_interface.actions:
@@ -107,17 +56,9 @@ def ris_proof_setup(hts, config, generic_interface):
     print("Got HTS:", hts)
 
     print("----------------- adding assumptions to the HTS definition ----------------")
-    action_vars = set()
-    for a in generic_interface.actions:
-        for v in get_free_variables(a):
-            action_vars.add(v)
-    data_inputs = hts.input_vars - action_vars
-    # remove reset and clock
-    data_inputs.remove(generic_interface.rst)
-    data_inputs.remove(generic_interface.clk)
 
     # convert to a list, we want it to be ordered now
-    data_inputs = list(data_inputs)
+    data_inputs = generic_interface.data_inputs
 
     print('Found the following data inputs:\n\t', data_inputs)
 
@@ -140,15 +81,18 @@ def ris_proof_setup(hts, config, generic_interface):
 
     # Now the system is ready to be copied
     # Create copy of system
-    hts_copy, copy_interface, copy_data_inputs, sys_equiv_output = copy_sys(hts, generic_interface, data_inputs)
-    # update the main system
-    hts.combine(hts_copy)
+    hts_copy, copy_interface, sys_equiv_output = copy_sys(hts, generic_interface)
 
-    bmc = BMCSolver(hts, config)
-    # union_vars = hts.vars.union(hts_copy.vars)
-    bmc._init_at_time(hts.vars, 2)
-    invar = hts.single_invar()
-    trans = hts.single_trans()
+    # update the main system
+    hts_comb = HTS()
+    hts_comb.combine(hts)
+    hts_comb.combine(hts_copy)
+
+    bmc = BMCSolver(hts_comb, config)
+    # union_vars = hts_comb.vars.union(hts_copy.vars)
+    bmc._init_at_time(hts_comb.vars, 2)
+    invar = hts_comb.single_invar()
+    trans = hts_comb.single_trans()
     invar0 = bmc.at_time(invar, 0)
     assume(bmc, invar0, "Assuming invariant at 0")
     unrolled = bmc.unroll(trans, invar, B)
@@ -174,7 +118,7 @@ def ris_proof_setup(hts, config, generic_interface):
             copy_timed_actions[t].append(bmc.at_time(ca, t))
         for e in copy_interface.ens:
             copy_timed_ens[t].append(bmc.at_time(e, t))
-        for cdi in copy_data_inputs:
+        for cdi in copy_interface.data_inputs:
             copy_timed_data_inputs[t].append(bmc.at_time(cdi, t))
         assert len(copy_timed_actions[t]) == len(copy_timed_ens[t])
 
@@ -484,8 +428,31 @@ def reduced_instruction_set(hts, config, generic_interface, strategy='simple'):
     if res:
         print("Property holds")
         print("IMPORTANT NOTE: This procedure for finding the reduced instruction set relies on proving that actions don't disable each other -- use IC3 for this.")
+
     else:
         raise RuntimeError("Bummer: {} delay failed -- try a more advanced approach".format(strategy))
+
+    return res
+
+def create_action_constraints(actions:List[FNode])->FNode:
+    '''
+    Creates a disjunctive constraint for reduced instruction sets.
+    Assumes that reduced_instruction_set was called and returned True, i.e. all actions can be separated
+    '''
+
+    disjuncts = []
+    for i in range(len(actions)):
+        conjuncts = []
+        for j, a in enumerate(actions):
+            if i == j:
+                conjuncts.append(a)
+            else:
+                conjuncts.append(Not(a))
+        disjuncts.append(And(conjuncts))
+
+    assert len(disjuncts) > 0, "Expecting non-empty disjunction"
+
+    return Or(disjuncts)
 
 
 def read_verilog(filepath:Path, topmod:str, config:btor_config)->Tuple[HTS, FNode, FNode]:
