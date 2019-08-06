@@ -106,7 +106,7 @@ def ris_proof_setup(hts, config, generic_interface):
             timed_actions[t].append(bmc.at_time(a, t))
         for e in generic_interface.ens:
             timed_ens[t].append(bmc.at_time(e, t))
-        for di in data_inputs:
+        for di in generic_interface.data_inputs:
             timed_data_inputs[t].append(bmc.at_time(di, t))
         assert len(timed_actions[t]) == len(timed_ens[t])
 

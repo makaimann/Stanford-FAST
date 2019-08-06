@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
-from pysmt.shortcuts import BV, EqualsOrIff
+from pysmt.shortcuts import BV, EqualsOrIff, TRUE
 
 from cosa.environment import reset_env
 from cosa.representation import TS
@@ -9,7 +9,8 @@ from cosa.utils.formula_mngm import get_free_variables
 
 from por_utils import btor_config, interface
 
-from ris import reduced_instruction_set, read_verilog, test_actions
+from ris import reduced_instruction_set, read_verilog, test_actions, create_action_constraints
+from por import find_gir
 
 def main():
     reset_env()
@@ -56,7 +57,17 @@ def main():
     generic_interface = interface(actions=actions, ens=en, rst=rst, clk=clk, data_inputs=data_inputs)
 
     test_actions(actions, en)
-    reduced_instruction_set(hts, config, generic_interface, strategy='simple')
+    if reduced_instruction_set(hts, config, generic_interface, strategy='simple'):
+        action_constraints = create_action_constraints(actions)
+        print("Found RIS constraint:", action_constraints)
+
+        # add action constraints to system
+        ts = TS()
+        ts.set_behavior(TRUE(), TRUE(), action_constraints)
+        hts.add_ts(ts)
+
+        find_gir(hts, config, generic_interface)
+
 
 if __name__ == "__main__":
     main()
