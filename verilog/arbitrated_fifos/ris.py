@@ -63,7 +63,10 @@ def ris_proof_setup(hts, config, generic_interface):
     print('Found the following data inputs:\n\t', data_inputs)
 
     # assume reset is zero
-    rst_zero = EqualsOrIff(generic_interface.rst, BV(0, 1))
+    if generic_interface.rst is not None:
+        rst_zero = EqualsOrIff(generic_interface.rst, BV(0, 1))
+    else:
+        rst_zero = TRUE()
     print("Simple assumption: Hold reset at zero:\n\t", rst_zero)
 
     # assume data stays constant

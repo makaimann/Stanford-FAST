@@ -52,7 +52,7 @@ def copy_sys(hts:HTS, generic_interface:interface)->Tuple[HTS, interface, FNode]
 
     copy_interface = interface(actions=[substitute(a, copymap) for a in generic_interface.actions],
                                ens=[substitute(e, copymap) for e in generic_interface.ens],
-                               rst=substitute(generic_interface.rst, copymap),
+                               rst=substitute(generic_interface.rst, copymap) if generic_interface.rst is not None else TRUE(),
                                clk=substitute(generic_interface.clk, copymap),
                                data_inputs=[TS.get_prefix(d, prefix) for d in generic_interface.data_inputs])
 

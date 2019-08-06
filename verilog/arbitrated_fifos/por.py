@@ -83,4 +83,39 @@ def find_gir(hts:HTS, config:NamedTuple, generic_interface:interface)->List[Tupl
                 # print(model)
                 # raise RuntimeError() #temporary for debugging
 
-    print("Found the following members of an independence relationshiop:", girs)
+    return girs
+
+def safe_to_remove_empty_instruction(hts:HTS, config:NamedTuple, generic_interface:interface)->bool:
+    '''
+    Returns true if we can remove the empty instruction (e.g. no actions, a stutter step)
+    '''
+    B = 2
+
+    bmc = BMCSolver(hts, config)
+    bmc._init_at_time(hts.vars, 2)
+
+    invar = hts.single_invar()
+    trans = hts.single_trans()
+    invar0 = bmc.at_time(invar, 0)
+
+    assume(bmc, invar0, "Assuming invariant at 0")
+
+    unrolled = bmc.unroll(trans, invar, B)
+    assume(bmc, unrolled, "Assuming unrolled system")
+
+    timed_actions = defaultdict(list)
+    timed_ens     = defaultdict(list)
+    timed_data_inputs = defaultdict(list)
+    for t in range(B):
+        for a in generic_interface.actions:
+            timed_actions[t].append(bmc.at_time(a, t))
+        for e in generic_interface.ens:
+            timed_ens[t].append(bmc.at_time(e, t))
+        for di in generic_interface.data_inputs:
+            timed_data_inputs[t].append(bmc.at_time(di, t))
+        assert len(timed_actions[t]) == len(timed_ens[t])
+
+    assert hts.state_vars, "Expecting at least one state variable"
+    state_changed = Not(And([EqualsOrIff(bmc.at_time(sv, 0), bmc.at_time(sv, 1)) for sv in hts.state_vars]))
+
+    return not bmc.solver.solver.solve([Not(Or(timed_actions[0])), state_changed])

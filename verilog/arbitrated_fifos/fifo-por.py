@@ -10,7 +10,7 @@ from cosa.utils.formula_mngm import get_free_variables
 from por_utils import btor_config, interface
 
 from ris import reduced_instruction_set, read_verilog, test_actions, create_action_constraints
-from por import find_gir
+from por import find_gir, safe_to_remove_empty_instruction
 
 def main():
     reset_env()
@@ -67,7 +67,8 @@ def main():
         hts.add_ts(ts)
 
         find_gir(hts, config, generic_interface)
-
+        if safe_to_remove_empty_instruction(hts, config, generic_interface):
+            print("Can safely remove empty instruction")
 
 if __name__ == "__main__":
     main()
