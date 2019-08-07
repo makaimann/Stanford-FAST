@@ -1,7 +1,9 @@
 from collections import namedtuple
 from cosa.analyzers.mcsolver import BMCSolver
-from cosa.utils.formula_mngm import substitute, get_free_variables
+from cosa.environment import ExtHRPrinter
 from cosa.representation import HTS, TS
+from cosa.utils.formula_mngm import substitute, get_free_variables
+from six.moves import cStringIO
 from typing import List, NamedTuple, Tuple
 from pysmt.fnode import FNode
 from pysmt.shortcuts import And, BOOL, BV, BVULE, BVType, EqualsOrIff, Implies, Not, Or, simplify, Solver, Symbol, TRUE
@@ -10,6 +12,22 @@ from pysmt.shortcuts import And, BOOL, BV, BVULE, BVType, EqualsOrIff, Implies, 
 btor_config = namedtuple('btor_config', 'abstract_clock opt_circuit no_arrays symbolic_init strategy skip_solving smt2_tracing solver_name incremental solver_options synchronize verific')
 interface   = namedtuple('interface', 'actions ens rst clk data_inputs')
 temporal_sys = namedtuple('temporal_sys', 'bmc, timed_actions, timed_ens, timed_data_inputs, copy_timed_actions, copy_timed_ens, copy_timed_data_inputs, timed_sys_equiv')
+
+class NextPrinter(ExtHRPrinter):
+    def walk_symbol(self, formula):
+        if TS.is_prime(formula):
+            self.write("next(%s)"%TS.get_ref_var(formula).symbol_name())
+        else:
+            self.write("%s"%formula.symbol_name())
+
+def formulas_to_str(formulas:List[FNode], separator="\n")->str:
+    buf = cStringIO()
+    printer = NextPrinter(buf)
+    for f in formulas[:-1]:
+        printer.printer(f)
+        buf.write(separator)
+    printer.printer(formulas[-1])
+    return buf.getvalue()
 
 def assume(bmc:BMCSolver, assumption:FNode, msg:str=None, serialize:int=None):
     if msg is not None:
