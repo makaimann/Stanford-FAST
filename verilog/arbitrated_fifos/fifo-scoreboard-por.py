@@ -68,7 +68,8 @@ def main():
         ts.set_behavior(TRUE(), TRUE(), action_constraints)
         hts.add_ts(ts)
 
-        find_gir(hts, config, generic_interface)
+        ind = find_gir(hts, config, generic_interface)
+        print("Found the following independence relationships:", ind)
         if safe_to_remove_empty_instruction(hts, config, generic_interface):
             print("Can safely remove empty instruction")
 

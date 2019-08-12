@@ -354,14 +354,6 @@ def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode],
         res = True
 
         while res:
-            # check that we haven't over-constrained with the learned witness
-            if not bmc.solver.solver.solve([antecedent]):
-                res2 = bmc.solver.solver.solve([sn[i-1], Not(sn[i])])
-                if res2:
-                    print("Previous model")
-                    print(model)
-                raise RuntimeError("Bummer: Over-constrained by witness -- giving up")
-
             assumptions = [antecedent, Not(prop)]
             res = bmc.solver.solver.solve(assumptions)
 
@@ -370,16 +362,17 @@ def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode],
                 # witness function depends on the property being negated at time 2
                 witness_antecedent = [Not(prop)]
                 witness_neg_consequent = []
+                complex_instruction = []
                 for ta in timed_actions[0]:
                     vta = bmc.solver.solver.get_value(ta).constant_value()
-                    if monotonic:
-                        if vta:
-                            witness_antecedent.append(ta)
+                    if vta:
+                        complex_instruction.append(ta)
+                        witness_antecedent.append(ta)
                     else:
-                        if vta:
-                            witness_antecedent.append(ta)
-                        else:
-                            witness_antecedent.append(Not(ta))
+                        complex_instruction.append(Not(ta))
+                if monotonic:
+                    # create shallow copy
+                    witness_antecedent = list(complex_instruction)
                 # only considering time 0 and only allow delayed action at time 1
                 # to be more general, could let the witness constraint range over time 0 and time 1
                 for cta in copy_timed_actions[0]:
@@ -395,6 +388,14 @@ def ceg_strategy(unrolled_sys:temporal_sys, delay:List[FNode], sn:List[FNode],
                 print("Learned witness constraint:")
                 assume(bmc, witness_constraint, serialize=100)
                 print()
+
+                # check that we haven't over-constrained with the learned witness
+                if not bmc.solver.solver.solve([And(complex_instruction)]):
+                    print("Failed with complex instruction:", complex_instruction)
+                    # print("Previous model")
+                    # print(model)
+                    # raise RuntimeError("Bummer: Over-constrained by witness -- giving up")
+
             else:
                 continue
     return True
