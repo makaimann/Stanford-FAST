@@ -3,7 +3,7 @@ import argparse
 import itertools
 import subprocess
 
-YOSYS_SCRIPT="""read_verilog {MACROS} -sv {SRC}; prep -top {TOP}; hierarchy -check; memory; flatten;; setundef -undriven -expose; write_btor {TOP}.btor"""
+YOSYS_SCRIPT="""read_verilog {MACROS} -sv {SRC}; prep -top {TOP}; hierarchy -check; memory; flatten;; setundef -undriven -expose; write_btor {NAME}.btor"""
 
 scoreboard_files = ['FF.v', 'MagicPacketTracker.v', 'SimpleScoreboard.sv']
 
@@ -27,7 +27,11 @@ def gen_btor(design, depth, width, num_fifos):
     SRC = " ".join(itertools.chain(design_files[design], scoreboard_files))
     TOP = top_mods[design]
 
-    child = subprocess.Popen(["yosys", "-l", "yosys.log", "-p", YOSYS_SCRIPT.format(MACROS=MACROS, SRC=SRC, TOP=TOP)],
+    NAME = TOP + "_w%i"%width + "_d%i"%depth
+    if design == "arbitrated":
+        NAME += "_n%i"%num_fifos
+
+    child = subprocess.Popen(["yosys", "-l", "yosys.log", "-p", YOSYS_SCRIPT.format(MACROS=MACROS, SRC=SRC, TOP=TOP, NAME=NAME)],
                              stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT)
     stdout,stderr = child.communicate()
@@ -38,7 +42,7 @@ def gen_btor(design, depth, width, num_fifos):
 
     print("Successfully wrote btor file to {TOP}.btor".format(TOP=TOP))
 
-    return "{}.btor".format(TOP)
+    return NAME + ".btor"
 
 
 def main():

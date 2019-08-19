@@ -4,7 +4,7 @@ import os
 import sys
 from to_btor import gen_btor
 
-COSA_SCRIPT="time CoSA -i {BTOR} -k {K} --verification safety --full-trace"
+COSA_SCRIPT="time CoSA -i {BTOR} -k {K} --verification safety --solver-name btor"
 
 def main():
     parser = argparse.ArgumentParser(description="Generate BTOR collateral for buggy Verilog systems.")
