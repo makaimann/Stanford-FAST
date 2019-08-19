@@ -2,7 +2,7 @@
 `define SIMPLE_SCOREBOARD
 
   module SimpleScoreboard(clk, rst, push, pop, start, data_in, data_out,
-                          data_out_vld, prop_signal);
+                          data_out_vld, en, prop_signal);
    parameter DEPTH  = 8,
              WIDTH  = 8,
              CNTWID = $clog2(DEPTH) + 1;
@@ -18,9 +18,9 @@
    input wire [WIDTH-1:0]                    data_out;
 
    output wire                               data_out_vld;
+   output wire                               en;
    output wire                               prop_signal;
 
-   wire                                      en;
    wire                                      next_en;
 
    wire                                      magic_packet_exited;

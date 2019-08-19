@@ -6,7 +6,7 @@ import subprocess
 import sys
 
 YOSYS_COMMAND="""
-read_verilog -sv -formal {source_files}; prep -top {top}; \
+read_verilog -sv -formal {macros} {source_files}; prep -top {top}; \
 memory_map; \
 {synchronize}; \
 chformal -assume -early; \
@@ -35,6 +35,7 @@ if __name__ == '__main__':
     parser.add_argument('--top', '-t', default='top')
     parser.add_argument('--synchronize', action='store_true')
     parser.add_argument('--quiet', '-q', action='store_true')
+    parser.add_argument('--macros', help='macros in -Dname=value format to be sent to Yosys')
 
     args = parser.parse_args()
 
@@ -46,7 +47,8 @@ if __name__ == '__main__':
 
     res = subprocess.check_call(['yosys',
                                  log_flag, 'yosys.log',
-                                 '-p', YOSYS_COMMAND.format(source_files=" ".join(args.source_files),
+                                 '-p', YOSYS_COMMAND.format(macros=args.macros,
+                                                            source_files=" ".join(args.source_files),
                                                             top=args.top,
                                                             synchronize=synchronize)
     ])

@@ -11,7 +11,7 @@ module circular_pointer_fifo(clk, rst, push, pop, data_in,
   input wire pop;
   input wire [WIDTH-1:0] data_in;
   (* keep *)
-  output wire full;
+  output reg full;
   output wire empty;
   output wire [WIDTH-1:0] data_out;
 
@@ -32,14 +32,16 @@ module circular_pointer_fifo(clk, rst, push, pop, data_in,
   logic [PTRWID-1:0] wrPtr;
   wire  [PTRWID-1:0] wrPtrNxt;
 
-  assign wrPtrNxt = rst ? 1 : wrPtr + {{(PTRWID-1){1'b0}}, push};
+  assign wrPtrNxt = wrPtr + {{(PTRWID-1){1'b0}}, push};
 
-  FF #(.WIDTH(PTRWID)) ff_wrPtr (.rst(rst),
-                                 .clk(clk),
-                                 .en(clkEn),
-                                 .D(wrPtrNxt),
-                                 .Q(wrPtr)
-                                 );
+  FF
+    #(.WIDTH(PTRWID))
+   ff_wrPtr (.rst(rst),
+             .clk(clk),
+             .en(clkEn),
+             .D(wrPtrNxt),
+             .Q(wrPtr)
+             );
 
   //************** rdPtr logic ****************//
 
@@ -47,7 +49,7 @@ module circular_pointer_fifo(clk, rst, push, pop, data_in,
   logic [PTRWID-1:0] rdPtr;
   wire  [PTRWID-1:0] rdPtrNxt;
 
-  assign rdPtrNxt = rst ? {PTRWID{1'b0}} : rdPtr + {{(PTRWID-1){1'b0}}, pop};
+  assign rdPtrNxt = rdPtr + {{(PTRWID-1){1'b0}}, pop};
 
   FF #(.WIDTH(PTRWID)) ff_rdPtr (.rst(rst),
                                  .clk(clk),
@@ -56,10 +58,12 @@ module circular_pointer_fifo(clk, rst, push, pop, data_in,
                                  .Q(rdPtr));
 
   //************** empty and full logic ********//
-  // assign empty = rdPtr == wrPtr;
-  // assign full = (rdPtr[PTRWID-2:0] == wrPtr[PTRWID-2:0]) & (rdPtr[PTRWID-1] != wrPtr[PTRWID-1]);
    assign empty = (cnt == 0);
-   assign full = (cnt == DEPTH);
+
+   // BUG: full is a clock-cycle out of date
+   always @(posedge clk) begin
+      full <= (cnt == DEPTH);
+   end
 
   //************** latch entries ***************//
 

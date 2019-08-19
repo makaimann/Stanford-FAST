@@ -23,12 +23,13 @@ def gen_btor(design, depth, width, en, num_fifos):
     '''
     Generates btor and returns the name of the generated file. Throws a runtime error if generation fails.
     '''
-    int_en = 1 if en else 0
 
-    MACROS="-DDEPTH={} -DWIDTH={} -DEN= -DNUM_FIFOS={}".format(depth, width, int_en, num_fifos)
+    en_macro = "-DEN" if en else ""
+    MACROS="-DDEPTH={} -DWIDTH={} -DNUM_FIFOS={} {}".format(depth, width, num_fifos, en_macro)
     SRC = " ".join(itertools.chain(design_files[design], scoreboard_files))
     TOP = top_mods[design]
 
+    int_en = 1 if en else 0
     NAME = TOP + "_w%i"%width + "_d%i"%depth + "_e%i"%int_en
 
     if design == "arbitrated":
