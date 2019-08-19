@@ -79,7 +79,7 @@ module circular_pointer_top(clk, rst, start, push, data_in, pop,
  `else
    always @* begin
       if (!initstate)
-        assert(prop_signal);
+        data_integrity: assert(prop_signal);
    end
  `endif
 
