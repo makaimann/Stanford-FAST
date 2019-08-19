@@ -19,15 +19,18 @@ top_mods = {
     "arbitrated": 'arbitrated_top'
 }
 
-def gen_btor(design, depth, width, num_fifos):
+def gen_btor(design, depth, width, en, num_fifos):
     '''
     Generates btor and returns the name of the generated file. Throws a runtime error if generation fails.
     '''
-    MACROS="-DDEPTH={} -DWIDTH={} -DNUM_FIFOS={}".format(depth, width, num_fifos)
+    int_en = 1 if en else 0
+
+    MACROS="-DDEPTH={} -DWIDTH={} -DEN= -DNUM_FIFOS={}".format(depth, width, int_en, num_fifos)
     SRC = " ".join(itertools.chain(design_files[design], scoreboard_files))
     TOP = top_mods[design]
 
-    NAME = TOP + "_w%i"%width + "_d%i"%depth
+    NAME = TOP + "_w%i"%width + "_d%i"%depth + "_e%i"%int_en
+
     if design == "arbitrated":
         NAME += "_n%i"%num_fifos
 
@@ -40,7 +43,7 @@ def gen_btor(design, depth, width, num_fifos):
         print(stderr)
         raise RuntimeError("Failed")
 
-    print("Successfully wrote btor file to {TOP}.btor".format(TOP=TOP))
+    print("Successfully wrote btor file to {NAME}.btor".format(NAME=NAME))
 
     return NAME + ".btor"
 
@@ -51,9 +54,10 @@ def main():
     parser.add_argument("--depth", type=int, default=8)
     parser.add_argument("--width", type=int, default=8)
     parser.add_argument("--num-fifos", type=int, default=4)
+    parser.add_argument("--en", action="store_true", default=False)
     args = parser.parse_args()
 
-    gen_btor(args.design, args.depth, args.width, args.num_fifos)
+    gen_btor(args.design, args.depth, args.width, args.en, args.num_fifos)
 
 if __name__ == "__main__":
     main()
