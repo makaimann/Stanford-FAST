@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+
+import argparse
+
 from pathlib import Path
 
 from pysmt.fnode import FNode
@@ -13,7 +16,7 @@ from por_utils import btor_config, interface, formulas_to_str
 from ris import reduced_instruction_set, read_verilog, read_btor, test_actions, create_action_constraints
 from por import find_gir, safe_to_remove_empty_instruction
 
-def main():
+def prove(btorname):
     reset_env()
     config = btor_config(abstract_clock=True,
                          opt_circuit=False,
@@ -28,8 +31,9 @@ def main():
                          synchronize=False,
                          verific=False)
 
-#    hts, _, _ = read_verilog(Path("./circular_pointer_top.v"), "circular_pointer_top", config)
-    hts, _, _ = read_btor(Path("./circular_pointer_top.btor"), "", config)
+    design_name = btorname.replace('.btor', '')
+
+    hts, _, _ = read_btor(Path(btorname), "", config)
 
     symbols = dict()
     for v in hts.vars:
@@ -89,10 +93,16 @@ def main():
             print("Can safely remove empty instruction")
             assumptions.append(Or(actions))
 
-        with open("assumptions.txt", "w") as f:
+        assumption_filename = "assumptions-{}.txt".format(design_name)
+        with open(assumption_filename, "w") as f:
             f.write(formulas_to_str(assumptions))
 
-        print("Wrote assumptions to assumptions.txt")
+        print("Wrote assumptions to {}".format(assumption_filename))
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Reads a BTOR file and proves RIS/POR")
+    parser.add_argument('btor', help='btor filename')
+
+    args = parser.parse_args()
+
+    prove(args.btor)
