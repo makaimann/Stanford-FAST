@@ -51,6 +51,7 @@ module shift_register_fifo(clk, rst, data_in, push, pop,
       end
    endgenerate
 
+   // BUG: it's short one element (needs one more register)
    generate
       genvar j;
       for(j = 0; j < DEPTH-1; j=j+1) begin : next_val_comp
