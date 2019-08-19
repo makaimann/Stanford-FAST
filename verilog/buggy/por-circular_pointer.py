@@ -1,0 +1,98 @@
+#!/usr/bin/env python3
+from pathlib import Path
+
+from pysmt.fnode import FNode
+from pysmt.shortcuts import And, BV, EqualsOrIff, Implies, Not, Or, TRUE
+
+from cosa.environment import reset_env
+from cosa.representation import TS
+from cosa.utils.formula_mngm import get_free_variables, substitute
+
+from por_utils import btor_config, interface, formulas_to_str
+
+from ris import reduced_instruction_set, read_verilog, read_btor, test_actions, create_action_constraints
+from por import find_gir, safe_to_remove_empty_instruction
+
+def main():
+    reset_env()
+    config = btor_config(abstract_clock=True,
+                         opt_circuit=False,
+                         no_arrays=False,
+                         symbolic_init=True,
+                         strategy='FWD',
+                         skip_solving=False,
+                         smt2_tracing=None,
+                         solver_name='btor',
+                         incremental=True,
+                         solver_options=None,
+                         synchronize=False,
+                         verific=False)
+
+#    hts, _, _ = read_verilog(Path("./circular_pointer_top.v"), "circular_pointer_top", config)
+    hts, _, _ = read_btor(Path("./circular_pointer_top.btor"), "", config)
+
+    symbols = dict()
+    for v in hts.vars:
+        symbols[v.symbol_name()] = v
+
+    clk      = symbols['clk']
+    rst      = symbols['rst']
+    start    = symbols['start']
+    push     = symbols['push']
+    data_in  = symbols['data_in']
+    pop      = symbols['pop']
+    empty    = symbols['empty']
+    full     = symbols['full']
+    data_out = symbols['data_out']
+    en       = symbols['sb.en']
+
+    actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(pop, BV(1, 1)), EqualsOrIff(start, BV(1, 1))]
+    en      = [EqualsOrIff(full, BV(0, 1)), EqualsOrIff(empty, BV(0, 1)), EqualsOrIff(en, BV(0, 1))]
+
+    action2en = {}
+    for a, e in zip(actions, en):
+        action2en[a] = e
+
+    action_vars = set()
+    for a in actions:
+        for v in get_free_variables(a):
+            action_vars.add(v)
+    data_inputs = hts.input_vars - action_vars
+    # remove reset and clock
+    data_inputs.remove(clk)
+    data_inputs.remove(rst)
+
+    data_inputs = list(data_inputs)
+
+    generic_interface = interface(actions=actions, ens=en, rst=None, clk=clk, data_inputs=data_inputs)
+
+    assumptions = []
+    test_actions(actions, en)
+    if reduced_instruction_set(hts, config, generic_interface, strategy='ceg'):
+        action_constraints = create_action_constraints(actions)
+        print("Found RIS constraint:", action_constraints)
+
+        assumptions.append(action_constraints)
+
+        # add action constraints to system
+        ts = TS()
+        ts.set_behavior(TRUE(), TRUE(), action_constraints)
+        hts.add_ts(ts)
+
+        girs = find_gir(hts, config, generic_interface)
+        print("Found the following members of the independence relationship:", girs)
+
+        for a0, a1 in girs:
+            assumptions.append(Implies(And(a1, action2en[a0]), Not(TS.to_next(a0))))
+
+        if safe_to_remove_empty_instruction(hts, config, generic_interface):
+            print("Can safely remove empty instruction")
+            assumptions.append(Or(actions))
+
+        with open("assumptions.txt", "w") as f:
+            f.write(formulas_to_str(assumptions))
+
+        print("Wrote assumptions to assumptions.txt")
+
+if __name__ == "__main__":
+    main()
