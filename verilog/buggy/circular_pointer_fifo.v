@@ -59,11 +59,7 @@ module circular_pointer_fifo(clk, rst, push, pop, data_in,
 
   //************** empty and full logic ********//
    assign empty = (cnt == 0);
-
-   // BUG: full is a clock-cycle out of date
-   always @(posedge clk) begin
-      full <= (cnt == DEPTH);
-   end
+   assign full  = (cnt == DEPTH);
 
   //************** latch entries ***************//
 

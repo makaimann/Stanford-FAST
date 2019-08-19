@@ -2,12 +2,12 @@
 import argparse
 import os
 import sys
-from to_btor import gen_btor
+from process_source import gen_btor
 
 COSA_SCRIPT="time CoSA -i {BTOR} -k {K} --verification safety --solver-name btor"
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate BTOR collateral for buggy Verilog systems.")
+    parser = argparse.ArgumentParser(description="Generate BTOR and run on it.")
     parser.add_argument("design", choices=["shift_register", "circular_pointer", "arbitrated", "example"])
     parser.add_argument("--depth", type=int, default=8)
     parser.add_argument("--width", type=int, default=8)

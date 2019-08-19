@@ -17,7 +17,7 @@ flatten; \
 delete -output; \
 techmap; \
 abc -g AND -fast; \
-write_aiger -I -B -zinit -map {TOP}.aim {TOP}.aig;
+write_aiger -I -B -zinit -map {TOP}.aim {NAME}.aig;
 """
 
 scoreboard_files = ['FF.v', 'MagicPacketTracker.v', 'SimpleScoreboard.sv']
