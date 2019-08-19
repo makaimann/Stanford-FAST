@@ -15,7 +15,8 @@ def main():
     parser.add_argument("-k", type=int, default=80)
     args = parser.parse_args()
 
-    btorfile = gen_btor(args.design, args.depth, args.width, args.num_fifos)
+    # never runs with enable macro
+    btorfile = gen_btor(args.design, args.depth, args.width, False, args.num_fifos)
 
     try:
         os.system(COSA_SCRIPT.format(BTOR=btorfile, K=args.k))
