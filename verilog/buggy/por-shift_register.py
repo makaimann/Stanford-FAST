@@ -5,7 +5,7 @@ import argparse
 from pathlib import Path
 
 from pysmt.fnode import FNode
-from pysmt.shortcuts import And, BV, EqualsOrIff, Implies, Not, Or, TRUE
+from pysmt.shortcuts import And, BV, EqualsOrIff, Implies, Not, Or, TRUE, BVULT
 
 from cosa.environment import reset_env
 from cosa.representation import TS
@@ -49,9 +49,12 @@ def prove(btorname):
     full     = symbols['full']
     data_out = symbols['data_out']
     en       = symbols['sb.en']
+    count    = symbols['dut.count']
 
     actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(pop, BV(1, 1)), EqualsOrIff(start, BV(1, 1))]
     en      = [EqualsOrIff(full, BV(0, 1)), EqualsOrIff(empty, BV(0, 1)), EqualsOrIff(en, BV(0, 1))]
+
+    guards  = [BVULT(count, BV(2**(count.symbol_type().width-1)-1, count.symbol_type().width))]
 
     action2en = {}
     for a, e in zip(actions, en):
@@ -83,7 +86,7 @@ def prove(btorname):
         ts.set_behavior(TRUE(), TRUE(), action_constraints)
         hts.add_ts(ts)
 
-        girs = find_gir(hts, config, generic_interface)
+        girs = find_gir(hts, config, generic_interface, guards)
         print("Found the following members of the independence relationship:", girs)
 
         for a0, a1, g in girs:
