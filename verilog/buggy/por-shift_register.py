@@ -5,7 +5,7 @@ import argparse
 from pathlib import Path
 
 from pysmt.fnode import FNode
-from pysmt.shortcuts import And, BV, EqualsOrIff, Implies, Not, Or, TRUE, BVULT
+from pysmt.shortcuts import And, BV, EqualsOrIff, Implies, Not, Or, TRUE, BVULT, BVUGT
 
 from cosa.environment import reset_env
 from cosa.representation import TS
@@ -50,9 +50,10 @@ def prove(btorname):
     data_out = symbols['data_out']
     en       = symbols['sb.en']
     count    = symbols['dut.count']
+    sbcnt  = symbols['sb.cnt']
 
     actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(pop, BV(1, 1)), EqualsOrIff(start, BV(1, 1))]
-    en      = [EqualsOrIff(full, BV(0, 1)), EqualsOrIff(empty, BV(0, 1)), EqualsOrIff(en, BV(0, 1))]
+    en      = [EqualsOrIff(full, BV(0, 1)), EqualsOrIff(empty, BV(0, 1)), And(EqualsOrIff(en, BV(0, 1)), BVUGT(count, BV(0, sbcnt.symbol_type().width)))]
 
     guards  = [BVULT(count, BV(2**(count.symbol_type().width-1)-1, count.symbol_type().width))]
 

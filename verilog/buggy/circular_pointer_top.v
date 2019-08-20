@@ -17,12 +17,15 @@ module circular_pointer_top(clk, rst, start, push, data_in, pop,
    (* keep *)
    wire                        en;
 
+   wire                        qual_push;
+   assign qual_push = start | push;
+
    circular_pointer_fifo
      #(.WIDTH(WIDTH),
        .DEPTH(DEPTH))
    f (.clk(clk),
 	    .rst(rst),
-	    .push(push),
+	    .push(qual_push),
 	    .pop(pop),
       .data_in(data_in),
       .empty(empty),
@@ -35,7 +38,7 @@ module circular_pointer_top(clk, rst, start, push, data_in, pop,
 
    sb (.clk(clk),
        .rst(rst),
-       .push(push),
+       .push(qual_push),
        .pop(pop),
        .start(start),
        .data_in(data_in),

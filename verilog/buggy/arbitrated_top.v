@@ -1,6 +1,6 @@
 `define FORMAL
 module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
-                      data_out, prop_signal);
+                      data_out, gnt, prop_signal);
 
    parameter NUM_FIFOS   =    `NUM_FIFOS,
              WIDTH       =    `WIDTH,
@@ -14,13 +14,14 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
    input [WIDTH-1:0]        data_in;
    input                    start; // for scoreboard
    output [WIDTH-1:0]       data_out;
+   output [NUM_FIFOS-1:0]   gnt;
    output                   prop_signal;
 
    // scoreboard signals
    wire                     data_out_vld;
    wire                     en;
 
-   wire [NUM_FIFOS-1:0]     full, empty, gnt, guarded_reqs;
+   wire [NUM_FIFOS-1:0]     full, empty, guarded_reqs;
    wire [WIDTH-1:0]         fifo_data_out [NUM_FIFOS-1:0];
 
    wire [NUM_FIFOS-1:0]     decoded_push, qual_push;

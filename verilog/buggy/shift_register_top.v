@@ -18,6 +18,8 @@ module shift_register_top(clk, rst, start, push, pop, data_in,
    (* keep *)
    wire                            en;
 
+   wire                            qual_push;
+   assign qual_push = push | start;
 
    always @* begin : environmental_constraints
       assume (~empty | ~pop);
@@ -30,7 +32,7 @@ module shift_register_top(clk, rst, start, push, pop, data_in,
    dut(.clk(clk),
        .rst(rst),
        .data_in(data_in),
-       .push(push),
+       .push(qual_push),
        .pop(pop),
        .empty(empty),
        .full(full),
@@ -41,7 +43,7 @@ module shift_register_top(clk, rst, start, push, pop, data_in,
        .WIDTH(WIDTH))
    sb (.clk(clk),
        .rst(rst),
-       .push(push),
+       .push(qual_push),
        .pop(pop),
        .start(start),
        .data_in(data_in),
