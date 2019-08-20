@@ -18,6 +18,7 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
 
    // scoreboard signals
    wire                     data_out_vld;
+   wire                     en;
 
    wire [NUM_FIFOS-1:0]     full, empty, gnt, guarded_reqs;
    wire [WIDTH-1:0]         fifo_data_out [NUM_FIFOS-1:0];
@@ -94,21 +95,117 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
        .data_in(data_in),
        .data_out(data_out),
        .data_out_vld(data_out_vld),
+       .en(en),
        .prop_signal(prop_signal));
 
 `ifdef FORMAL
-   reg initstate = 1'b1;
+   reg                         initstate = 1'b1;
+   reg                         trail_initstate = 1'b1;
 
    always @(posedge clk) begin
       initstate <= 1'b0;
+      trail_initstate <= initstate;
    end
 
    always @* begin
       assume(rst == initstate);
-      if(!initstate)
-        assert(prop_signal);
+      assume(!full | !push);
+      assume(!empty | !pop);
    end
-   `endif
+
+ `ifdef EN
+   always @(posedge clk) begin
+      if (!trail_initstate) begin
+         // reqs doesn't disable start
+        assert property(!(!$past(start) &&
+                          !$past(push) &&
+                          !$past(reqs[0]) &&
+                          !$past(reqs[1]) &&
+                          !$past(reqs[2]) &&
+                          $past(reqs[3]) &&
+                          !$past(en)) || !en);
+         assert property(!(!$past(start) &&
+                           !$past(push) &&
+                           !$past(reqs[0]) &&
+                           !$past(reqs[1]) &&
+                           $past(reqs[2]) &&
+                           !$past(reqs[3]) &&
+                           !$past(en)) || !en);
+         assert property(!(!$past(start) &&
+                           !$past(push) &&
+                           !$past(reqs[0]) &&
+                           $past(reqs[1]) &&
+                           !$past(reqs[2]) &&
+                           !$past(reqs[3]) &&
+                           !$past(en)) || !en);
+         assert property(!(!$past(start) &&
+                           !$past(push) &&
+                           $past(reqs[0]) &&
+                           !$past(reqs[1]) &&
+                           !$past(reqs[2]) &&
+                           !$past(reqs[3]) &&
+                           !$past(en)) || !en);
+
+         // push doesn't disable start
+         assert property(!(!$past(start) &&
+                           $past(push) &&
+                           !$past(reqs[0]) &&
+                           !$past(reqs[1]) &&
+                           !$past(reqs[2]) &&
+                           !$past(reqs[3]) &&
+                           !$past(en)) || !en);
+
+         // reqs doesn't disable push
+        assert property(!(!$past(start) &&
+                          !$past(push) &&
+                          !$past(reqs[0]) &&
+                          !$past(reqs[1]) &&
+                          !$past(reqs[2]) &&
+                          $past(reqs[3]) &&
+                          !$past(full)) || !full);
+         assert property(!(!$past(start) &&
+                           !$past(push) &&
+                           !$past(reqs[0]) &&
+                           !$past(reqs[1]) &&
+                           $past(reqs[2]) &&
+                           !$past(reqs[3]) &&
+                           !$past(full)) || !full);
+         assert property(!(!$past(start) &&
+                           !$past(push) &&
+                           !$past(reqs[0]) &&
+                           $past(reqs[1]) &&
+                           !$past(reqs[2]) &&
+                           !$past(reqs[3]) &&
+                           !$past(full)) || !full);
+         assert property(!(!$past(start) &&
+                           !$past(push) &&
+                           $past(reqs[0]) &&
+                           !$past(reqs[1]) &&
+                           !$past(reqs[2]) &&
+                           !$past(reqs[3]) &&
+                           !$past(full)) || !full);
+
+         // start doesn't disable push
+         assert property(!($past(start) &&
+                           !$past(push) &&
+                           !$past(reqs[0]) &&
+                           !$past(reqs[1]) &&
+                           !$past(reqs[2]) &&
+                           !$past(reqs[3]) &&
+                           !$past(full)) || !full);
+
+         // don't need to check requests -- guarded internally so the enable condition is just True
+
+      end
+   end
+ `else
+   always @* begin
+      if (!initstate)
+        data_integrity: assert(prop_signal);
+   end
+ `endif
+
+`endif
 
 endmodule // arbitrated_fifos
 
