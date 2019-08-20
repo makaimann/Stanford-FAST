@@ -31,7 +31,7 @@ module shift_register_fifo(clk, rst, data_in, push, pop,
    end
 
    assign empty = (count == 0);
-   assign full  = (count == DEPTH);
+   assign full  = (count >= DEPTH);
 
    wire [WIDTH-1:0]   next_val [DEPTH-1:0];
    wire [WIDTH-1:0]   entries  [DEPTH-1:0];
@@ -55,7 +55,7 @@ module shift_register_fifo(clk, rst, data_in, push, pop,
    generate
       genvar j;
       for(j = 0; j < DEPTH-1; j=j+1) begin : next_val_comp
-         assign next_val[j] = ((push & pop & (count - 1 == j)) | (push & (count == j))) ? data_in :
+         assign next_val[j] = (push & ((count - pop) == j)) ? data_in :
                               pop ? entries[j+1] : 0;
       end
    endgenerate

@@ -69,6 +69,7 @@ def prove(btorname):
 
     data_inputs = list(data_inputs)
 
+    # shouldn't pass with no reset
     generic_interface = interface(actions=actions, ens=en, rst=None, clk=clk, data_inputs=data_inputs)
 
     assumptions = []

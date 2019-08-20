@@ -53,7 +53,7 @@ def prove(btorname):
     sbcnt  = symbols['sb.cnt']
 
     actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(pop, BV(1, 1)), EqualsOrIff(start, BV(1, 1))]
-    en      = [EqualsOrIff(full, BV(0, 1)), EqualsOrIff(empty, BV(0, 1)), And(EqualsOrIff(en, BV(0, 1)), BVUGT(count, BV(0, sbcnt.symbol_type().width)))]
+    en      = [Not(full), EqualsOrIff(empty, BV(0, 1)), And(EqualsOrIff(en, BV(0, 1)), BVUGT(count, BV(0, sbcnt.symbol_type().width)))]
 
     guards  = [BVULT(count, BV(2**(count.symbol_type().width-1)-1, count.symbol_type().width))]
 
@@ -72,7 +72,7 @@ def prove(btorname):
 
     data_inputs = list(data_inputs)
 
-    generic_interface = interface(actions=actions, ens=en, rst=None, clk=clk, data_inputs=data_inputs)
+    generic_interface = interface(actions=actions, ens=en, rst=rst, clk=clk, data_inputs=data_inputs)
 
     assumptions = []
     test_actions(actions, en)
