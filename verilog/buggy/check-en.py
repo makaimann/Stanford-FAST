@@ -15,7 +15,7 @@ def main():
     parser.add_argument("--width", type=int, default=8)
     parser.add_argument("--num-fifos", type=int, default=4)
     parser.add_argument("-k", type=int, default=80)
-    parser.add_argument("--options", "-o", help='options to pass to abc')
+    parser.add_argument("--options", "-o", help='options to pass to abc', default='')
     args = parser.parse_args()
 
     # always runs with enable macro
