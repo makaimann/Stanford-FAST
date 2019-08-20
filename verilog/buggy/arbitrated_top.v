@@ -28,7 +28,7 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
    genvar                   k;
    generate
       for(k=0; k < NUM_FIFOS; k = k+1) begin : qual_push
-         assign decoded_push[k] = push & (push_sel == k);
+         assign decoded_push[k] = (push & (push_sel == k)) | (start & (push_sel == TRACKED));
       end
    endgenerate
 
@@ -48,7 +48,7 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
             #(.WIDTH(WIDTH), .DEPTH(DEPTH))
          f (.clk(clk),
             .rst(rst),
-            .push(push && (push_sel == i)),
+            .push(qual_push),
             .pop(gnt[i]),
             .data_in(data_in),
             .full(full[i]),
@@ -90,9 +90,9 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
 
    sb (.clk(clk),
        .rst(rst),
-       .push(push & (push_sel == TRACKED)),
+       .push(decoded_push),
        .pop(gnt[TRACKED]),
-       .start(start),
+       .start(start & (push_sel == TRACKED)),
        .data_in(data_in),
        .data_out(data_out),
        .data_out_vld(data_out_vld),
@@ -111,7 +111,6 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
    always @* begin
       assume(rst == initstate);
       assume(!full | !push);
-      assume(!empty | !pop);
    end
 
  `ifdef EN
