@@ -3,7 +3,7 @@ module circular_pointer_top(clk, rst, start, push, data_in, pop,
                             empty, full, data_out, prop_signal);
 
    parameter WIDTH      =    `WIDTH,
-             DEPTH      =    `DEPTH;
+             DEPTH      =    `DEPTH+1; // bug: only supports powers of two
 
    input                       clk, rst, start, push, pop;
    input [WIDTH-1:0]           data_in;
