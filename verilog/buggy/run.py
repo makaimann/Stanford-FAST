@@ -4,7 +4,7 @@ import os
 import sys
 from process_source import gen_btor
 
-COSA_SCRIPT="time CoSA -i {BTOR} -k {K} --verification safety --solver-name btor"
+COSA_SCRIPT="time CoSA -i {BTOR} -k {K} --verification safety --solver-name btor --full-trace --vcd"
 
 def main():
     parser = argparse.ArgumentParser(description="Generate BTOR and run on it.")

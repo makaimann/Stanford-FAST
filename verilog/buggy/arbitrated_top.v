@@ -24,13 +24,7 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
    wire [NUM_FIFOS-1:0]     full, empty, guarded_reqs;
    wire [WIDTH-1:0]         fifo_data_out [NUM_FIFOS-1:0];
 
-   wire [NUM_FIFOS-1:0]     decoded_push, qual_push;
-   genvar                   k;
-   generate
-      for(k=0; k < NUM_FIFOS; k = k+1) begin : qual_push
-         assign decoded_push[k] = (push & (push_sel == k));
-      end
-   endgenerate
+   wire [NUM_FIFOS-1:0]     qual_push;
 
    // can re-direct to different fifo
    // BUG: doesn't update tag
@@ -38,7 +32,8 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
      #(.WIDTH(NUM_FIFOS))
    rrs
      (.en(push),
-      .requests(decoded_push & ~full),
+      .input_sel(push_sel),
+      .allowed(~full),
       .sel(qual_push));
 
    genvar i;
@@ -48,7 +43,7 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
             #(.WIDTH(WIDTH), .DEPTH(DEPTH))
          f (.clk(clk),
             .rst(rst),
-            .push(qual_push),
+            .push(qual_push[i]),
             .pop(gnt[i]),
             .data_in(data_in),
             .full(full[i]),
@@ -85,12 +80,12 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
 
 
    SimpleScoreboard
-     #(.DEPTH(DEPTH),
+     #(.DEPTH(DEPTH+2),
        .WIDTH(WIDTH))
 
    sb (.clk(clk),
        .rst(rst),
-       .push(decoded_push),
+       .push(push & (push_sel == TRACKED)),
        .pop(gnt[TRACKED]),
        .start(start & (push_sel == TRACKED)),
        .data_in(data_in),
@@ -110,7 +105,7 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
 
    always @* begin
       assume(rst == initstate);
-      assume(!full | !push);
+      assume(!(&full) | !push);
    end
 
  `ifdef EN
