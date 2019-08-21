@@ -72,7 +72,7 @@ module shift_register_top(clk, rst, start, push, pop, data_in,
          // push doesn't disable pop
          assert property(!(!$past(start) && $past(push) && !$past(pop) && !$past(empty)) || !empty);
 
-         // decided not to treat start as an action -- using a guard instead, could also add an invariant !empty <-> sb.cnt != 0
+         // decided not to treat start as an action -- using a guard instead, could also add an invariant !empty & !en <-> sb.cnt != 0
         //  // push doesn't disable start
         //  assert property(!(!$past(start) && $past(push) && !$past(pop) && !$past(en)) || !en);
         //  // pop doesn't disable start

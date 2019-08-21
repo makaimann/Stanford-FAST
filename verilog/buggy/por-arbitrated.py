@@ -55,11 +55,15 @@ def prove(btorname):
 
     # Not parameterized -- assumes N=4
     actions = [And(EqualsOrIff(push, BV(1, 1)), EqualsOrIff(push_sel, BV(0, 2))), And(EqualsOrIff(push, BV(1, 1)), EqualsOrIff(push_sel, BV(1, 2))), And(EqualsOrIff(push, BV(1, 1)), EqualsOrIff(push_sel, BV(2, 2))), And(EqualsOrIff(push, BV(1, 1)), EqualsOrIff(push_sel, BV(3, 2))),
-               EqualsOrIff(start, BV(1, 1)), EqualsOrIff(BVExtract(reqs, 0, 0), BV(1, 1)), EqualsOrIff(BVExtract(reqs, 1, 1), BV(1, 1)), EqualsOrIff(BVExtract(reqs, 2, 2), BV(1, 1)), EqualsOrIff(BVExtract(reqs, 3, 3), BV(1, 1))]
+               EqualsOrIff(BVExtract(reqs, 0, 0), BV(1, 1)), EqualsOrIff(BVExtract(reqs, 1, 1), BV(1, 1)), EqualsOrIff(BVExtract(reqs, 2, 2), BV(1, 1)), EqualsOrIff(BVExtract(reqs, 3, 3), BV(1, 1))]
+    # EqualsOrIff(start, BV(1, 1)),
     en      = [EqualsOrIff(BVExtract(full, 0, 0), BV(0, 1)), EqualsOrIff(BVExtract(full, 1, 1), BV(0, 1)), EqualsOrIff(BVExtract(full, 2, 2), BV(0, 1)), EqualsOrIff(BVExtract(full, 3, 3), BV(0, 1)),
-               And(EqualsOrIff(push_sel, BV(0, 2)), And(EqualsOrIff(en, BV(0, 1)), BVUGT(sbcnt, BV(0, sbcnt.symbol_type().width)))), TRUE(), TRUE(), TRUE(), TRUE()]
+               TRUE(), TRUE(), TRUE(), TRUE()]
+    # And(EqualsOrIff(push_sel, BV(0, 2)), And(EqualsOrIff(en, BV(0, 1)), BVUGT(sbcnt, BV(0, sbcnt.symbol_type().width)))),
 
     predicates = [EqualsOrIff(gnt, BV(1, 4)), EqualsOrIff(gnt, BV(2, 4)), EqualsOrIff(gnt, BV(4, 4)), EqualsOrIff(gnt, BV(8, 4))]
+
+    guards = [Not(EqualsOrIff(sbcnt, BV(0, sbcnt.symbol_type().width)))]
 
     action2en = {}
     for a, e in zip(actions, en):
