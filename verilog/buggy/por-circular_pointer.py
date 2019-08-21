@@ -51,8 +51,12 @@ def prove(btorname):
     en       = symbols['sb.en']
     count    = symbols['sb.cnt']
 
-    actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(pop, BV(1, 1)), EqualsOrIff(start, BV(1, 1))]
-    en      = [EqualsOrIff(full, BV(0, 1)), EqualsOrIff(empty, BV(0, 1)), And(EqualsOrIff(en, BV(0, 1)), BVUGT(count, BV(0, count.symbol_type().width)))]
+    actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(pop, BV(1, 1))]
+    # , EqualsOrIff(start, BV(1, 1))]
+    en      = [EqualsOrIff(full, BV(0, 1)), EqualsOrIff(empty, BV(0, 1))]
+    # , And(EqualsOrIff(en, BV(0, 1)), EqualsOrIff(full, BV(0, 1)))]
+
+    guards = [Not(EqualsOrIff(count, BV(0, count.symbol_type().width)))]
 
     action2en = {}
     for a, e in zip(actions, en):
@@ -84,7 +88,7 @@ def prove(btorname):
         ts.set_behavior(TRUE(), TRUE(), action_constraints)
         hts.add_ts(ts)
 
-        girs = find_gir(hts, config, generic_interface)
+        girs = find_gir(hts, config, generic_interface, guards)
         print("Found the following members of the independence relationship:", girs)
 
         for a0, a1, g in girs:

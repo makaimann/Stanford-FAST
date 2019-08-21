@@ -111,6 +111,7 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
    always @* begin
       assume(rst == initstate);
       assume(!full | !push);
+      assume(!full | !start);
    end
 
  `ifdef EN

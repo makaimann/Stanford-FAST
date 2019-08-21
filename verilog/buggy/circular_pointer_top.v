@@ -1,6 +1,6 @@
 `define FORMAL
 module circular_pointer_top(clk, rst, start, push, data_in, pop,
-           empty, full, data_out, prop_signal);
+                            empty, full, data_out, prop_signal);
 
    parameter WIDTH      =    `WIDTH,
              DEPTH      =    `DEPTH;
@@ -17,15 +17,12 @@ module circular_pointer_top(clk, rst, start, push, data_in, pop,
    (* keep *)
    wire                        en;
 
-   wire                        qual_push;
-   assign qual_push = start | push;
-
    circular_pointer_fifo
      #(.WIDTH(WIDTH),
        .DEPTH(DEPTH))
    f (.clk(clk),
 	    .rst(rst),
-	    .push(qual_push),
+	    .push(push),
 	    .pop(pop),
       .data_in(data_in),
       .empty(empty),
@@ -38,7 +35,7 @@ module circular_pointer_top(clk, rst, start, push, data_in, pop,
 
    sb (.clk(clk),
        .rst(rst),
-       .push(qual_push),
+       .push(push),
        .pop(pop),
        .start(start),
        .data_in(data_in),
@@ -65,18 +62,22 @@ module circular_pointer_top(clk, rst, start, push, data_in, pop,
  `ifdef EN
    always @(posedge clk) begin
       if (!trail_initstate) begin
-         // pop doesn't disable start
-        assert property(!(!$past(start) && !$past(push) && $past(pop) && !$past(en)) || !en);
-         // pop doesn't disable push
+        // pop doesn't disable push
         assert property(!(!$past(start) && !$past(push) && $past(pop) && !$past(full)) || !full);
-         // push doesn't disable start
-        assert property(!(!$past(start) && $past(push) && !$past(pop) && !$past(en)) || !en);
-         // push doesn't disable pop
-         assert property(!(!$past(start) && $past(push) && !$past(pop) && !$past(empty)) || !empty);
-         // start doesn't disable pop
-        assert property(!($past(start) && !$past(push) && !$past(pop) && !$past(empty)) || !empty);
-         // start doesn't disable push
-        assert property(!($past(start) && !$past(push) && !$past(pop) && !$past(full)) || !full);
+        // push doesn't disable pop
+        assert property(!(!$past(start) && $past(push) && !$past(pop) && !$past(empty)) || !empty);
+
+        // decided not to treat start as an action -- it's data instead
+        // all this changes is you need an extra guard for POR (turns out the guard is an invariant anyway)
+
+        //  // start doesn't disable pop
+        // assert property(!($past(start) && !$past(push) && !$past(pop) && !$past(empty)) || !empty);
+        //  // start doesn't disable push
+        // assert property(!($past(start) && !$past(push) && !$past(pop) && !$past(full)) || !full);
+        //  // pop doesn't disable start
+        // assert property(!(!$past(start) && !$past(push) && $past(pop) && !$past(en)) || !en);
+        //  // push doesn't disable start
+        // assert property(!(!$past(start) && $past(push) && !$past(pop) && !$past(en)) || !en);
       end
    end
  `else
