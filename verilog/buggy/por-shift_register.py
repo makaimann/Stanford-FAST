@@ -15,6 +15,7 @@ from por_utils import btor_config, interface, formulas_to_str
 
 from ris import reduced_instruction_set, read_verilog, read_btor, test_actions, create_action_constraints
 from por import find_gir, safe_to_remove_empty_instruction
+from process_source import gen_btor
 
 def prove(btorname):
     reset_env()
@@ -106,9 +107,15 @@ def prove(btorname):
         print("Wrote assumptions to {}".format(assumption_filename))
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Reads a BTOR file and proves RIS/POR")
-    parser.add_argument('btor', help='btor filename')
-
+    parser = argparse.ArgumentParser(description="Generate BTOR collateral for buggy Verilog systems and check RIS/POR side conditions.")
+    parser.add_argument("--depth", type=int, default=8)
+    parser.add_argument("--width", type=int, default=8)
+    parser.add_argument("--num-fifos", type=int, default=4)
+    parser.add_argument("-k", type=int, default=80)
+    parser.add_argument("--options", "-o", help='options to pass to abc', default='')
     args = parser.parse_args()
 
-    prove(args.btor)
+    # never runs with enable macro
+    btorfile = gen_btor('shift_register', args.depth, args.width, False, args.num_fifos)
+
+    prove(btorfile)
