@@ -28,7 +28,7 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
    genvar                   k;
    generate
       for(k=0; k < NUM_FIFOS; k = k+1) begin : qual_push
-         assign decoded_push[k] = (push & (push_sel == k)) | (start & (push_sel == TRACKED));
+         assign decoded_push[k] = (push & (push_sel == k)) | (start & (push_sel == TRACKED) & (k == TRACKED));
       end
    endgenerate
 
@@ -37,7 +37,7 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
    round_robin_selector
      #(.WIDTH(NUM_FIFOS))
    rrs
-     (.en(push),
+     (.en(push | start),
       .requests(decoded_push & ~full),
       .sel(qual_push));
 
