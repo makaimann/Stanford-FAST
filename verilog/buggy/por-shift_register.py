@@ -50,12 +50,14 @@ def prove(btorname):
     data_out = symbols['data_out']
     en       = symbols['sb.en']
     count    = symbols['dut.count']
-    sbcnt  = symbols['sb.cnt']
+    sbcnt    = symbols['sb.cnt']
 
-    actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(pop, BV(1, 1)), EqualsOrIff(start, BV(1, 1))]
-    en      = [Not(full), EqualsOrIff(empty, BV(0, 1)), And(EqualsOrIff(en, BV(0, 1)), BVUGT(count, BV(0, sbcnt.symbol_type().width)))]
+    actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(pop, BV(1, 1))]
+    # , EqualsOrIff(start, BV(1, 1))]
+    en      = [Not(full), EqualsOrIff(empty, BV(0, 1))]
+    # , And(EqualsOrIff(en, BV(0, 1)), BVUGT(count, BV(0, sbcnt.symbol_type().width)))]
 
-    guards  = [BVULT(count, BV(2**(count.symbol_type().width-1)-1, count.symbol_type().width))]
+    guards  = [And(BVULT(count, BV(2**(count.symbol_type().width-1)-1, count.symbol_type().width)), Not(EqualsOrIff(sbcnt, BV(0, sbcnt.symbol_type().width))))]
 
     action2en = {}
     for a, e in zip(actions, en):

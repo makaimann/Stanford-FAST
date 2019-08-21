@@ -18,9 +18,6 @@ module shift_register_top(clk, rst, start, push, pop, data_in,
    (* keep *)
    wire                            en;
 
-   wire                            qual_push;
-   assign qual_push = push | start;
-
    always @* begin : environmental_constraints
       assume (~empty | ~pop);
       assume (~full | ~push);
@@ -32,7 +29,7 @@ module shift_register_top(clk, rst, start, push, pop, data_in,
    dut(.clk(clk),
        .rst(rst),
        .data_in(data_in),
-       .push(qual_push),
+       .push(push),
        .pop(pop),
        .empty(empty),
        .full(full),
@@ -43,7 +40,7 @@ module shift_register_top(clk, rst, start, push, pop, data_in,
        .WIDTH(WIDTH))
    sb (.clk(clk),
        .rst(rst),
-       .push(qual_push),
+       .push(push),
        .pop(pop),
        .start(start),
        .data_in(data_in),
@@ -70,18 +67,20 @@ module shift_register_top(clk, rst, start, push, pop, data_in,
  `ifdef EN
    always @(posedge clk) begin
       if (!trail_initstate) begin
-         // pop doesn't disable start
-        assert property(!(!$past(start) && !$past(push) && $past(pop) && !$past(en)) || !en);
          // pop doesn't disable push
         assert property(!(!$past(start) && !$past(push) && $past(pop) && !$past(full)) || !full);
-         // push doesn't disable start
-        assert property(!(!$past(start) && $past(push) && !$past(pop) && !$past(en)) || !en);
          // push doesn't disable pop
          assert property(!(!$past(start) && $past(push) && !$past(pop) && !$past(empty)) || !empty);
-         // start doesn't disable pop
-        assert property(!($past(start) && !$past(push) && !$past(pop) && !$past(empty)) || !empty);
-         // start doesn't disable push
-        assert property(!($past(start) && !$past(push) && !$past(pop) && !$past(full)) || !full);
+
+         // decided not to treat start as an action -- using a guard instead, could also add an invariant !empty <-> sb.cnt != 0
+        //  // push doesn't disable start
+        //  assert property(!(!$past(start) && $past(push) && !$past(pop) && !$past(en)) || !en);
+        //  // pop doesn't disable start
+        //  assert property(!(!$past(start) && !$past(push) && $past(pop) && !$past(en)) || !en);
+        //  // start doesn't disable pop
+        // assert property(!($past(start) && !$past(push) && !$past(pop) && !$past(empty)) || !empty);
+        //  // start doesn't disable push
+        // assert property(!($past(start) && !$past(push) && !$past(pop) && !$past(full)) || !full);
       end
    end
  `else
