@@ -1,6 +1,6 @@
 `define FIFO
 module circular_pointer_fifo(clk, rst, push, pop, data_in,
-            full, empty, data_out);
+                             full, empty, data_out);
   parameter WIDTH = 8;
   parameter DEPTH = 8;
   parameter PTRWID = $clog2(DEPTH) + 1;

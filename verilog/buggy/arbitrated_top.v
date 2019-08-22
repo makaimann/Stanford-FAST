@@ -1,5 +1,5 @@
 `define FORMAL
-module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
+module arbitrated_top(clk, rst, push, data_in, start, req, gnt_sel,
                       data_out, gnt, prop_signal);
 
    parameter NUM_FIFOS   =    `NUM_FIFOS,
@@ -8,11 +8,12 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
              TAGWIDTH    =    $clog2(NUM_FIFOS),
              TRACKED     =    0;
 
-   input                    clk, rst, push;
-   input [TAGWIDTH-1:0]     push_sel;
-   input [NUM_FIFOS-1:0]    reqs;
+   input                    clk, rst;
+   input [NUM_FIFOS-1:0]    push;
    input [WIDTH-1:0]        data_in;
    input                    start; // for scoreboard
+   input                    req;
+   input [TAGWIDTH-1:0]     gnt_sel;
    output [WIDTH-1:0]       data_out;
    output [NUM_FIFOS-1:0]   gnt;
    output                   prop_signal;
@@ -21,20 +22,20 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
    wire                     data_out_vld;
    wire                     en;
 
-   wire [NUM_FIFOS-1:0]     full, empty, guarded_reqs;
+   wire [NUM_FIFOS-1:0]     full, empty;
    wire [WIDTH-1:0]         fifo_data_out [NUM_FIFOS-1:0];
 
-   wire [NUM_FIFOS-1:0]     qual_push;
+   // wire [NUM_FIFOS-1:0]     qual_push;
 
-   // can re-direct to different fifo
-   // BUG: doesn't update tag
-   round_robin_selector
-     #(.WIDTH(NUM_FIFOS))
-   rrs
-     (.en(push),
-      .input_sel(push_sel),
-      .allowed(~full),
-      .sel(qual_push));
+   // // can re-direct to different fifo
+   // // BUG: doesn't update tag
+   // round_robin_selector
+   //   #(.WIDTH(NUM_FIFOS))
+   // rrs
+   //   (.en(push),
+   //    .input_sel(push_sel),
+   //    .allowed(~full),
+   //    .sel(qual_push));
 
    genvar i;
    generate
@@ -43,7 +44,7 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
             #(.WIDTH(WIDTH), .DEPTH(DEPTH))
          f (.clk(clk),
             .rst(rst),
-            .push(qual_push[i]),
+            .push(push[i]),
             .pop(gnt[i]),
             .data_in(data_in),
             .full(full[i]),
@@ -51,7 +52,8 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
             .data_out(fifo_data_out[i]));
 
          // For now assuming every non-empty fifo is requesting
-         assign guarded_reqs[i] = reqs[i] & ~empty[i];
+         //assign guarded_reqs[i] = reqs[i] & ~empty[i];
+         assign gnt[i] = (req & (gnt_sel == i));
       end
    endgenerate
 
@@ -65,11 +67,16 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
 
    // abstract arbiter
    always @* begin : abstract_arbiter
-      assume((guarded_reqs != 0) | (gnt == 0));
-      assume((guarded_reqs == 0) | (|(gnt & guarded_reqs)));
-      assume((guarded_reqs == 0) || ((gnt != 0) && ((gnt & (gnt - 1)) == 0)));
+      assume (empty[gnt_sel] | (gnt != 0));
+      // assume((guarded_reqs != 0) | (gnt == 0));
+      // assume((guarded_reqs == 0) | (|(gnt & guarded_reqs)));
+      // assume((guarded_reqs == 0) || ((gnt != 0) && ((gnt & (gnt - 1)) == 0)));
    end
    // end abstract arbiter
+
+   // priority arbiter
+   // assign gnt = (reqs) & (reqs - 1);
+   // end priority arbiter
 
    onehot_mux
      #(.CHANNELS(NUM_FIFOS),
@@ -85,9 +92,9 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
 
    sb (.clk(clk),
        .rst(rst),
-       .push(push & (push_sel == TRACKED)),
+       .push(push[TRACKED]),
        .pop(gnt[TRACKED]),
-       .start(start & (push_sel == TRACKED)),
+       .start(start & push[TRACKED]),
        .data_in(data_in),
        .data_out(data_out),
        .data_out_vld(data_out_vld),
@@ -105,7 +112,15 @@ module arbitrated_top(clk, rst, push, push_sel, reqs, data_in, start,
 
    always @* begin
       assume(rst == initstate);
-      assume(!(&full) | !push);
+      //assume(!(&full) | !push);
+      assume(!full[0] | !push[0]);
+      assume(!full[1] | !push[1]);
+      assume(!full[2] | !push[2]);
+      assume(!full[3] | !push[3]);
+      assume(!empty[0] | !gnt[0]);
+      assume(!empty[1] | !gnt[1]);
+      assume(!empty[2] | !gnt[2]);
+      assume(!empty[3] | !gnt[3]);
    end
 
  `ifdef EN

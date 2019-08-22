@@ -44,25 +44,36 @@ def prove(btorname):
     rst      = symbols['rst']
     start    = symbols['start']
     push     = symbols['push']
-    push_sel = symbols['push_sel']
+    # push_sel = symbols['push_sel']
     data_in  = symbols['data_in']
     empty    = symbols['empty']
     full     = symbols['full']
     data_out = symbols['data_out']
     en       = symbols['sb.en']
-    reqs     = symbols['reqs']
+    # reqs     = symbols['reqs']
     gnt      = symbols['gnt']
     sbcnt    = symbols['sb.cnt']
+    req      = symbols['req']
+    gnt_sel  = symbols['gnt_sel']
 
     # Not parameterized -- assumes N=4
-    actions = [And(EqualsOrIff(push, BV(1, 1)), EqualsOrIff(push_sel, BV(0, 2))), And(EqualsOrIff(push, BV(1, 1)), EqualsOrIff(push_sel, BV(1, 2))), And(EqualsOrIff(push, BV(1, 1)), EqualsOrIff(push_sel, BV(2, 2))), And(EqualsOrIff(push, BV(1, 1)), EqualsOrIff(push_sel, BV(3, 2))),
-               EqualsOrIff(BVExtract(reqs, 0, 0), BV(1, 1)), EqualsOrIff(BVExtract(reqs, 1, 1), BV(1, 1)), EqualsOrIff(BVExtract(reqs, 2, 2), BV(1, 1)), EqualsOrIff(BVExtract(reqs, 3, 3), BV(1, 1))]
+    # actions = [And(EqualsOrIff(push, BV(1, 1)), EqualsOrIff(push_sel, BV(0, 2))), And(EqualsOrIff(push, BV(1, 1)), EqualsOrIff(push_sel, BV(1, 2))), And(EqualsOrIff(push, BV(1, 1)), EqualsOrIff(push_sel, BV(2, 2))), And(EqualsOrIff(push, BV(1, 1)), EqualsOrIff(push_sel, BV(3, 2))),
+    #            EqualsOrIff(BVExtract(reqs, 0, 0), BV(1, 1)), EqualsOrIff(BVExtract(reqs, 1, 1), BV(1, 1)), EqualsOrIff(BVExtract(reqs, 2, 2), BV(1, 1)), EqualsOrIff(BVExtract(reqs, 3, 3), BV(1, 1))]
+    actions = [EqualsOrIff(BVExtract(push, 0, 0), BV(1, 1)), EqualsOrIff(BVExtract(push, 1, 1), BV(1, 1)),
+               EqualsOrIff(BVExtract(push, 2, 2), BV(1, 1)), EqualsOrIff(BVExtract(push, 3, 3), BV(1, 1)),
+               And(EqualsOrIff(req, BV(1, 1)), EqualsOrIff(gnt_sel, BV(0, 2))),
+               And(EqualsOrIff(req, BV(1, 1)), EqualsOrIff(gnt_sel, BV(1, 2))),
+               And(EqualsOrIff(req, BV(1, 1)), EqualsOrIff(gnt_sel, BV(2, 2))),
+               And(EqualsOrIff(req, BV(1, 1)), EqualsOrIff(gnt_sel, BV(3, 2)))]
     # EqualsOrIff(start, BV(1, 1)),
-    en      = [EqualsOrIff(BVExtract(full, 0, 0), BV(0, 1)), EqualsOrIff(BVExtract(full, 1, 1), BV(0, 1)), EqualsOrIff(BVExtract(full, 2, 2), BV(0, 1)), EqualsOrIff(BVExtract(full, 3, 3), BV(0, 1)),
-               TRUE(), TRUE(), TRUE(), TRUE()]
+    en      = [EqualsOrIff(BVExtract(full, 0, 0), BV(0, 1)), EqualsOrIff(BVExtract(full, 1, 1), BV(0, 1)),
+               EqualsOrIff(BVExtract(full, 2, 2), BV(0, 1)), EqualsOrIff(BVExtract(full, 3, 3), BV(0, 1)),
+               EqualsOrIff(BVExtract(empty, 0, 0), BV(0, 1)), EqualsOrIff(BVExtract(empty, 1, 1), BV(0, 1)),
+               EqualsOrIff(BVExtract(empty, 2, 2), BV(0, 1)), EqualsOrIff(BVExtract(empty, 3, 3), BV(0, 1))]
     # And(EqualsOrIff(push_sel, BV(0, 2)), And(EqualsOrIff(en, BV(0, 1)), BVUGT(sbcnt, BV(0, sbcnt.symbol_type().width)))),
 
-    predicates = [EqualsOrIff(gnt, BV(1, 4)), EqualsOrIff(gnt, BV(2, 4)), EqualsOrIff(gnt, BV(4, 4)), EqualsOrIff(gnt, BV(8, 4))]
+    # predicates = [EqualsOrIff(gnt, BV(1, 4)), EqualsOrIff(gnt, BV(2, 4)), EqualsOrIff(gnt, BV(4, 4)), EqualsOrIff(gnt, BV(8, 4))]
+    predicates = []
 
     guards = [Not(EqualsOrIff(sbcnt, BV(0, sbcnt.symbol_type().width)))]
 
