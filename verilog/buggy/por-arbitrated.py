@@ -129,7 +129,10 @@ def prove(btorname, depth):
 
         assumption_filename = "assumptions-{}.txt".format(design_name)
         with open(assumption_filename, "w") as f:
-            f.write(formulas_to_str(assumptions))
+            # super hacky, but need to quote name with square brackets in it
+            res = formulas_to_str(assumptions)
+            res = res.replace("gen_fifos[0].f.cnt", "'gen_fifos[0].f.cnt'")
+            f.write(res)
 
         print("Wrote assumptions to {}".format(assumption_filename))
 
