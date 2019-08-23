@@ -155,6 +155,11 @@ module arbitrated_top(clk, rst, push, flat_data_in, start, req, gnt_sel,
                                   !$past(req) &&
                                   !$past(empty[l]))
                                 || !empty[l]);
+
+               assert property (!(!$past(|push) &&
+                                  $past(req) &&
+                                  !$past(full[l]))
+                                || !full[l]);
             end
          end
       end
