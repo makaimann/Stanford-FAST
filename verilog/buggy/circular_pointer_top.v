@@ -63,9 +63,9 @@ module circular_pointer_top(clk, rst, start, push, data_in, pop,
    always @(posedge clk) begin
       if (!trail_initstate) begin
         // pop doesn't disable push
-        assert property(!(!$past(start) && !$past(push) && $past(pop) && !$past(full)) || !full);
+        assert property(!(!$past(push) && $past(pop) && !$past(full)) || !full);
         // push doesn't disable pop
-        assert property(!(!$past(start) && $past(push) && !$past(pop) && !$past(empty)) || !empty);
+        assert property(!($past(push) && !$past(pop) && !$past(empty)) || !empty);
 
         // decided not to treat start as an action -- it's data instead
         // all this changes is you need an extra guard for POR (turns out the guard is an invariant anyway)

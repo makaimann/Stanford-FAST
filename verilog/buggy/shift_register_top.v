@@ -68,9 +68,9 @@ module shift_register_top(clk, rst, start, push, pop, data_in,
    always @(posedge clk) begin
       if (!trail_initstate) begin
          // pop doesn't disable push
-        assert property(!(!$past(start) && !$past(push) && $past(pop) && !$past(full)) || !full);
+        assert property(!(!$past(push) && $past(pop) && !$past(full)) || !full);
          // push doesn't disable pop
-         assert property(!(!$past(start) && $past(push) && !$past(pop) && !$past(empty)) || !empty);
+         assert property(!($past(push) && !$past(pop) && !$past(empty)) || !empty);
 
          // decided not to treat start as an action -- using a guard instead, could also add an invariant !empty & !en <-> sb.cnt != 0
         //  // push doesn't disable start
