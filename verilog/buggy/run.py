@@ -8,7 +8,7 @@ from process_source import gen_btor
 
 def main():
     parser = argparse.ArgumentParser(description="Generate BTOR and run on it.")
-    parser.add_argument("design", choices=["shift_register", "circular_pointer", "arbitrated", "example"])
+    parser.add_argument("design", choices=["shift_register", "circular_pointer", "arbitrated", "arbitrated_encoded", "example"])
     parser.add_argument("--depth", type=int, default=8)
     parser.add_argument("--width", type=int, default=8)
     parser.add_argument("--num-fifos", type=int, default=4)

@@ -10,7 +10,7 @@ yosys-abc -c 'read_aiger {aigfile}; fold; strash; {verification} {options}; writ
 
 def main():
     parser = argparse.ArgumentParser(description="Generate AIG collateral for buggy Verilog systems and check enable conditions.")
-    parser.add_argument("design", choices=["shift_register", "circular_pointer", "arbitrated", "example"])
+    parser.add_argument("design", choices=["shift_register", "circular_pointer", "arbitrated", "arbitrated_encoded", "example"])
     parser.add_argument("--depth", type=int, default=8)
     parser.add_argument("--width", type=int, default=8)
     parser.add_argument("--num-fifos", type=int, default=4)
