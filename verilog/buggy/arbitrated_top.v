@@ -1,5 +1,5 @@
 `define FORMAL
-module arbitrated_top(clk, rst, push, push_sel, flat_data_in, start, req, gnt_sel,
+module arbitrated_top(clk, rst, push, flat_data_in, start, req, gnt_sel,
                       data_out, gnt, prop_signal);
 
    parameter NUM_FIFOS   =    `NUM_FIFOS,
@@ -8,8 +8,8 @@ module arbitrated_top(clk, rst, push, push_sel, flat_data_in, start, req, gnt_se
              TAGWIDTH    =    $clog2(NUM_FIFOS),
              TRACKED     =    1;
 
-   input                    clk, rst, push;
-   input [TAGWIDTH-1:0]     push_sel;
+   input                    clk, rst;
+   input [NUM_FIFOS-1:0]    push;
    input [NUM_FIFOS*WIDTH-1:0] flat_data_in;
    input                    start; // for scoreboard
    input                    req;
@@ -65,7 +65,7 @@ module arbitrated_top(clk, rst, push, push_sel, flat_data_in, start, req, gnt_se
             #(.WIDTH(WIDTH), .DEPTH(DEPTH))
          f (.clk(clk),
             .rst(rst),
-            .push(push & (push_sel == i)),
+            .push(push[i]),
             .pop(gnt[i]),
             .data_in(data_in[i] & mask),
             .full(full[i]),
@@ -113,9 +113,9 @@ module arbitrated_top(clk, rst, push, push_sel, flat_data_in, start, req, gnt_se
 
    sb (.clk(clk),
        .rst(rst),
-       .push(push & (push_sel == TRACKED)),
+       .push(push[TRACKED]),
        .pop(gnt[TRACKED]),
-       .start(start & push & (push_sel == TRACKED)),
+       .start(start & push[TRACKED]),
        .data_in(data_in[TRACKED]),
        .data_out(data_out),
        .data_out_vld(data_out_vld),
@@ -133,16 +133,16 @@ module arbitrated_top(clk, rst, push, push_sel, flat_data_in, start, req, gnt_se
 
    always @* begin
       assume(rst == initstate);
-      //assume(!(&full) | !push);
-      assume(!full[0] | !(push & (push_sel == 0)));
-      assume(!full[1] | !(push & (push_sel == 1)));
-      assume(!full[2] | !(push & (push_sel == 2)));
-      assume(!full[3] | !(push & (push_sel == 3)));
+      // //assume(!(&full) | !push);
+      // assume(!full[0] | !(push & (push_sel == 0)));
+      // assume(!full[1] | !(push & (push_sel == 1)));
+      // assume(!full[2] | !(push & (push_sel == 2)));
+      // assume(!full[3] | !(push & (push_sel == 3)));
 
-      // assume(!full[0] | !push[0]);
-      // assume(!full[1] | !push[1]);
-      // assume(!full[2] | !push[2]);
-      // assume(!full[3] | !push[3]);
+      assume(!full[0] | !push[0]);
+      assume(!full[1] | !push[1]);
+      assume(!full[2] | !push[2]);
+      assume(!full[3] | !push[3]);
       assume(!empty[0] | !gnt[0]);
       assume(!empty[1] | !gnt[1]);
       assume(!empty[2] | !gnt[2]);
@@ -153,19 +153,19 @@ module arbitrated_top(clk, rst, push, push_sel, flat_data_in, start, req, gnt_se
    always @(posedge clk) begin
       if (!trail_initstate) begin
          // reqs doesn't disable push
-         assert property (!($past(push) &&
-                          !$past(req) &&
-                          !$past(empty[0]))
+         assert property (!($past(|push) &&
+                            !$past(req) &&
+                            !$past(empty[0]))
                           || !empty[0]);
-         assert property (!($past(push) &&
+         assert property (!($past(|push) &&
                             !$past(req) &&
                             !$past(empty[1]))
                           || !empty[1]);
-         assert property (!($past(push) &&
+         assert property (!($past(|push) &&
                             !$past(req) &&
                             !$past(empty[2]))
                           || !empty[2]);
-         assert property (!($past(push) &&
+         assert property (!($past(|push) &&
                             !$past(req) &&
                             !$past(empty[3]))
                           || !empty[3]);

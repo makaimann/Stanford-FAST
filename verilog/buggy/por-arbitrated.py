@@ -55,7 +55,7 @@ def prove(btorname, depth):
     sbcnt    = symbols['sb.cnt']
     req      = symbols['req']
     gnt_sel  = symbols['gnt_sel']
-    push_sel  = symbols['push_sel']
+    # push_sel  = symbols['push_sel']
     f0cnt    = symbols['gen_fifos[0].f.cnt']
 
     # Not parameterized -- assumes N=4
@@ -71,7 +71,10 @@ def prove(btorname, depth):
     #            EqualsOrIff(BVExtract(push, 2, 2), BV(1, 1)), EqualsOrIff(BVExtract(push, 3, 3), BV(1, 1)),
     #            EqualsOrIff(req, BV(1, 1))]
 
-    actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(req, BV(1, 1))]
+    # actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(req, BV(1, 1))]
+    actions = [EqualsOrIff(BVExtract(push, 0, 0), BV(1, 1)), EqualsOrIff(BVExtract(push, 1, 1), BV(1, 1)),
+               EqualsOrIff(BVExtract(push, 2, 2), BV(1, 1)), EqualsOrIff(BVExtract(push, 3, 3), BV(1, 1)),
+               EqualsOrIff(req, BV(1, 1))]
 
     # EqualsOrIff(start, BV(1, 1)),
     # en      = [EqualsOrIff(BVExtract(full, 0, 0), BV(0, 1)), EqualsOrIff(BVExtract(full, 1, 1), BV(0, 1)),
@@ -81,8 +84,11 @@ def prove(btorname, depth):
     # en      = [EqualsOrIff(BVExtract(full, 0, 0), BV(0, 1)), EqualsOrIff(BVExtract(full, 1, 1), BV(0, 1)),
     #            EqualsOrIff(BVExtract(full, 2, 2), BV(0, 1)), EqualsOrIff(BVExtract(full, 3, 3), BV(0, 1)),
     #            EqualsOrIff(BVExtract(BVLShr(empty, BVZExt(gnt_sel, 2)), 0, 0), BV(0, 1))]
-    en = [EqualsOrIff(BVExtract(BVLShr(full, BVZExt(push_sel, 2)), 0, 0), BV(0, 1)),
-          EqualsOrIff(BVExtract(BVLShr(empty, BVZExt(gnt_sel, 2)), 0, 0), BV(0, 1))]
+    # en = [EqualsOrIff(BVExtract(BVLShr(full, BVZExt(push_sel, 2)), 0, 0), BV(0, 1)),
+    #       EqualsOrIff(BVExtract(BVLShr(empty, BVZExt(gnt_sel, 2)), 0, 0), BV(0, 1))]
+    en      = [EqualsOrIff(BVExtract(full, 0, 0), BV(0, 1)), EqualsOrIff(BVExtract(full, 1, 1), BV(0, 1)),
+               EqualsOrIff(BVExtract(full, 2, 2), BV(0, 1)), EqualsOrIff(BVExtract(full, 3, 3), BV(0, 1)),
+               EqualsOrIff(BVExtract(BVLShr(empty, BVZExt(gnt_sel, 2)), 0, 0), BV(0, 1))]
 
     # And(EqualsOrIff(push_sel, BV(0, 2)), And(EqualsOrIff(en, BV(0, 1)), BVUGT(sbcnt, BV(0, sbcnt.symbol_type().width)))),
 
@@ -110,7 +116,7 @@ def prove(btorname, depth):
 
     assumptions = []
     test_actions(actions, en)
-    if reduced_instruction_set(hts, config, generic_interface, strategy='ceg', predicates=predicates):
+    if reduced_instruction_set(hts, config, generic_interface, strategy='simple-ceg', predicates=predicates):
         action_constraints = create_action_constraints(hts, config, generic_interface)
         print("Found RIS constraint:", action_constraints)
 
