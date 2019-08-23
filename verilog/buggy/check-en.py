@@ -13,7 +13,7 @@ def main():
     parser.add_argument("design", choices=["shift_register", "circular_pointer", "arbitrated", "arbitrated_encoded", "example"])
     parser.add_argument("--depth", type=int, default=8)
     parser.add_argument("--width", type=int, default=8)
-    parser.add_argument("--num-fifos", type=int, default=4)
+    parser.add_argument("--num-fifos", type=int, default=2)
     parser.add_argument("-k", type=int, default=80)
     parser.add_argument("--options", "-o", help='options to pass to abc', default='')
     args = parser.parse_args()

@@ -73,7 +73,7 @@ def prove(btorname, depth):
 
     # actions = [EqualsOrIff(push, BV(1, 1)), EqualsOrIff(req, BV(1, 1))]
     actions = [EqualsOrIff(BVExtract(push, 0, 0), BV(1, 1)), EqualsOrIff(BVExtract(push, 1, 1), BV(1, 1)),
-               EqualsOrIff(BVExtract(push, 2, 2), BV(1, 1)), EqualsOrIff(BVExtract(push, 3, 3), BV(1, 1)),
+    #           EqualsOrIff(BVExtract(push, 2, 2), BV(1, 1)), EqualsOrIff(BVExtract(push, 3, 3), BV(1, 1)),
                EqualsOrIff(req, BV(1, 1))]
 
     # EqualsOrIff(start, BV(1, 1)),
@@ -87,8 +87,8 @@ def prove(btorname, depth):
     # en = [EqualsOrIff(BVExtract(BVLShr(full, BVZExt(push_sel, 2)), 0, 0), BV(0, 1)),
     #       EqualsOrIff(BVExtract(BVLShr(empty, BVZExt(gnt_sel, 2)), 0, 0), BV(0, 1))]
     en      = [EqualsOrIff(BVExtract(full, 0, 0), BV(0, 1)), EqualsOrIff(BVExtract(full, 1, 1), BV(0, 1)),
-               EqualsOrIff(BVExtract(full, 2, 2), BV(0, 1)), EqualsOrIff(BVExtract(full, 3, 3), BV(0, 1)),
-               EqualsOrIff(BVExtract(BVLShr(empty, BVZExt(gnt_sel, 2)), 0, 0), BV(0, 1))]
+    #           EqualsOrIff(BVExtract(full, 2, 2), BV(0, 1)), EqualsOrIff(BVExtract(full, 3, 3), BV(0, 1)),
+               EqualsOrIff(BVExtract(BVLShr(empty, BVZExt(gnt_sel, 1)), 0, 0), BV(0, 1))]
 
     # And(EqualsOrIff(push_sel, BV(0, 2)), And(EqualsOrIff(en, BV(0, 1)), BVUGT(sbcnt, BV(0, sbcnt.symbol_type().width)))),
 
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate BTOR collateral for buggy Verilog systems and check RIS/POR side conditions.")
     parser.add_argument("--depth", type=int, default=8)
     parser.add_argument("--width", type=int, default=8)
-    parser.add_argument("--num-fifos", type=int, default=4)
+    parser.add_argument("--num-fifos", type=int, default=2)
     parser.add_argument("-k", type=int, default=80)
     parser.add_argument("--options", "-o", help='options to pass to abc', default='')
     args = parser.parse_args()

@@ -96,7 +96,7 @@ def main():
     parser.add_argument("design", choices=["shift_register", "circular_pointer", "arbitrated", "arbitrated_encoded", "example"])
     parser.add_argument("--depth", type=int, default=8)
     parser.add_argument("--width", type=int, default=8)
-    parser.add_argument("--num-fifos", type=int, default=4)
+    parser.add_argument("--num-fifos", type=int, default=2)
     parser.add_argument("--en", action="store_true", default=False)
     parser.add_argument("--dest", required=True, choices=['btor', 'aig'])
     args = parser.parse_args()

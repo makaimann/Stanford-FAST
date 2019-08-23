@@ -131,99 +131,34 @@ module arbitrated_top(clk, rst, push, flat_data_in, start, req, gnt_sel,
       trail_initstate <= initstate;
    end
 
+   genvar k;
+   generate
+      for(k=0; k < NUM_FIFOS; k=k+1) begin
+         always @* begin
+            assume(!full[k] | !push[k]);
+            assume(!empty[k] | !gnt[k]);
+         end
+      end
+   endgenerate
+
    always @* begin
       assume(rst == initstate);
-      // //assume(!(&full) | !push);
-      // assume(!full[0] | !(push & (push_sel == 0)));
-      // assume(!full[1] | !(push & (push_sel == 1)));
-      // assume(!full[2] | !(push & (push_sel == 2)));
-      // assume(!full[3] | !(push & (push_sel == 3)));
-
-      assume(!full[0] | !push[0]);
-      assume(!full[1] | !push[1]);
-      assume(!full[2] | !push[2]);
-      assume(!full[3] | !push[3]);
-      assume(!empty[0] | !gnt[0]);
-      assume(!empty[1] | !gnt[1]);
-      assume(!empty[2] | !gnt[2]);
-      assume(!empty[3] | !gnt[3]);
    end
 
  `ifdef EN
-   always @(posedge clk) begin
-      if (!trail_initstate) begin
-         // reqs doesn't disable push
-         assert property (!($past(|push) &&
-                            !$past(req) &&
-                            !$past(empty[0]))
-                          || !empty[0]);
-         assert property (!($past(|push) &&
-                            !$past(req) &&
-                            !$past(empty[1]))
-                          || !empty[1]);
-         assert property (!($past(|push) &&
-                            !$past(req) &&
-                            !$past(empty[2]))
-                          || !empty[2]);
-         assert property (!($past(|push) &&
-                            !$past(req) &&
-                            !$past(empty[3]))
-                          || !empty[3]);
-
-         // don't need to check requests -- guarded internally so the enable condition is just True
-
-         // decided not to use start as an action, just using an extra guard that shouldn't matter anyway
-         // alternative is to add an invariant that empty & !en <-> sbcnt != 0
-
-         // // start doesn't disable push
-         // assert property(!($past(start) &&
-         //                   !$past(push) &&
-         //                   !$past(reqs[0]) &&
-         //                   !$past(reqs[1]) &&
-         //                   !$past(reqs[2]) &&
-         //                   !$past(reqs[3]) &&
-         //                   !$past(full)) || !full);
-                 //  // reqs doesn't disable start
-        // assert property(!(!$past(start) &&
-        //                   !$past(push) &&
-        //                   !$past(reqs[0]) &&
-        //                   !$past(reqs[1]) &&
-        //                   !$past(reqs[2]) &&
-        //                   $past(reqs[3]) &&
-        //                   !$past(en)) || !en);
-        //  assert property(!(!$past(start) &&
-        //                    !$past(push) &&
-        //                    !$past(reqs[0]) &&
-        //                    !$past(reqs[1]) &&
-        //                    $past(reqs[2]) &&
-        //                    !$past(reqs[3]) &&
-        //                    !$past(en)) || !en);
-        //  assert property(!(!$past(start) &&
-        //                    !$past(push) &&
-        //                    !$past(reqs[0]) &&
-        //                    $past(reqs[1]) &&
-        //                    !$past(reqs[2]) &&
-        //                    !$past(reqs[3]) &&
-        //                    !$past(en)) || !en);
-        //  assert property(!(!$past(start) &&
-        //                    !$past(push) &&
-        //                    $past(reqs[0]) &&
-        //                    !$past(reqs[1]) &&
-        //                    !$past(reqs[2]) &&
-        //                    !$past(reqs[3]) &&
-        //                    !$past(en)) || !en);
-
-        //  // push doesn't disable start
-        //  assert property(!(!$past(start) &&
-        //                    $past(push) &&
-        //                    !$past(reqs[0]) &&
-        //                    !$past(reqs[1]) &&
-        //                    !$past(reqs[2]) &&
-        //                    !$past(reqs[3]) &&
-        //                    !$past(en)) || !en);
-
+   genvar l;
+   generate
+      for(l = 0; l < NUM_FIFOS; l = l+1) begin
+         always @(posedge clk) begin
+            if (!trail_initstate) begin
+               assert property (!($past(|push) &&
+                                  !$past(req) &&
+                                  !$past(empty[l]))
+                                || !empty[l]);
+            end
+         end
       end
-   end
+   endgenerate
  `else
    always @* begin
       if (!initstate)
