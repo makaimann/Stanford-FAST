@@ -1,16 +1,16 @@
 `define FORMAL
-module arbitrated_top(clk, rst, push, data_in, start, req, gnt_sel,
+module arbitrated_top(clk, rst, push, push_sel, flat_data_in, start, req, gnt_sel,
                       data_out, gnt, prop_signal);
 
    parameter NUM_FIFOS   =    `NUM_FIFOS,
              WIDTH       =    `WIDTH,
              DEPTH       =    `DEPTH,
              TAGWIDTH    =    $clog2(NUM_FIFOS),
-             TRACKED     =    0;
+             TRACKED     =    1;
 
-   input                    clk, rst;
-   input [NUM_FIFOS-1:0]    push;
-   input [WIDTH-1:0]        data_in;
+   input                    clk, rst, push;
+   input [TAGWIDTH-1:0]     push_sel;
+   input [NUM_FIFOS*WIDTH-1:0] flat_data_in;
    input                    start; // for scoreboard
    input                    req;
    input [TAGWIDTH-1:0]     gnt_sel;
@@ -24,6 +24,27 @@ module arbitrated_top(clk, rst, push, data_in, start, req, gnt_sel,
 
    wire [NUM_FIFOS-1:0]     full, empty;
    wire [WIDTH-1:0]         fifo_data_out [NUM_FIFOS-1:0];
+
+   // unpack data for easier handling
+   (* keep *)
+   wire [WIDTH-1:0]         data_in  [NUM_FIFOS-1:0];
+
+   wire                     not_full;
+   assign not_full = ~full;
+
+   // Yosys generates bad btor (non-UTF-8 parseable) without this...not sure why
+   wire [WIDTH-1:0]                    all_ones;
+   assign all_ones = {WIDTH{1'b1}};
+
+   wire [WIDTH-1:0]                    mask;
+   assign mask = {WIDTH{not_full}};
+
+   generate
+      genvar                i;
+      for(i=0; i < NUM_FIFOS; i=i+1) begin : unpack_data
+         assign data_in[i]  = all_ones & flat_data_in[(i+1)*WIDTH-1:i*WIDTH];
+      end
+   endgenerate
 
    // wire [NUM_FIFOS-1:0]     qual_push;
 
@@ -44,9 +65,9 @@ module arbitrated_top(clk, rst, push, data_in, start, req, gnt_sel,
             #(.WIDTH(WIDTH), .DEPTH(DEPTH))
          f (.clk(clk),
             .rst(rst),
-            .push(push[i]),
+            .push(push & (push_sel == i)),
             .pop(gnt[i]),
-            .data_in(data_in),
+            .data_in(data_in[i] & mask),
             .full(full[i]),
             .empty(empty[i]),
             .data_out(fifo_data_out[i]));
@@ -92,10 +113,10 @@ module arbitrated_top(clk, rst, push, data_in, start, req, gnt_sel,
 
    sb (.clk(clk),
        .rst(rst),
-       .push(push[TRACKED]),
+       .push(push & (push_sel == TRACKED)),
        .pop(gnt[TRACKED]),
-       .start(start & push[TRACKED]),
-       .data_in(data_in),
+       .start(start & push & (push_sel == TRACKED)),
+       .data_in(data_in[TRACKED]),
        .data_out(data_out),
        .data_out_vld(data_out_vld),
        .en(en),
@@ -113,10 +134,15 @@ module arbitrated_top(clk, rst, push, data_in, start, req, gnt_sel,
    always @* begin
       assume(rst == initstate);
       //assume(!(&full) | !push);
-      assume(!full[0] | !push[0]);
-      assume(!full[1] | !push[1]);
-      assume(!full[2] | !push[2]);
-      assume(!full[3] | !push[3]);
+      assume(!full[0] | !(push & (push_sel == 0)));
+      assume(!full[1] | !(push & (push_sel == 1)));
+      assume(!full[2] | !(push & (push_sel == 2)));
+      assume(!full[3] | !(push & (push_sel == 3)));
+
+      // assume(!full[0] | !push[0]);
+      // assume(!full[1] | !push[1]);
+      // assume(!full[2] | !push[2]);
+      // assume(!full[3] | !push[3]);
       assume(!empty[0] | !gnt[0]);
       assume(!empty[1] | !gnt[1]);
       assume(!empty[2] | !gnt[2]);
