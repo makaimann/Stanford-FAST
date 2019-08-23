@@ -153,34 +153,22 @@ module arbitrated_top(clk, rst, push, push_sel, flat_data_in, start, req, gnt_se
    always @(posedge clk) begin
       if (!trail_initstate) begin
          // reqs doesn't disable push
-        assert property(!(!$past(start) &&
-                          !$past(push) &&
-                          !$past(reqs[0]) &&
-                          !$past(reqs[1]) &&
-                          !$past(reqs[2]) &&
-                          $past(reqs[3]) &&
-                          !$past(full)) || !full);
-         assert property(!(!$past(start) &&
-                           !$past(push) &&
-                           !$past(reqs[0]) &&
-                           !$past(reqs[1]) &&
-                           $past(reqs[2]) &&
-                           !$past(reqs[3]) &&
-                           !$past(full)) || !full);
-         assert property(!(!$past(start) &&
-                           !$past(push) &&
-                           !$past(reqs[0]) &&
-                           $past(reqs[1]) &&
-                           !$past(reqs[2]) &&
-                           !$past(reqs[3]) &&
-                           !$past(full)) || !full);
-         assert property(!(!$past(start) &&
-                           !$past(push) &&
-                           $past(reqs[0]) &&
-                           !$past(reqs[1]) &&
-                           !$past(reqs[2]) &&
-                           !$past(reqs[3]) &&
-                           !$past(full)) || !full);
+         assert property (!($past(push) &&
+                          !$past(req) &&
+                          !$past(empty[0]))
+                          || !empty[0]);
+         assert property (!($past(push) &&
+                            !$past(req) &&
+                            !$past(empty[1]))
+                          || !empty[1]);
+         assert property (!($past(push) &&
+                            !$past(req) &&
+                            !$past(empty[2]))
+                          || !empty[2]);
+         assert property (!($past(push) &&
+                            !$past(req) &&
+                            !$past(empty[3]))
+                          || !empty[3]);
 
          // don't need to check requests -- guarded internally so the enable condition is just True
 
