@@ -14,7 +14,7 @@ from cosa.utils.formula_mngm import get_free_variables, substitute
 from por_utils import btor_config, interface, formulas_to_str
 
 from ris import reduced_instruction_set, read_verilog, read_btor, test_actions, create_action_constraints
-from por import find_gir, safe_to_remove_empty_instruction
+from por import find_gir
 from process_source import gen_btor
 
 def prove(btorname):
@@ -80,7 +80,7 @@ def prove(btorname):
     assumptions = []
     test_actions(actions, en)
     if reduced_instruction_set(hts, config, generic_interface, strategy='ceg'):
-        action_constraints = create_action_constraints(actions)
+        action_constraints = create_action_constraints(hts, config, generic_interface)
         print("Found RIS constraint:", action_constraints)
 
         assumptions.append(action_constraints)
@@ -95,10 +95,6 @@ def prove(btorname):
 
         for a0, a1, g in girs:
             assumptions.append(Implies(And(g, And(a1, action2en[a0])), Not(TS.to_next(a0))))
-
-        if safe_to_remove_empty_instruction(hts, config, generic_interface):
-            print("Can safely remove empty instruction")
-            assumptions.append(Or(actions))
 
         assumption_filename = "assumptions-{}.txt".format(design_name)
         with open(assumption_filename, "w") as f:
