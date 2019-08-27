@@ -30,6 +30,7 @@ def prove(btorfile):
                          synchronize=False,
                          verific=False)
 
+    design_name = btorfile.replace('.btor', '')
     hts, _, _ = read_btor(Path(btorfile), "", config)
 
     symbols = dict()
@@ -79,15 +80,16 @@ def prove(btorfile):
         for a0, a1, g in girs:
             assumptions.append(Implies(And(g, And(a1, action2en[a0])), Not(TS.to_next(a0))))
 
-        with open("assumptions.txt", "w") as f:
+        assumption_filename = "assumptions-{}.txt".format(design_name)
+        with open(assumption_filename, "w") as f:
             f.write(formulas_to_str(assumptions))
 
         print("Wrote assumptions to assumptions.txt")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate BTOR collateral for buggy Verilog systems and check RIS/POR side conditions.")
-    parser.add_argument("--depth", type=int, default=6)
-    parser.add_argument("--width", type=int, default=6)
+    parser.add_argument("--depth", type=int, default=8)
+    parser.add_argument("--width", type=int, default=8)
     parser.add_argument("--num-fifos", type=int, default=2)
     parser.add_argument("-k", type=int, default=80)
     parser.add_argument("--options", "-o", help='options to pass to abc', default='')
