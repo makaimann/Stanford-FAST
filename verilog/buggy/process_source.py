@@ -23,6 +23,7 @@ write_aiger -I -B -zinit -map {TOP}.aim {NAME}.aig;
 scoreboard_files = ['FF.v', 'MagicPacketTracker.v', 'SimpleScoreboard.sv']
 
 design_files = {
+    "example": ["example.v"],
     "shift_register":  ['shift_register_fifo.v', 'shift_register_top.v'],
     "circular_pointer": ['circular_pointer_fifo.v', 'circular_pointer_top.v'],
     "arbitrated": ['arbitrated_top.v', 'onehot_mux.v', 'circular_pointer_fifo.v'],
@@ -30,6 +31,7 @@ design_files = {
 }
 
 top_mods = {
+    "example": "example",
     "shift_register": 'shift_register_top',
     "circular_pointer": 'circular_pointer_top',
     "arbitrated": 'arbitrated_top',
