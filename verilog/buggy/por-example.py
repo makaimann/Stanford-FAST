@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
+import argparse
 from pathlib import Path
 
 from pysmt.fnode import FNode
-from pysmt.shortcuts import And, BV, EqualsOrIff, Implies, Not, Or, TRUE
+from pysmt.shortcuts import And, BV, EqualsOrIff, Implies, Not, Or, TRUE, BVUGT
 
 from cosa.environment import reset_env
 from cosa.representation import TS
@@ -10,10 +11,11 @@ from cosa.utils.formula_mngm import get_free_variables, substitute
 
 from por_utils import btor_config, interface, formulas_to_str
 
-from ris import reduced_instruction_set, read_verilog, test_actions, create_action_constraints
+from ris import reduced_instruction_set, read_verilog, read_btor, test_actions, create_action_constraints
 from por import find_gir
+from process_source import gen_btor
 
-def main():
+def prove(btorfile):
     reset_env()
     config = btor_config(abstract_clock=True,
                          opt_circuit=False,
@@ -28,7 +30,7 @@ def main():
                          synchronize=False,
                          verific=False)
 
-    hts, _, _ = read_verilog(Path("./example.v"), "example", config)
+    hts, _, _ = read_btor(Path(btorfile), "", config)
 
     symbols = dict()
     for v in hts.vars:
@@ -60,8 +62,8 @@ def main():
 
     assumptions = []
     test_actions(actions, en)
-    if reduced_instruction_set(hts, config, generic_interface, strategy='ceg'):
-        action_constraints = create_action_constraints(actions)
+    if reduced_instruction_set(hts, config, generic_interface, strategy='simple-ceg'):
+        action_constraints = create_action_constraints(hts, config, generic_interface)
         print("Found RIS constraint:", action_constraints)
 
         assumptions.append(action_constraints)
@@ -83,4 +85,15 @@ def main():
         print("Wrote assumptions to assumptions.txt")
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Generate BTOR collateral for buggy Verilog systems and check RIS/POR side conditions.")
+    parser.add_argument("--depth", type=int, default=6)
+    parser.add_argument("--width", type=int, default=6)
+    parser.add_argument("--num-fifos", type=int, default=2)
+    parser.add_argument("-k", type=int, default=80)
+    parser.add_argument("--options", "-o", help='options to pass to abc', default='')
+
+    args = parser.parse_args()
+
+    # never runs with enable macro
+    btorfile = gen_btor('example', args.depth, args.width, False, args.num_fifos, arrays=True)
+    prove(btorfile)

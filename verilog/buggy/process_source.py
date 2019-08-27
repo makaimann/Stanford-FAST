@@ -3,7 +3,7 @@ import argparse
 import itertools
 import subprocess
 
-YOSYS_SCRIPT="""read_verilog {MACROS} -sv {SRC}; prep -top {TOP}; hierarchy -check; memory; flatten;; setundef -undriven -expose; write_btor {NAME}.btor"""
+YOSYS_SCRIPT="""read_verilog {MACROS} -sv {SRC}; prep -top {TOP}; hierarchy -check; {MEMCMD}; flatten;; setundef -undriven -expose; write_btor {NAME}.btor"""
 
 YOSYS_ABC_SCRIPT="""
 read_verilog -sv -formal {MACROS} {SRC}; prep -top {TOP}; \
@@ -52,14 +52,19 @@ def collect_options(design, depth, width, en, num_fifos):
 
     return MACROS, SRC, TOP, NAME
 
-def gen_btor(design, depth, width, en, num_fifos):
+def gen_btor(design, depth, width, en, num_fifos, arrays=False):
     '''
     Generates btor and returns the name of the generated file. Throws a runtime error if generation fails.
     '''
 
     MACROS, SRC, TOP, NAME = collect_options(design, depth, width, en, num_fifos)
 
-    child = subprocess.Popen(["yosys", "-l", "yosys.log", "-p", YOSYS_SCRIPT.format(MACROS=MACROS, SRC=SRC, TOP=TOP, NAME=NAME)],
+    if arrays:
+        MEMCMD = "memory -nomap"
+    else:
+        MEMCMD = "memory"
+
+    child = subprocess.Popen(["yosys", "-l", "yosys.log", "-p", YOSYS_SCRIPT.format(MACROS=MACROS, SRC=SRC, TOP=TOP, MEMCMD=MEMCMD, NAME=NAME)],
                              stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT)
     stdout,stderr = child.communicate()
