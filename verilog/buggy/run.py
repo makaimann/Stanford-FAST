@@ -11,7 +11,7 @@ def main():
     parser.add_argument("design", choices=["shift_register", "circular_pointer", "arbitrated", "arbitrated_encoded", "example"])
     parser.add_argument("--depth", type=int, default=8)
     parser.add_argument("--width", type=int, default=8)
-    parser.add_argument("--num-fifos", type=int, default=2)
+    parser.add_argument("--num-fifos", type=int)
     parser.add_argument("-k", type=int, default=80)
     parser.add_argument("--por", action="store_true")
     args = parser.parse_args()

@@ -40,15 +40,20 @@ top_mods = {
 
 def collect_options(design, depth, width, en, num_fifos):
     en_macro = "-DEN" if en else ""
-    MACROS="-DDEPTH={} -DWIDTH={} -DNUM_FIFOS={} {}".format(depth, width, num_fifos, en_macro)
+    MACROS="-DDEPTH={} -DWIDTH={} {}".format(depth, width, en_macro)
+
     SRC = " ".join(itertools.chain(design_files[design], scoreboard_files))
     TOP = top_mods[design]
 
     int_en = 1 if en else 0
-    NAME = TOP + "_w%i"%width + "_d%i"%depth + "_e%i"%int_en
 
+    NAME = TOP
     if "arbitrated" in design:
+        assert num_fifos is not None
         NAME += "_n%i"%num_fifos
+        MACROS += " -DNUM_FIFOS={}".format(num_fifos)
+
+    NAME += "_w%i"%width + "_d%i"%depth + "_e%i"%int_en
 
     return MACROS, SRC, TOP, NAME
 
@@ -103,7 +108,7 @@ def main():
     parser.add_argument("design", choices=["shift_register", "circular_pointer", "arbitrated", "arbitrated_encoded", "example"])
     parser.add_argument("--depth", type=int, default=8)
     parser.add_argument("--width", type=int, default=8)
-    parser.add_argument("--num-fifos", type=int, default=2)
+    parser.add_argument("--num-fifos", type=int)
     parser.add_argument("--en", action="store_true", default=False)
     parser.add_argument("--dest", required=True, choices=['btor', 'aig'])
     args = parser.parse_args()
