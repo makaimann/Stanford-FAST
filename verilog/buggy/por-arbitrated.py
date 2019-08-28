@@ -56,7 +56,6 @@ def prove(btorname, depth, num_fifos):
 
     selwidth = int(math.ceil(math.log2(num_fifos)))
 
-    # Not parameterized -- assumes N=4
     actions = [EqualsOrIff(BVExtract(push, i, i), BV(1, 1)) for i in range(num_fifos)]
     actions.append(EqualsOrIff(req, BV(1, 1)))
 
