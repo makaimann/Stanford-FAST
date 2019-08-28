@@ -57,7 +57,7 @@ def prove(btorname):
     en      = [EqualsOrIff(full, BV(0, 1)), EqualsOrIff(empty, BV(0, 1))]
     # , And(EqualsOrIff(en, BV(0, 1)), EqualsOrIff(full, BV(0, 1)))]
 
-    guards = [Not(EqualsOrIff(sbcnt, BV(0, sbcnt.symbol_type().width)))]
+    guards = [BVUGT(sbcnt, BV(0, sbcnt.symbol_type().width))]
 
     action2en = {}
     for a, e in zip(actions, en):

@@ -65,7 +65,7 @@ def prove(btorname, depth, num_fifos):
     # predicates = [EqualsOrIff(gnt, BV(1, 4)), EqualsOrIff(gnt, BV(2, 4)), EqualsOrIff(gnt, BV(4, 4)), EqualsOrIff(gnt, BV(8, 4))]
     predicates = []
 
-    guards = [And(Not(EqualsOrIff(sbcnt, BV(0, sbcnt.symbol_type().width))), BVULT(f0cnt, BV(depth-1, f0cnt.symbol_type().width)))]
+    guards = [And(BVUGT(sbcnt, BV(0, sbcnt.symbol_type().width)), BVULT(f0cnt, BV(depth-1, f0cnt.symbol_type().width)))]
 
     action2en = {}
     for a, e in zip(actions, en):
