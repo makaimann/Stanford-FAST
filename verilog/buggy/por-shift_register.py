@@ -79,7 +79,7 @@ def prove(btorname):
 
     assumptions = []
     test_actions(actions, en)
-    if reduced_instruction_set(hts, config, generic_interface, strategy='ceg'):
+    if reduced_instruction_set(hts, config, generic_interface, strategy='simple-ceg'):
         action_constraints = create_action_constraints(hts, config, generic_interface)
         print("Found RIS constraint:", action_constraints)
 
