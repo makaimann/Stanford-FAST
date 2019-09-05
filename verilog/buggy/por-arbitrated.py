@@ -109,7 +109,7 @@ def prove(btorname, depth, num_fifos):
         with open(assumption_filename, "w") as f:
             # super hacky, but need to quote name with square brackets in it
             res = formulas_to_str(assumptions)
-            res = res.replace("gen_fifos[0].f.cnt", "'gen_fifos[0].f.cnt'")
+            res = res.replace("gen_fifos[0].f.count", "'gen_fifos[0].f.count'")
             f.write(res)
 
         print("Wrote assumptions to {}".format(assumption_filename))
