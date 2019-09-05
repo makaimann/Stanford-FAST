@@ -22,7 +22,8 @@ module arbitrated_top(clk, rst, push, flat_data_in, start, req, gnt_sel,
    wire                     data_out_vld;
    wire                     en;
 
-   wire [NUM_FIFOS-1:0]     full, empty;
+//   wire [NUM_FIFOS-1:0]     full, empty;
+   wire [NUM_FIFOS-1:0]     empty;
    wire [WIDTH-1:0]         fifo_data_out [NUM_FIFOS-1:0];
 
    // unpack data for easier handling
@@ -36,31 +37,29 @@ module arbitrated_top(clk, rst, push, flat_data_in, start, req, gnt_sel,
       end
    endgenerate
 
-   // wire [NUM_FIFOS-1:0]     qual_push;
-
-   // // can re-direct to different fifo
-   // // BUG: doesn't update tag
-   // round_robin_selector
-   //   #(.WIDTH(NUM_FIFOS))
-   // rrs
-   //   (.en(push),
-   //    .input_sel(push_sel),
-   //    .allowed(~full),
-   //    .sel(qual_push));
+   wire [NUM_FIFOS-1:0] has_credits;
 
    genvar i;
    generate
       for(i=0; i < NUM_FIFOS; i=i+1) begin : gen_fifos
-         shift_register_fifo
+         circular_pointer_fifo
             #(.WIDTH(WIDTH), .DEPTH(DEPTH))
          f (.clk(clk),
             .rst(rst),
             .push(push[i]),
             .pop(gnt[i]),
             .data_in(data_in[i]),
-            .full(full[i]),
+//            .full(full[i]),
             .empty(empty[i]),
             .data_out(fifo_data_out[i]));
+
+	 credit_counter
+	   #(.CREDITS_MAX(DEPTH))
+	 cc(.clk(clk),
+	    .rst(rst),
+	    .inc(gnt[i]),
+	    .dec(push[i]),
+	    .has_credits(has_credits[i]));
 
          // For now assuming every non-empty fifo is requesting
          //assign guarded_reqs[i] = reqs[i] & ~empty[i];
@@ -112,7 +111,7 @@ module arbitrated_top(clk, rst, push, flat_data_in, start, req, gnt_sel,
    generate
       for(k=0; k < NUM_FIFOS; k=k+1) begin
          always @* begin
-            assume(!full[k] | !push[k]);
+            assume(has_credits[k] | !push[k]);
             assume(!empty[k] | !gnt[k]);
          end
       end
@@ -133,10 +132,16 @@ module arbitrated_top(clk, rst, push, flat_data_in, start, req, gnt_sel,
                                   !$past(empty[l]))
                                 || !empty[l]);
 
-               assert property (!(!$past(|push) &&
+	       assert property (!(!$past(|push) &&
                                   $past(req) &&
-                                  !$past(full[l]))
-                                || !full[l]);
+                                  $past(has_credits[l]))
+                                || has_credits[l]);
+
+
+               // assert property (!(!$past(|push) &&
+               //                    $past(req) &&
+               //                    !$past(full[l]))
+               //                  || !full[l]);
             end
          end
       end

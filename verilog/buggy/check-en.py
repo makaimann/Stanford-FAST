@@ -21,6 +21,8 @@ def main():
     # always runs with enable macro
     aigfile = gen_aig(args.design, args.depth, args.width, True, args.num_fifos)
 
+    sys.stdout.flush()
+
     try:
         os.system(ABC_COMMAND.format(aigfile=aigfile,
                                      verification='pdr',

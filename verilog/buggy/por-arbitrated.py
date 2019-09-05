@@ -45,29 +45,31 @@ def prove(btorname, depth, num_fifos):
     start    = symbols['start']
     push     = symbols['push']
     empty    = symbols['empty']
-    full     = symbols['full']
+    # full     = symbols['full']
     data_out = symbols['data_out']
     en       = symbols['sb.en']
     gnt      = symbols['gnt']
     sbcnt    = symbols['sb.cnt']
     req      = symbols['req']
     gnt_sel  = symbols['gnt_sel']
-    count0    = symbols['gen_fifos[0].f.count']
-    count1    = symbols['gen_fifos[1].f.count']
+    has_credits  = symbols['has_credits']
+    # count0    = symbols['gen_fifos[0].f.count']
+    # count1    = symbols['gen_fifos[1].f.count']
 
     selwidth = int(math.ceil(math.log2(num_fifos)))
 
     actions = [EqualsOrIff(BVExtract(push, i, i), BV(1, 1)) for i in range(num_fifos)]
     actions.append(EqualsOrIff(req, BV(1, 1)))
 
-    en = [EqualsOrIff(BVExtract(full, i, i), BV(0, 1)) for i in range(num_fifos)]
+    en = [EqualsOrIff(BVExtract(has_credits, i, i), BV(1, 1)) for i in range(num_fifos)]
     en.append(EqualsOrIff(BVExtract(BVLShr(empty, BVZExt(gnt_sel, num_fifos - selwidth)), 0, 0), BV(0, 1)))
 
     # predicates = [EqualsOrIff(gnt, BV(1, 4)), EqualsOrIff(gnt, BV(2, 4)), EqualsOrIff(gnt, BV(4, 4)), EqualsOrIff(gnt, BV(8, 4))]
     predicates = []
 
     # guards = [And(BVULT(count0, BV(2**(count0.symbol_type().width-1)-1, count0.symbol_type().width)), BVULT(count1, BV(2**(count1.symbol_type().width-1)-1, count1.symbol_type().width)), BVUGT(sbcnt, BV(0, sbcnt.symbol_type().width)))]
-    guards = [BVULT(count0, BV(2**(count0.symbol_type().width-1)-1, count0.symbol_type().width))]
+    # guards = [BVULT(count0, BV(2**(count0.symbol_type().width-1)-1, count0.symbol_type().width))]
+    guards = [BVUGT(sbcnt, BV(0, sbcnt.symbol_type().width))]
 
     action2en = {}
     for a, e in zip(actions, en):
