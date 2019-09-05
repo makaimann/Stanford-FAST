@@ -6,7 +6,7 @@ module arbitrated_top(clk, rst, push, flat_data_in, start, req, gnt_sel,
              WIDTH       =    `WIDTH,
              DEPTH       =    `DEPTH,
              TAGWIDTH    =    $clog2(NUM_FIFOS),
-             TRACKED     =    1;
+             TRACKED     =    0;
 
    input                    clk, rst;
    input [NUM_FIFOS-1:0]    push;
