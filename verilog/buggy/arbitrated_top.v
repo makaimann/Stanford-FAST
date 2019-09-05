@@ -29,16 +29,6 @@ module arbitrated_top(clk, rst, push, flat_data_in, start, req, gnt_sel,
    (* keep *)
    wire [WIDTH-1:0]         data_in  [NUM_FIFOS-1:0];
 
-   wire                     not_full;
-   assign not_full = ~full;
-
-   // Yosys generates bad btor (non-UTF-8 parseable) without this...not sure why
-   wire [WIDTH-1:0]                    all_ones;
-   assign all_ones = {WIDTH{1'b1}};
-
-   wire [WIDTH-1:0]                    mask;
-   assign mask = {WIDTH{not_full}};
-
    generate
       genvar                i;
       for(i=0; i < NUM_FIFOS; i=i+1) begin : unpack_data
@@ -61,13 +51,13 @@ module arbitrated_top(clk, rst, push, flat_data_in, start, req, gnt_sel,
    genvar i;
    generate
       for(i=0; i < NUM_FIFOS; i=i+1) begin : gen_fifos
-         circular_pointer_fifo
+         shift_register_fifo
             #(.WIDTH(WIDTH), .DEPTH(DEPTH))
          f (.clk(clk),
             .rst(rst),
             .push(push[i]),
             .pop(gnt[i]),
-            .data_in(data_in[i] & mask),
+            .data_in(data_in[i]),
             .full(full[i]),
             .empty(empty[i]),
             .data_out(fifo_data_out[i]));
@@ -85,19 +75,6 @@ module arbitrated_top(clk, rst, push, flat_data_in, start, req, gnt_sel,
          assign flat_fifo_data_out[(j+1)*WIDTH-1:j*WIDTH] = fifo_data_out[j];
       end
    endgenerate
-
-   // abstract arbiter
-   always @* begin : abstract_arbiter
-      assume (empty[gnt_sel] | (gnt != 0));
-      // assume((guarded_reqs != 0) | (gnt == 0));
-      // assume((guarded_reqs == 0) | (|(gnt & guarded_reqs)));
-      // assume((guarded_reqs == 0) || ((gnt != 0) && ((gnt & (gnt - 1)) == 0)));
-   end
-   // end abstract arbiter
-
-   // priority arbiter
-   // assign gnt = (reqs) & (reqs - 1);
-   // end priority arbiter
 
    onehot_mux
      #(.CHANNELS(NUM_FIFOS),

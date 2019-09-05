@@ -52,7 +52,8 @@ def prove(btorname, depth, num_fifos):
     sbcnt    = symbols['sb.cnt']
     req      = symbols['req']
     gnt_sel  = symbols['gnt_sel']
-    f0cnt    = symbols['gen_fifos[0].f.cnt']
+    count0    = symbols['gen_fifos[0].f.count']
+    count1    = symbols['gen_fifos[1].f.count']
 
     selwidth = int(math.ceil(math.log2(num_fifos)))
 
@@ -65,7 +66,8 @@ def prove(btorname, depth, num_fifos):
     # predicates = [EqualsOrIff(gnt, BV(1, 4)), EqualsOrIff(gnt, BV(2, 4)), EqualsOrIff(gnt, BV(4, 4)), EqualsOrIff(gnt, BV(8, 4))]
     predicates = []
 
-    guards = [And(BVUGT(sbcnt, BV(0, sbcnt.symbol_type().width)), BVULT(f0cnt, BV(depth-1, f0cnt.symbol_type().width)))]
+    # guards = [And(BVULT(count0, BV(2**(count0.symbol_type().width-1)-1, count0.symbol_type().width)), BVULT(count1, BV(2**(count1.symbol_type().width-1)-1, count1.symbol_type().width)), BVUGT(sbcnt, BV(0, sbcnt.symbol_type().width)))]
+    guards = [BVULT(count0, BV(2**(count0.symbol_type().width-1)-1, count0.symbol_type().width))]
 
     action2en = {}
     for a, e in zip(actions, en):

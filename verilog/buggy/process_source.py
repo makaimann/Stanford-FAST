@@ -26,7 +26,7 @@ design_files = {
     "example": ["example.v"],
     "shift_register":  ['shift_register_fifo.v', 'shift_register_top.v'],
     "circular_pointer": ['circular_pointer_fifo.v', 'circular_pointer_top.v'],
-    "arbitrated": ['arbitrated_top.v', 'onehot_mux.v', 'circular_pointer_fifo.v'],
+    "arbitrated": ['arbitrated_top.v', 'onehot_mux.v', 'shift_register_fifo.v'],
     "arbitrated_encoded": ['arbitrated_encoded_top.v', 'onehot_mux.v', 'circular_pointer_fifo.v']
 }
 
